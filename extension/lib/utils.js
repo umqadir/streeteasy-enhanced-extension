@@ -1,11 +1,13 @@
 /**
  * StreetSafe Utility Functions
  * Shared utilities for coordinate extraction, geocoding, and data fetching
+ *
+ * Note: This version uses static precompiled data for crime statistics
+ * instead of a backend API. All data lookups happen client-side.
  */
 
 // Configuration
 const CONFIG = {
-  API_BASE_URL: 'http://localhost:3000/v1', // Backend API
   NYC_GEOCODE_API: 'https://geosearch.planninglabs.nyc/v1/search',
   CACHE_TTL_MS: 1000 * 60 * 60 * 24, // 24 hours
   DEFAULT_TIME_WINDOW: '12m'
@@ -81,31 +83,52 @@ async function geocodeAddress(address) {
 }
 
 /**
- * Fetch crime statistics from backend API
+ * Fetch crime statistics using static precompiled data (no backend required)
  * @param {number} lat - Latitude
  * @param {number} lon - Longitude
- * @param {string} window - Time window (e.g., '12m', '24m')
+ * @param {string} window - Time window (e.g., '12m', '24m', 'ytd')
  * @returns {Promise<Object|null>} Crime statistics data
  */
 async function fetchCrimeStats(lat, lon, window = CONFIG.DEFAULT_TIME_WINDOW) {
   try {
-    const params = new URLSearchParams({
-      lat: lat.toString(),
-      lon: lon.toString(),
-      window
-    });
+    // Find NTA for this location using client-side point-in-polygon
+    const nta = await ntaLookup.findNTA(lat, lon);
 
-    const response = await fetch(`${CONFIG.API_BASE_URL}/safety?${params}`);
-
-    if (!response.ok) {
-      console.error('[StreetSafe] API error:', response.status);
+    if (!nta) {
+      console.warn('[StreetSafe] Location not found in NYC boundaries');
       return null;
     }
 
-    const data = await response.json();
-    return data;
+    console.log('[StreetSafe] Found NTA:', nta.name, `(${nta.id})`);
+
+    // Get crime statistics from precompiled data
+    const stats = await crimeStatsManager.getStats(nta.id, window);
+
+    if (!stats) {
+      console.warn('[StreetSafe] No crime statistics for NTA:', nta.id);
+      return null;
+    }
+
+    // Get comparisons with borough-specific data
+    const comparisons = await crimeStatsManager.getComparisons(window, nta.borough);
+
+    // Build response matching the original API format
+    return {
+      geography: {
+        ntaId: nta.id,
+        ntaName: nta.name,
+        borough: nta.borough
+      },
+      metrics: stats.metrics,
+      timeWindow: window,
+      dataThrough: stats.dataThrough,
+      computedAt: new Date().toISOString(),
+      comparisons: comparisons || { nycAverage: {}, boroughAverage: {} },
+      methodologyVersion: stats.methodologyVersion
+    };
+
   } catch (e) {
-    console.error('[StreetSafe] Fetch error:', e);
+    console.error('[StreetSafe] Error fetching crime stats:', e);
     return null;
   }
 }

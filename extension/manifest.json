@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "StreetSafe - Crime Context for StreetEasy",
   "version": "1.0.0",
-  "description": "Adds neighborhood crime statistics and safety context to StreetEasy apartment listings",
+  "description": "Adds neighborhood crime statistics and safety context to StreetEasy apartment listings using precompiled NYC Open Data",
   "permissions": [
     "storage",
     "sidePanel"
@@ -21,6 +21,7 @@
         "https://*.streeteasy.com/*"
       ],
       "js": [
+        "lib/geo-utils.js",
         "lib/utils.js",
         "content/coordinates-extractor.js",
         "content/ui-injector.js",
@@ -47,7 +48,9 @@
     {
       "resources": [
         "ui/inline-module.html",
-        "ui/inline-module.css"
+        "ui/inline-module.css",
+        "data/nta-boundaries.json",
+        "data/crime-stats.json"
       ],
       "matches": [
         "https://streeteasy.com/*",
