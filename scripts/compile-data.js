@@ -18,6 +18,61 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
+// 2020 Decennial Census population by NTA (from Census Bureau P1 table)
+// Source: Census API 2020/dec/pl, aggregated via tract-to-NTA crosswalk
+const NTA_POPULATIONS_2020 = {
+  "BK0101": 38980, "BK0102": 64444, "BK0103": 47703, "BK0104": 52998,
+  "BK0201": 25092, "BK0202": 40968, "BK0203": 32938, "BK0204": 28647,
+  "BK0301": 89189, "BK0302": 84653, "BK0401": 58692, "BK0402": 62049,
+  "BK0501": 43256, "BK0502": 42818, "BK0503": 53004, "BK0504": 17038,
+  "BK0505": 45559, "BK0601": 59166, "BK0602": 57405, "BK0701": 23622,
+  "BK0702": 54473, "BK0703": 55606, "BK0801": 23515, "BK0802": 85275,
+  "BK0901": 50590, "BK0902": 49513, "BK1001": 86779, "BK1002": 46756,
+  "BK1101": 104934, "BK1102": 33070, "BK1103": 60523, "BK1201": 35632,
+  "BK1202": 93905, "BK1203": 41758, "BK1204": 39137, "BK1301": 30366,
+  "BK1302": 49517, "BK1303": 33568, "BK1401": 66503, "BK1402": 43016,
+  "BK1403": 52891, "BK1501": 52797, "BK1502": 41465, "BK1503": 69084,
+  "BK1601": 37952, "BK1602": 60470, "BK1701": 47690, "BK1702": 34317,
+  "BK1703": 42762, "BK1704": 39115, "BK1801": 67087, "BK1802": 46955,
+  "BK1803": 89932, "BX0101": 57718, "BX0102": 42651, "BX0201": 15131,
+  "BX0202": 40289, "BX0301": 37607, "BX0302": 24553, "BX0303": 30158,
+  "BX0401": 69387, "BX0402": 32456, "BX0403": 49651, "BX0501": 54682,
+  "BX0502": 49099, "BX0503": 32099, "BX0601": 20147, "BX0602": 32150,
+  "BX0603": 35825, "BX0701": 46538, "BX0702": 55521, "BX0703": 43466,
+  "BX0801": 35777, "BX0802": 8594, "BX0803": 47927, "BX0901": 74342,
+  "BX0902": 37297, "BX0903": 41420, "BX0904": 33602, "BX1001": 17376,
+  "BX1002": 48116, "BX1003": 29462, "BX1004": 37369, "BX1101": 32425,
+  "BX1102": 25077, "BX1103": 29402, "BX1104": 34623, "BX1201": 61346,
+  "BX1202": 51736, "BX1203": 47657, "MN0101": 52992, "MN0102": 25390,
+  "MN0201": 23287, "MN0202": 34147, "MN0203": 35011, "MN0301": 42556,
+  "MN0302": 49149, "MN0303": 71436, "MN0401": 69741, "MN0402": 59524,
+  "MN0501": 33214, "MN0502": 25575, "MN0601": 22512, "MN0602": 28628,
+  "MN0603": 63520, "MN0604": 45765, "MN0701": 70697, "MN0702": 101767,
+  "MN0703": 51751, "MN0801": 85527, "MN0802": 62410, "MN0803": 84046,
+  "MN0901": 38865, "MN0902": 22183, "MN0903": 49410, "MN1001": 47113,
+  "MN1002": 83327, "MN1101": 59814, "MN1102": 64655, "MN1201": 72037,
+  "MN1202": 71842, "MN1203": 36299, "QN0101": 50225, "QN0102": 18927,
+  "QN0103": 52220, "QN0104": 38673, "QN0105": 32954, "QN0151": 3772,
+  "QN0201": 32216, "QN0202": 52278, "QN0203": 53188, "QN0301": 101848,
+  "QN0302": 33573, "QN0303": 43434, "QN0401": 107864, "QN0402": 73822,
+  "QN0501": 43257, "QN0502": 66402, "QN0503": 35135, "QN0504": 34474,
+  "QN0601": 30741, "QN0602": 88965, "QN0701": 33625, "QN0702": 28408,
+  "QN0703": 23287, "QN0704": 57387, "QN0705": 34704, "QN0706": 23638,
+  "QN0707": 69879, "QN0801": 36009, "QN0802": 35669, "QN0803": 23434,
+  "QN0804": 23576, "QN0805": 39292, "QN0901": 24371, "QN0902": 34100,
+  "QN0903": 24141, "QN0904": 27312, "QN0905": 41948, "QN1001": 79540,
+  "QN1002": 23518, "QN1003": 27320, "QN1101": 36182, "QN1102": 35588,
+  "QN1103": 25262, "QN1104": 25249, "QN1201": 60993, "QN1202": 44401,
+  "QN1203": 43090, "QN1204": 32883, "QN1205": 51816, "QN1206": 24576,
+  "QN1301": 23364, "QN1302": 26566, "QN1303": 54345, "QN1304": 19081,
+  "QN1305": 26088, "QN1306": 23103, "QN1307": 27101, "QN1401": 58648,
+  "QN1402": 41367, "QN1403": 24134, "SI0101": 20549, "SI0102": 19027,
+  "SI0103": 25510, "SI0104": 37010, "SI0105": 31458, "SI0106": 22609,
+  "SI0107": 33492, "SI0201": 36259, "SI0202": 29083, "SI0203": 32822,
+  "SI0204": 42871, "SI0301": 22388, "SI0302": 54699, "SI0303": 30683,
+  "SI0304": 40534, "SI0305": 16089
+};
+
 // Configuration
 const CONFIG = {
   // NYC Open Data endpoints (using 2020 NTA boundaries)
@@ -36,8 +91,7 @@ const CONFIG = {
   // Time windows to compute
   TIME_WINDOWS: ['12m', '24m', 'ytd'],
 
-  // Population estimates by NTA (2020 Census / ACS estimates)
-  // This is a fallback - we'll try to fetch real data
+  // Fallback population if NTA not in census data
   DEFAULT_POPULATION: 40000
 };
 
@@ -238,26 +292,27 @@ function assignCrimesToNTAs(crimes, boundaries) {
 }
 
 /**
- * Get estimated population for NTAs
- * Uses shape_area as proxy if no population data available
+ * Get population for NTAs from 2020 Decennial Census
+ * Falls back to DEFAULT_POPULATION for unknown NTAs
  */
 function estimatePopulations(boundaries) {
   const populations = {};
-
-  // Population density assumptions by borough (people per sq meter)
-  const densityByBorough = {
-    'Manhattan': 0.027,    // ~27,000/km²
-    'Brooklyn': 0.014,     // ~14,000/km²
-    'Bronx': 0.013,        // ~13,000/km²
-    'Queens': 0.008,       // ~8,000/km²
-    'Staten Island': 0.003 // ~3,000/km²
-  };
+  let censusMatches = 0;
+  let fallbacks = 0;
 
   for (const [ntaId, nta] of Object.entries(boundaries)) {
-    // Default to a reasonable NYC neighborhood population
-    populations[ntaId] = CONFIG.DEFAULT_POPULATION;
+    if (NTA_POPULATIONS_2020[ntaId]) {
+      populations[ntaId] = NTA_POPULATIONS_2020[ntaId];
+      censusMatches++;
+    } else {
+      // Fallback for NTAs not in census data (shouldn't happen for residential NTAs)
+      populations[ntaId] = CONFIG.DEFAULT_POPULATION;
+      fallbacks++;
+      console.log(`  Warning: No census population for ${ntaId}, using default`);
+    }
   }
 
+  console.log(`  Census data matched: ${censusMatches}, fallbacks: ${fallbacks}`);
   return populations;
 }
 
