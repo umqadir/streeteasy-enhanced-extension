@@ -1,0 +1,529 @@
+{
+  "generated": "2026-01-07T12:00:00.000Z",
+  "count": 195,
+  "note": "This is sample data. Run 'node scripts/compile-data.js' to fetch live data from NYC Open Data.",
+  "boundaries": {
+    "MN17": {
+      "id": "MN17",
+      "name": "Midtown-Midtown South",
+      "borough": "Manhattan",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9947, 40.7614], [-73.9731, 40.7614], [-73.9731, 40.7491], [-73.9947, 40.7491], [-73.9947, 40.7614]]]
+      }
+    },
+    "MN19": {
+      "id": "MN19",
+      "name": "Turtle Bay-East Midtown",
+      "borough": "Manhattan",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9731, 40.7614], [-73.9634, 40.7614], [-73.9634, 40.7491], [-73.9731, 40.7491], [-73.9731, 40.7614]]]
+      }
+    },
+    "MN13": {
+      "id": "MN13",
+      "name": "Chelsea-Clinton",
+      "borough": "Manhattan",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-74.0065, 40.7614], [-73.9947, 40.7614], [-73.9947, 40.7397], [-74.0065, 40.7397], [-74.0065, 40.7614]]]
+      }
+    },
+    "MN23": {
+      "id": "MN23",
+      "name": "West Village",
+      "borough": "Manhattan",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-74.0065, 40.7397], [-73.9947, 40.7397], [-73.9947, 40.7280], [-74.0065, 40.7280], [-74.0065, 40.7397]]]
+      }
+    },
+    "MN22": {
+      "id": "MN22",
+      "name": "East Village",
+      "borough": "Manhattan",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9947, 40.7350], [-73.9780, 40.7350], [-73.9780, 40.7220], [-73.9947, 40.7220], [-73.9947, 40.7350]]]
+      }
+    },
+    "MN24": {
+      "id": "MN24",
+      "name": "SoHo-TriBeCa-Civic Center-Little Italy",
+      "borough": "Manhattan",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-74.0100, 40.7280], [-73.9947, 40.7280], [-73.9947, 40.7080], [-74.0100, 40.7080], [-74.0100, 40.7280]]]
+      }
+    },
+    "MN25": {
+      "id": "MN25",
+      "name": "Battery Park City-Lower Manhattan",
+      "borough": "Manhattan",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-74.0200, 40.7150], [-74.0050, 40.7150], [-74.0050, 40.6990], [-74.0200, 40.6990], [-74.0200, 40.7150]]]
+      }
+    },
+    "MN27": {
+      "id": "MN27",
+      "name": "Chinatown",
+      "borough": "Manhattan",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9980, 40.7180], [-73.9880, 40.7180], [-73.9880, 40.7100], [-73.9980, 40.7100], [-73.9980, 40.7180]]]
+      }
+    },
+    "MN28": {
+      "id": "MN28",
+      "name": "Lower East Side",
+      "borough": "Manhattan",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9880, 40.7220], [-73.9750, 40.7220], [-73.9750, 40.7100], [-73.9880, 40.7100], [-73.9880, 40.7220]]]
+      }
+    },
+    "MN31": {
+      "id": "MN31",
+      "name": "Lenox Hill-Roosevelt Island",
+      "borough": "Manhattan",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9634, 40.7730], [-73.9500, 40.7730], [-73.9500, 40.7614], [-73.9634, 40.7614], [-73.9634, 40.7730]]]
+      }
+    },
+    "MN32": {
+      "id": "MN32",
+      "name": "Yorkville",
+      "borough": "Manhattan",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9550, 40.7830], [-73.9420, 40.7830], [-73.9420, 40.7730], [-73.9550, 40.7730], [-73.9550, 40.7830]]]
+      }
+    },
+    "MN33": {
+      "id": "MN33",
+      "name": "East Harlem South",
+      "borough": "Manhattan",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9500, 40.7950], [-73.9350, 40.7950], [-73.9350, 40.7830], [-73.9500, 40.7830], [-73.9500, 40.7950]]]
+      }
+    },
+    "MN34": {
+      "id": "MN34",
+      "name": "East Harlem North",
+      "borough": "Manhattan",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9450, 40.8050], [-73.9300, 40.8050], [-73.9300, 40.7950], [-73.9450, 40.7950], [-73.9450, 40.8050]]]
+      }
+    },
+    "MN35": {
+      "id": "MN35",
+      "name": "Washington Heights North",
+      "borough": "Manhattan",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9400, 40.8600], [-73.9200, 40.8600], [-73.9200, 40.8400], [-73.9400, 40.8400], [-73.9400, 40.8600]]]
+      }
+    },
+    "MN36": {
+      "id": "MN36",
+      "name": "Washington Heights South",
+      "borough": "Manhattan",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9450, 40.8400], [-73.9250, 40.8400], [-73.9250, 40.8200], [-73.9450, 40.8200], [-73.9450, 40.8400]]]
+      }
+    },
+    "MN40": {
+      "id": "MN40",
+      "name": "Upper East Side-Carnegie Hill",
+      "borough": "Manhattan",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9634, 40.7850], [-73.9500, 40.7850], [-73.9500, 40.7730], [-73.9634, 40.7730], [-73.9634, 40.7850]]]
+      }
+    },
+    "MN14": {
+      "id": "MN14",
+      "name": "Lincoln Square",
+      "borough": "Manhattan",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9900, 40.7800], [-73.9750, 40.7800], [-73.9750, 40.7680], [-73.9900, 40.7680], [-73.9900, 40.7800]]]
+      }
+    },
+    "MN12": {
+      "id": "MN12",
+      "name": "Upper West Side",
+      "borough": "Manhattan",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9850, 40.7950], [-73.9650, 40.7950], [-73.9650, 40.7800], [-73.9850, 40.7800], [-73.9850, 40.7950]]]
+      }
+    },
+    "MN09": {
+      "id": "MN09",
+      "name": "Morningside Heights",
+      "borough": "Manhattan",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9700, 40.8150], [-73.9550, 40.8150], [-73.9550, 40.8000], [-73.9700, 40.8000], [-73.9700, 40.8150]]]
+      }
+    },
+    "MN03": {
+      "id": "MN03",
+      "name": "Central Harlem North",
+      "borough": "Manhattan",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9550, 40.8200], [-73.9350, 40.8200], [-73.9350, 40.8050], [-73.9550, 40.8050], [-73.9550, 40.8200]]]
+      }
+    },
+    "BK09": {
+      "id": "BK09",
+      "name": "Brooklyn Heights-Cobble Hill",
+      "borough": "Brooklyn",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9980, 40.6950], [-73.9850, 40.6950], [-73.9850, 40.6850], [-73.9980, 40.6850], [-73.9980, 40.6950]]]
+      }
+    },
+    "BK38": {
+      "id": "BK38",
+      "name": "DUMBO-Vinegar Hill-Downtown Brooklyn-Boerum Hill",
+      "borough": "Brooklyn",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9900, 40.7050], [-73.9780, 40.7050], [-73.9780, 40.6900], [-73.9900, 40.6900], [-73.9900, 40.7050]]]
+      }
+    },
+    "BK33": {
+      "id": "BK33",
+      "name": "Carroll Gardens-Columbia Street-Red Hook",
+      "borough": "Brooklyn",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-74.0050, 40.6850], [-73.9900, 40.6850], [-73.9900, 40.6700], [-74.0050, 40.6700], [-74.0050, 40.6850]]]
+      }
+    },
+    "BK37": {
+      "id": "BK37",
+      "name": "Park Slope-Gowanus",
+      "borough": "Brooklyn",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9900, 40.6800], [-73.9750, 40.6800], [-73.9750, 40.6650], [-73.9900, 40.6650], [-73.9900, 40.6800]]]
+      }
+    },
+    "BK88": {
+      "id": "BK88",
+      "name": "Borough Park",
+      "borough": "Brooklyn",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9950, 40.6350], [-73.9750, 40.6350], [-73.9750, 40.6200], [-73.9950, 40.6200], [-73.9950, 40.6350]]]
+      }
+    },
+    "BK60": {
+      "id": "BK60",
+      "name": "Williamsburg",
+      "borough": "Brooklyn",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9650, 40.7180], [-73.9500, 40.7180], [-73.9500, 40.7050], [-73.9650, 40.7050], [-73.9650, 40.7180]]]
+      }
+    },
+    "BK73": {
+      "id": "BK73",
+      "name": "North Side-South Side",
+      "borough": "Brooklyn",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9600, 40.7150], [-73.9450, 40.7150], [-73.9450, 40.7000], [-73.9600, 40.7000], [-73.9600, 40.7150]]]
+      }
+    },
+    "BK90": {
+      "id": "BK90",
+      "name": "Greenpoint",
+      "borough": "Brooklyn",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9600, 40.7350], [-73.9400, 40.7350], [-73.9400, 40.7200], [-73.9600, 40.7200], [-73.9600, 40.7350]]]
+      }
+    },
+    "BK50": {
+      "id": "BK50",
+      "name": "Canarsie",
+      "borough": "Brooklyn",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9100, 40.6450], [-73.8850, 40.6450], [-73.8850, 40.6250], [-73.9100, 40.6250], [-73.9100, 40.6450]]]
+      }
+    },
+    "BK61": {
+      "id": "BK61",
+      "name": "Crown Heights North",
+      "borough": "Brooklyn",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9600, 40.6750], [-73.9400, 40.6750], [-73.9400, 40.6600], [-73.9600, 40.6600], [-73.9600, 40.6750]]]
+      }
+    },
+    "BK69": {
+      "id": "BK69",
+      "name": "Clinton Hill",
+      "borough": "Brooklyn",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9700, 40.6900], [-73.9550, 40.6900], [-73.9550, 40.6800], [-73.9700, 40.6800], [-73.9700, 40.6900]]]
+      }
+    },
+    "BK68": {
+      "id": "BK68",
+      "name": "Fort Greene",
+      "borough": "Brooklyn",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9800, 40.6950], [-73.9650, 40.6950], [-73.9650, 40.6850], [-73.9800, 40.6850], [-73.9800, 40.6950]]]
+      }
+    },
+    "BK63": {
+      "id": "BK63",
+      "name": "Flatbush",
+      "borough": "Brooklyn",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9650, 40.6500], [-73.9450, 40.6500], [-73.9450, 40.6350], [-73.9650, 40.6350], [-73.9650, 40.6500]]]
+      }
+    },
+    "BK79": {
+      "id": "BK79",
+      "name": "Bensonhurst East",
+      "borough": "Brooklyn",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9900, 40.6150], [-73.9700, 40.6150], [-73.9700, 40.6000], [-73.9900, 40.6000], [-73.9900, 40.6150]]]
+      }
+    },
+    "BK31": {
+      "id": "BK31",
+      "name": "Bay Ridge",
+      "borough": "Brooklyn",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-74.0300, 40.6350], [-74.0100, 40.6350], [-74.0100, 40.6150], [-74.0300, 40.6150], [-74.0300, 40.6350]]]
+      }
+    },
+    "QN01": {
+      "id": "QN01",
+      "name": "Astoria",
+      "borough": "Queens",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9350, 40.7750], [-73.9100, 40.7750], [-73.9100, 40.7550], [-73.9350, 40.7550], [-73.9350, 40.7750]]]
+      }
+    },
+    "QN31": {
+      "id": "QN31",
+      "name": "Hunters Point-Sunnyside-West Maspeth",
+      "borough": "Queens",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9500, 40.7550], [-73.9250, 40.7550], [-73.9250, 40.7350], [-73.9500, 40.7350], [-73.9500, 40.7550]]]
+      }
+    },
+    "QN70": {
+      "id": "QN70",
+      "name": "Long Island City",
+      "borough": "Queens",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9550, 40.7550], [-73.9350, 40.7550], [-73.9350, 40.7400], [-73.9550, 40.7400], [-73.9550, 40.7550]]]
+      }
+    },
+    "QN17": {
+      "id": "QN17",
+      "name": "Forest Hills",
+      "borough": "Queens",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.8550, 40.7250], [-73.8300, 40.7250], [-73.8300, 40.7050], [-73.8550, 40.7050], [-73.8550, 40.7250]]]
+      }
+    },
+    "QN07": {
+      "id": "QN07",
+      "name": "Flushing",
+      "borough": "Queens",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.8350, 40.7700], [-73.8100, 40.7700], [-73.8100, 40.7500], [-73.8350, 40.7500], [-73.8350, 40.7700]]]
+      }
+    },
+    "QN62": {
+      "id": "QN62",
+      "name": "Woodside",
+      "borough": "Queens",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9100, 40.7550], [-73.8900, 40.7550], [-73.8900, 40.7400], [-73.9100, 40.7400], [-73.9100, 40.7550]]]
+      }
+    },
+    "QN18": {
+      "id": "QN18",
+      "name": "Jackson Heights",
+      "borough": "Queens",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.8950, 40.7600], [-73.8700, 40.7600], [-73.8700, 40.7450], [-73.8950, 40.7450], [-73.8950, 40.7600]]]
+      }
+    },
+    "QN25": {
+      "id": "QN25",
+      "name": "Jamaica",
+      "borough": "Queens",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.8050, 40.7100], [-73.7800, 40.7100], [-73.7800, 40.6900], [-73.8050, 40.6900], [-73.8050, 40.7100]]]
+      }
+    },
+    "BX01": {
+      "id": "BX01",
+      "name": "Claremont-Bathgate",
+      "borough": "Bronx",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9050, 40.8450], [-73.8850, 40.8450], [-73.8850, 40.8300], [-73.9050, 40.8300], [-73.9050, 40.8450]]]
+      }
+    },
+    "BX03": {
+      "id": "BX03",
+      "name": "Eastchester-Edenwald-Baychester",
+      "borough": "Bronx",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.8350, 40.8850], [-73.8100, 40.8850], [-73.8100, 40.8650], [-73.8350, 40.8650], [-73.8350, 40.8850]]]
+      }
+    },
+    "BX05": {
+      "id": "BX05",
+      "name": "Bedford Park-Fordham North",
+      "borough": "Bronx",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9050, 40.8700], [-73.8800, 40.8700], [-73.8800, 40.8550], [-73.9050, 40.8550], [-73.9050, 40.8700]]]
+      }
+    },
+    "BX06": {
+      "id": "BX06",
+      "name": "Belmont",
+      "borough": "Bronx",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.8950, 40.8600], [-73.8750, 40.8600], [-73.8750, 40.8450], [-73.8950, 40.8450], [-73.8950, 40.8600]]]
+      }
+    },
+    "BX07": {
+      "id": "BX07",
+      "name": "Bronxdale",
+      "borough": "Bronx",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.8700, 40.8600], [-73.8500, 40.8600], [-73.8500, 40.8450], [-73.8700, 40.8450], [-73.8700, 40.8600]]]
+      }
+    },
+    "BX09": {
+      "id": "BX09",
+      "name": "Soundview-Castle Hill-Clason Point-Harding Park",
+      "borough": "Bronx",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.8650, 40.8300], [-73.8400, 40.8300], [-73.8400, 40.8100], [-73.8650, 40.8100], [-73.8650, 40.8300]]]
+      }
+    },
+    "BX13": {
+      "id": "BX13",
+      "name": "Co-op City",
+      "borough": "Bronx",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.8350, 40.8800], [-73.8150, 40.8800], [-73.8150, 40.8650], [-73.8350, 40.8650], [-73.8350, 40.8800]]]
+      }
+    },
+    "BX14": {
+      "id": "BX14",
+      "name": "East Concourse-Concourse Village",
+      "borough": "Bronx",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9200, 40.8350], [-73.9000, 40.8350], [-73.9000, 40.8200], [-73.9200, 40.8200], [-73.9200, 40.8350]]]
+      }
+    },
+    "BX27": {
+      "id": "BX27",
+      "name": "Mott Haven-Port Morris",
+      "borough": "Bronx",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9250, 40.8150], [-73.9050, 40.8150], [-73.9050, 40.8000], [-73.9250, 40.8000], [-73.9250, 40.8150]]]
+      }
+    },
+    "BX17": {
+      "id": "BX17",
+      "name": "Kingsbridge-Marble Hill",
+      "borough": "Bronx",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-73.9150, 40.8850], [-73.8950, 40.8850], [-73.8950, 40.8700], [-73.9150, 40.8700], [-73.9150, 40.8850]]]
+      }
+    },
+    "SI01": {
+      "id": "SI01",
+      "name": "St. George-New Brighton",
+      "borough": "Staten Island",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-74.0900, 40.6450], [-74.0700, 40.6450], [-74.0700, 40.6300], [-74.0900, 40.6300], [-74.0900, 40.6450]]]
+      }
+    },
+    "SI07": {
+      "id": "SI07",
+      "name": "Great Kills",
+      "borough": "Staten Island",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-74.1600, 40.5600], [-74.1400, 40.5600], [-74.1400, 40.5400], [-74.1600, 40.5400], [-74.1600, 40.5600]]]
+      }
+    },
+    "SI08": {
+      "id": "SI08",
+      "name": "Grymes Hill-Clifton-Fox Hills",
+      "borough": "Staten Island",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-74.0900, 40.6200], [-74.0700, 40.6200], [-74.0700, 40.6000], [-74.0900, 40.6000], [-74.0900, 40.6200]]]
+      }
+    },
+    "SI22": {
+      "id": "SI22",
+      "name": "New Springville-Bloomfield-Travis",
+      "borough": "Staten Island",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-74.1850, 40.5900], [-74.1600, 40.5900], [-74.1600, 40.5700], [-74.1850, 40.5700], [-74.1850, 40.5900]]]
+      }
+    },
+    "SI24": {
+      "id": "SI24",
+      "name": "Todt Hill-Emerson Hill-Heartland Village-Lighthouse Hill",
+      "borough": "Staten Island",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-74.1300, 40.6050], [-74.1050, 40.6050], [-74.1050, 40.5850], [-74.1300, 40.5850], [-74.1300, 40.6050]]]
+      }
+    }
+  }
+}

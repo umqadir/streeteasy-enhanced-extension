@@ -14,12 +14,13 @@ A Chrome extension that adds neighborhood crime statistics and safety context to
 - **Rate + Count Metrics**: Shows both population-adjusted rates AND absolute figures to account for low-population/high-crime business districts
 - **Time Windows**: View data for last 12 months, 24 months, or calendar year
 - **Privacy First**: No browsing history collection, minimal data retention
+- **No Backend Required**: All data is precompiled and bundled with the extension
 
 ## How It Works
 
 1. **Location Detection**: Extracts coordinates from listing maps or geocodes the address using NYC's free GeoSearch API
-2. **Neighborhood Mapping**: Maps coordinates to official NYC Neighborhood Tabulation Areas (NTAs)
-3. **Crime Statistics**: Shows recent NYPD complaint data with:
+2. **Neighborhood Mapping**: Maps coordinates to official NYC Neighborhood Tabulation Areas (NTAs) using client-side point-in-polygon lookup
+3. **Crime Statistics**: Shows precompiled NYPD complaint data with:
    - **Count**: Total incidents in the time period
    - **Rate**: Incidents per 100,000 residents (for fair comparison)
    - **Percentile**: What % of NYC neighborhoods are less safe
@@ -28,20 +29,42 @@ A Chrome extension that adds neighborhood crime statistics and safety context to
 
 ## Architecture
 
-### Extension (Frontend)
-- **Manifest V3** Chrome extension
-- **Content Scripts**: Detect listings, extract coordinates, inject UI
-- **Service Worker**: Handle API calls, caching, and side panel
-- **Shadow DOM**: Isolated styling to avoid conflicts with StreetEasy
+### Simplified Client-Side Design
 
-### Backend API
-- **Node.js + Express**: RESTful API serving crime statistics
-- **PostgreSQL + PostGIS**: Spatial database for NTA boundaries and crime data
-- **Data Pipeline**: Daily updates from NYC Open Data (NYPD complaints)
+This extension uses a **fully client-side architecture** with precompiled static data. No backend server is required for end users.
+
+```
+Extension (Chrome MV3)
+├── Content Scripts     → Detect listings, extract coordinates
+├── Geo Utilities       → Point-in-polygon NTA lookup
+├── Static Data         → Precompiled NTA boundaries + crime stats
+├── Service Worker      → Handle caching and side panel
+└── Shadow DOM UI       → Isolated styling for injected components
+
+Data Compilation (Offline)
+└── scripts/compile-data.js → Fetches from NYC Open Data, computes metrics
+```
+
+### Why No Runtime Backend?
+
+- **Cost Effective**: No server hosting costs for maintainers or users
+- **Fast**: All lookups happen locally, no network latency
+- **Private**: User locations never leave their browser
+- **Offline Capable**: Works without an internet connection (after initial page load)
+- **Scalable**: Works for any number of users without infrastructure scaling
+
+### Data Freshness
+
+Crime statistics are precomputed and bundled with the extension. To update the data:
+1. Run `node scripts/compile-data.js` to fetch fresh data from NYC Open Data
+2. The script generates updated `extension/data/*.json` files
+3. Reload the extension to use the new data
+
+Data is typically updated quarterly (matching NYPD's release cycle).
 
 ## Installation
 
-### Extension (User Installation)
+### User Installation
 
 1. Download or clone this repository
 2. Open Chrome and go to `chrome://extensions/`
@@ -49,162 +72,32 @@ A Chrome extension that adds neighborhood crime statistics and safety context to
 4. Click "Load unpacked" and select the `extension` directory
 5. Visit any StreetEasy listing to see crime statistics
 
-### Backend Setup (For Developers)
+### Data Update (For Maintainers)
 
-#### Prerequisites
-- Node.js 18+
-- PostgreSQL 14+ with PostGIS extension
-- NYC Open Data app token (optional but recommended)
-
-#### Database Setup
+To refresh the precompiled crime statistics:
 
 ```bash
-# Install PostgreSQL and PostGIS
-brew install postgresql postgis  # macOS
-# or
-sudo apt-get install postgresql postgis  # Ubuntu
-
-# Start PostgreSQL
-brew services start postgresql  # macOS
-# or
-sudo systemctl start postgresql  # Ubuntu
-
-# Create database
-createdb streetsafe
-
-# Enable PostGIS
-psql streetsafe -c "CREATE EXTENSION postgis;"
-```
-
-#### Backend Installation
-
-```bash
-cd backend
-
-# Install dependencies
-npm install
-
-# Copy environment file
-cp .env.example .env
-
-# Edit .env with your database credentials
-nano .env
-
-# Initialize database
-npm run db:init
-```
-
-#### Load Geographic Data
-
-1. **Download NTA Boundaries**
-   - Visit: https://data.cityofnewyork.us/City-Government/Neighborhood-Tabulation-Areas-NTA-/cpf4-rkhq
-   - Export as GeoJSON
-   - Save as `data/nta-boundaries.geojson`
-
-2. **Download Population Data**
-   - Visit: https://www.nyc.gov/site/planning/data-maps/open-data/census-download-metadata.page
-   - Download ACS 5-year population data for NTAs
-   - Save as `data/nta-population.csv`
-
-3. **Load Data**
-   ```bash
-   node pipeline/load-nta-boundaries.js data/nta-boundaries.geojson
-   node pipeline/load-population-data.js data/nta-population.csv
-   ```
-
-#### Run Initial Pipeline
-
-```bash
-# Fetch and process crime data
-npm run pipeline
+# Run the data compiler
+node scripts/compile-data.js
 ```
 
 This will:
-- Fetch recent NYPD complaint data from NYC Open Data
-- Geocode complaints to NTAs
-- Compute metrics (counts, rates, percentiles, ranks)
-- Calculate NYC and borough averages
+- Fetch NTA boundaries from NYC Open Data
+- Fetch recent NYPD complaint data
+- Compute metrics (counts, rates, percentiles, ranks) for all NTAs
+- Generate `extension/data/nta-boundaries.json` and `extension/data/crime-stats.json`
 
-#### Start API Server
+**Prerequisites for data compilation:**
+- Node.js 18+
+- Internet connection to access NYC Open Data APIs
 
-```bash
-npm start
-# or for development with auto-reload
-npm run dev
-```
-
-The API will be available at `http://localhost:3000`
-
-#### Automated Updates
-
-Set up a cron job to run the pipeline daily:
-
-```bash
-# Edit crontab
-crontab -e
-
-# Add line to run daily at 2 AM
-0 2 * * * cd /path/to/streeteasy-enhanced-extension/backend && npm run pipeline
-```
-
-## API Documentation
-
-### GET /v1/safety
-
-Get crime statistics for a location.
-
-**Parameters:**
-- `lat` (required): Latitude
-- `lon` (required): Longitude
-- `window` (optional): Time window - `12m` (default), `24m`, or `ytd`
-
-**Example:**
-```bash
-curl "http://localhost:3000/v1/safety?lat=40.7589&lon=-73.9851&window=12m"
-```
-
-**Response:**
-```json
-{
-  "geography": {
-    "ntaId": "MN17",
-    "ntaName": "Midtown-Midtown South",
-    "borough": "Manhattan"
-  },
-  "metrics": {
-    "murder": {
-      "count": 2,
-      "rate": 5.4,
-      "percentile": 45.2,
-      "rank": 88,
-      "total": 195
-    },
-    "felonyAssault": {
-      "count": 156,
-      "rate": 420.3,
-      "percentile": 32.1,
-      "rank": 133,
-      "total": 195
-    }
-  },
-  "timeWindow": "12m",
-  "dataThrough": "2026-01-06",
-  "computedAt": "2026-01-07T12:00:00.000Z",
-  "comparisons": {
-    "nycAverage": {
-      "murder": 4.2,
-      "felonyAssault": 245.6
-    }
-  },
-  "methodologyVersion": "1.0.0"
-}
-```
+The extension will work immediately after installation using the bundled data files. Data compilation is only needed when you want to refresh the statistics.
 
 ## Data Sources
 
 - **Crime Data**: [NYPD Complaint Data](https://data.cityofnewyork.us/Public-Safety/NYPD-Complaint-Data-Current-Year-To-Date-/5uac-w243) via NYC Open Data
 - **Geography**: [NYC Neighborhood Tabulation Areas](https://data.cityofnewyork.us/City-Government/Neighborhood-Tabulation-Areas-NTA-/cpf4-rkhq) (NTAs)
-- **Population**: [ACS 5-year estimates](https://www.nyc.gov/site/planning/data-maps/open-data/census-download-metadata.page) from NYC Planning
+- **Population**: ACS 5-year estimates from NYC Planning
 - **Geocoding**: [NYC GeoSearch API](https://geosearch.planninglabs.nyc/) (Pelias-based, free, no API key required)
 
 ## Methodology
@@ -220,7 +113,7 @@ curl "http://localhost:3000/v1/safety?lat=40.7589&lon=-73.9851&window=12m"
    - Shows absolute incident volume
    - Important for understanding actual risk in low-population areas
 
-2. **Rate**: (Count / Population) × 100,000
+2. **Rate**: (Count / Population) x 100,000
    - Normalizes for population size
    - Enables fair comparison between large and small neighborhoods
 
@@ -251,7 +144,7 @@ NTAs are statistical geographies created by NYC Planning for Census data reporti
 
 ### Important Limitations
 
-⚠️ **Complaint Data ≠ Victimization Risk**
+**Complaint Data != Victimization Risk**
 
 - Reflects *reported* complaints, not all incidents
 - Some sensitive crimes (e.g., sexual assaults) may not be geocoded in public data
@@ -265,8 +158,9 @@ NTAs are statistical geographies created by NYC Planning for Census data reporti
 
 ## Privacy & Data Collection
 
+- **No Server**: All data lookups happen locally in your browser
 - **No Browsing History**: We only process the current listing page
-- **Minimal Retention**: Backend does not log specific coordinates by default
+- **No Location Tracking**: Your coordinates are never sent to any server
 - **Local Caching**: Statistics are cached in browser storage for 24 hours
 - **No User Accounts**: No registration or personal information required
 - **Open Source**: All code is auditable
@@ -277,18 +171,33 @@ NTAs are statistical geographies created by NYC Planning for Census data reporti
 
 ```
 streeteasy-enhanced-extension/
-├── extension/              # Chrome extension
+├── extension/              # Chrome extension (user-facing)
 │   ├── manifest.json       # Extension manifest (V3)
-│   ├── content/            # Content scripts
 │   ├── background/         # Service worker
-│   ├── ui/                 # UI components
-│   └── lib/                # Shared utilities
-├── backend/                # Backend API
-│   ├── api/                # Express API server
-│   ├── db/                 # Database connection and schema
-│   └── pipeline/           # Data pipeline scripts
+│   ├── content/            # Content scripts
+│   ├── lib/                # Shared utilities (geo-utils, utils)
+│   ├── ui/                 # UI components (side panel, styles)
+│   ├── data/               # Precompiled static data
+│   │   ├── nta-boundaries.json
+│   │   └── crime-stats.json
+│   └── icons/              # Extension icons
+├── scripts/                # Data compilation tools
+│   └── compile-data.js     # Fetches and compiles NYC data
+├── backend/                # [ARCHIVED] Legacy backend (not required)
 └── docs/                   # Documentation
 ```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `extension/lib/geo-utils.js` | Point-in-polygon NTA lookup, crime stats manager |
+| `extension/lib/utils.js` | Geocoding, formatting, caching utilities |
+| `extension/content/main.js` | Main orchestrator for content scripts |
+| `extension/content/coordinates-extractor.js` | Extracts lat/lon from StreetEasy pages |
+| `extension/content/ui-injector.js` | Injects crime stats UI into pages |
+| `extension/data/*.json` | Precompiled NTA boundaries and crime statistics |
+| `scripts/compile-data.js` | Data compilation script for maintainers |
 
 ### Contributing
 
@@ -303,17 +212,16 @@ Contributions are welcome! Please:
 ### Testing Locally
 
 1. **Test Extension**:
-   - Load unpacked extension in Chrome
+   - Load unpacked extension in Chrome (`chrome://extensions/`)
    - Visit a StreetEasy listing
-   - Check browser console for logs
+   - Check browser console for logs (filter by "StreetSafe")
 
-2. **Test Backend**:
+2. **Update Data**:
    ```bash
-   # Test API endpoint
-   curl "http://localhost:3000/v1/safety?lat=40.7589&lon=-73.9851"
+   # Compile fresh data from NYC Open Data
+   node scripts/compile-data.js
 
-   # Check database
-   psql streetsafe -c "SELECT COUNT(*) FROM crime_complaints;"
+   # Reload the extension in Chrome
    ```
 
 ## Roadmap
@@ -323,8 +231,8 @@ Contributions are welcome! Please:
 - [x] Side panel with detailed statistics
 - [x] Murder and felony assault metrics
 - [x] NTA-based geography
-- [x] Backend API with caching
-- [x] Data pipeline for NYPD complaints
+- [x] Client-side point-in-polygon NTA lookup
+- [x] Precompiled static data (no backend required)
 - [x] Geocoding fallback with NYC API
 - [x] Both rate and count metrics
 
@@ -340,7 +248,6 @@ Contributions are welcome! Please:
 - [ ] Historical trend analysis
 - [ ] Customizable time windows
 - [ ] User preferences and settings
-- [ ] Mobile app version
 
 ## License
 
@@ -366,4 +273,4 @@ Crime statistics are based on publicly available NYPD complaint data and should 
 
 ---
 
-**Made with ❤️ for NYC apartment hunters**
+**Made with care for NYC apartment hunters**
