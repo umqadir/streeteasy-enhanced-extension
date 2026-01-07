@@ -1,0 +1,58 @@
+{
+  "manifest_version": 3,
+  "name": "StreetSafe - Crime Context for StreetEasy",
+  "version": "1.0.0",
+  "description": "Adds neighborhood crime statistics and safety context to StreetEasy apartment listings",
+  "permissions": [
+    "storage",
+    "sidePanel"
+  ],
+  "host_permissions": [
+    "https://streeteasy.com/*",
+    "https://*.streeteasy.com/*"
+  ],
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://streeteasy.com/*",
+        "https://*.streeteasy.com/*"
+      ],
+      "js": [
+        "lib/utils.js",
+        "content/coordinates-extractor.js",
+        "content/ui-injector.js",
+        "content/main.js"
+      ],
+      "css": [
+        "ui/inline-module.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "side_panel": {
+    "default_path": "ui/side-panel.html"
+  },
+  "action": {
+    "default_title": "StreetSafe - View Crime Statistics"
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "ui/inline-module.html",
+        "ui/inline-module.css"
+      ],
+      "matches": [
+        "https://streeteasy.com/*",
+        "https://*.streeteasy.com/*"
+      ]
+    }
+  ]
+}

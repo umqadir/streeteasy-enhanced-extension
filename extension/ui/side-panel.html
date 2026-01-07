@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StreetSafe - Crime & Safety Statistics</title>
+  <link rel="stylesheet" href="side-panel.css">
+</head>
+<body>
+  <div class="side-panel">
+    <header class="panel-header">
+      <h1>StreetSafe</h1>
+      <p class="subtitle">Crime & Safety Context for NYC</p>
+    </header>
+
+    <div id="content">
+      <!-- Loading state (initial) -->
+      <div id="loading-state" class="state-container">
+        <div class="loading-spinner">
+          <div class="spinner"></div>
+          <p>Waiting for listing data...</p>
+        </div>
+      </div>
+
+      <!-- Data display -->
+      <div id="data-display" class="state-container" style="display: none;">
+        <section class="location-section">
+          <h2>Location</h2>
+          <div id="location-info"></div>
+        </section>
+
+        <section class="controls-section">
+          <label for="time-window">Time Period:</label>
+          <select id="time-window">
+            <option value="12m">Last 12 months</option>
+            <option value="24m">Last 24 months</option>
+            <option value="ytd">Calendar year</option>
+          </select>
+        </section>
+
+        <section class="metrics-section">
+          <h2>Crime Statistics</h2>
+          <div id="metrics-container"></div>
+        </section>
+
+        <section class="comparisons-section">
+          <h2>Comparisons</h2>
+          <div id="comparisons-container"></div>
+        </section>
+
+        <section class="methodology-section">
+          <h2>Methodology</h2>
+          <div class="methodology-content">
+            <h3>Data Sources</h3>
+            <ul>
+              <li><strong>Crime Data:</strong> NYPD Complaint Data via NYC Open Data</li>
+              <li><strong>Geography:</strong> NYC Neighborhood Tabulation Areas (NTAs)</li>
+              <li><strong>Population:</strong> ACS 5-year estimates</li>
+            </ul>
+
+            <h3>What We Measure</h3>
+            <p><strong>Count:</strong> Total number of reported incidents in the time period</p>
+            <p><strong>Rate:</strong> Incidents per 100,000 residents (allows comparison between neighborhoods of different sizes)</p>
+            <p><strong>Percentile:</strong> What percentage of NYC neighborhoods have a lower rate (higher percentile = safer relative to other areas)</p>
+            <p><strong>Rank:</strong> Position among all NYC neighborhoods (1 = lowest crime rate)</p>
+
+            <h3>Crime Categories</h3>
+            <ul>
+              <li><strong>Murder:</strong> Murder & non-negligent manslaughter</li>
+              <li><strong>Felony Assault:</strong> Serious assaults causing injury or involving weapons</li>
+            </ul>
+
+            <h3>Important Limitations</h3>
+            <div class="warning-box">
+              <p><strong>⚠️ Complaint data ≠ actual victimization risk</strong></p>
+              <ul>
+                <li>Reflects reported complaints, not all incidents</li>
+                <li>Some crime types (e.g., sexual assaults) may not be geocoded in public data</li>
+                <li>Reporting rates vary by neighborhood</li>
+                <li>NTA boundaries don't match "real" neighborhood boundaries</li>
+                <li>Population estimates may be outdated for rapidly changing areas</li>
+                <li>Business districts may show high rates but low residential risk</li>
+              </ul>
+            </div>
+
+            <h3>Why Both Rates and Counts?</h3>
+            <p>We show both <strong>rates</strong> (per 100k population) and <strong>absolute counts/ranks</strong> because:</p>
+            <ul>
+              <li><strong>Rates</strong> adjust for population size, enabling fair comparison</li>
+              <li><strong>Counts</strong> show actual incident volume, important for low-population areas like business districts that may have high rates but moderate absolute crime levels</li>
+              <li>Together they give a more complete picture than either metric alone</li>
+            </ul>
+
+            <h3>About NTAs</h3>
+            <p>Neighborhood Tabulation Areas (NTAs) are statistical geographies created by NYC Planning for Census data reporting. They approximate neighborhoods but are designed for statistical consistency, not to match subjective neighborhood boundaries.</p>
+          </div>
+        </section>
+
+        <footer class="panel-footer">
+          <p class="data-date">Data updated: <span id="data-date"></span></p>
+          <p class="disclaimer">Use this information as one factor among many when evaluating a location.</p>
+        </footer>
+      </div>
+
+      <!-- Error state -->
+      <div id="error-state" class="state-container" style="display: none;">
+        <div class="error-message">
+          <p>⚠️ Could not load crime statistics.</p>
+          <p>Make sure you're viewing a StreetEasy listing page.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="side-panel.js"></script>
+</body>
+</html>
