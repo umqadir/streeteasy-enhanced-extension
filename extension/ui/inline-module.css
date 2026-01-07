@@ -1,0 +1,12 @@
+/* StreetSafe Inline Module Styles
+ * Note: Primary styles are injected via Shadow DOM in ui-injector.js
+ * This file provides fallback/base styles for the container
+ */
+
+.streetsafe-container {
+  /* Container positioning */
+  position: relative;
+  z-index: 100;
+  width: 100%;
+  margin: 16px 0;
+}
