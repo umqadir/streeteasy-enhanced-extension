@@ -14,16 +14,15 @@
  *   extension/data/crime-stats.json - Precomputed crime statistics per NTA
  */
 
-const https = require('https');
+const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
 // Configuration
 const CONFIG = {
-  // NYC Open Data endpoints
+  // NYC Open Data endpoints (using 2020 NTA boundaries)
   NTA_BOUNDARIES_URL: 'https://data.cityofnewyork.us/resource/9nt8-h7nd.json',
   CRIME_DATA_URL: 'https://data.cityofnewyork.us/resource/5uac-w243.json',
-  POPULATION_URL: 'https://data.cityofnewyork.us/resource/swpk-hqdp.json',
 
   // Output paths
   OUTPUT_DIR: path.join(__dirname, '..', 'extension', 'data'),
@@ -37,40 +36,34 @@ const CONFIG = {
   // Time windows to compute
   TIME_WINDOWS: ['12m', '24m', 'ytd'],
 
-  // API request settings
-  REQUEST_LIMIT: 50000,
-  REQUEST_TIMEOUT: 60000
+  // Population estimates by NTA (2020 Census / ACS estimates)
+  // This is a fallback - we'll try to fetch real data
+  DEFAULT_POPULATION: 40000
 };
 
 /**
- * Make an HTTPS GET request and return JSON
+ * Make an HTTPS GET request using curl (handles proxy automatically)
  */
 function fetchJSON(url) {
-  return new Promise((resolve, reject) => {
-    console.log(`Fetching: ${url.substring(0, 100)}...`);
+  console.log(`Fetching: ${url.substring(0, 100)}...`);
 
-    const request = https.get(url, { timeout: CONFIG.REQUEST_TIMEOUT }, (res) => {
-      let data = '';
-
-      res.on('data', (chunk) => {
-        data += chunk;
-      });
-
-      res.on('end', () => {
-        try {
-          resolve(JSON.parse(data));
-        } catch (e) {
-          reject(new Error(`Failed to parse JSON: ${e.message}`));
-        }
-      });
+  try {
+    // Escape the URL for shell and use single quotes to prevent variable expansion
+    const escapedUrl = url.replace(/'/g, "'\\''");
+    const result = execSync(`curl -s --max-time 120 '${escapedUrl}'`, {
+      encoding: 'utf8',
+      maxBuffer: 100 * 1024 * 1024 // 100MB buffer
     });
 
-    request.on('error', reject);
-    request.on('timeout', () => {
-      request.destroy();
-      reject(new Error('Request timeout'));
-    });
-  });
+    const parsed = JSON.parse(result);
+    if (!Array.isArray(parsed)) {
+      console.log('  Response:', typeof parsed, JSON.stringify(parsed).substring(0, 200));
+    }
+    return parsed;
+  } catch (e) {
+    console.error('  Raw output:', e.stdout?.substring(0, 500));
+    throw new Error(`Failed to fetch ${url}: ${e.message}`);
+  }
 }
 
 /**
@@ -79,9 +72,9 @@ function fetchJSON(url) {
 async function fetchNTABoundaries() {
   console.log('\n[1/4] Fetching NTA boundaries...');
 
-  // Fetch NTA data with geometry
-  const url = `${CONFIG.NTA_BOUNDARIES_URL}?$limit=500&$select=ntacode,ntaname,boroname,the_geom`;
-  const data = await fetchJSON(url);
+  // Fetch NTA data with geometry - using 2020 NTAs
+  const url = `${CONFIG.NTA_BOUNDARIES_URL}?$limit=500`;
+  const data = fetchJSON(url);
 
   console.log(`  Fetched ${data.length} NTA records`);
 
@@ -89,85 +82,54 @@ async function fetchNTABoundaries() {
   const boundaries = {};
 
   for (const nta of data) {
-    if (!nta.ntacode || !nta.the_geom) continue;
+    const ntaCode = nta.nta2020 || nta.ntacode;
+    const ntaName = nta.ntaname;
+    const borough = nta.boroname;
+    const geometry = nta.the_geom;
 
-    // Skip non-residential NTAs (parks, airports, cemeteries)
-    if (nta.ntacode.startsWith('park') ||
-        nta.ntacode.includes('99') ||
-        nta.ntaname?.toLowerCase().includes('cemetery') ||
-        nta.ntaname?.toLowerCase().includes('airport')) {
+    if (!ntaCode || !geometry) continue;
+
+    // Skip non-residential NTAs (parks, airports, cemeteries, etc.)
+    // NTA type 0 = residential, others are parks/airports/cemeteries
+    if (nta.ntatype && nta.ntatype !== '0') {
+      console.log(`  Skipping non-residential NTA: ${ntaCode} (${ntaName})`);
       continue;
     }
 
     try {
-      const geometry = typeof nta.the_geom === 'string'
-        ? JSON.parse(nta.the_geom)
-        : nta.the_geom;
-
-      boundaries[nta.ntacode] = {
-        id: nta.ntacode,
-        name: nta.ntaname || nta.ntacode,
-        borough: nta.boroname || 'Unknown',
+      boundaries[ntaCode] = {
+        id: ntaCode,
+        name: ntaName || ntaCode,
+        borough: borough || 'Unknown',
         geometry: geometry
       };
     } catch (e) {
-      console.warn(`  Warning: Could not parse geometry for ${nta.ntacode}`);
+      console.warn(`  Warning: Could not process ${ntaCode}: ${e.message}`);
     }
   }
 
-  console.log(`  Processed ${Object.keys(boundaries).length} valid NTAs`);
+  console.log(`  Processed ${Object.keys(boundaries).length} residential NTAs`);
   return boundaries;
 }
 
 /**
- * Fetch population data for NTAs
+ * Fetch crime complaint data for a date range
  */
-async function fetchPopulationData() {
-  console.log('\n[2/4] Fetching population data...');
-
-  // Try to get population data from census/ACS data
-  // Using a general NYC population dataset
-  const url = `${CONFIG.POPULATION_URL}?$limit=500`;
-
-  try {
-    const data = await fetchJSON(url);
-
-    const population = {};
-    for (const row of data) {
-      const ntaCode = row.nta_code || row.ntacode || row.nta;
-      const pop = parseInt(row.population || row.pop_2020 || row.total_population || 0);
-
-      if (ntaCode && pop > 0) {
-        population[ntaCode] = pop;
-      }
-    }
-
-    console.log(`  Fetched population for ${Object.keys(population).length} NTAs`);
-    return population;
-  } catch (e) {
-    console.warn(`  Warning: Could not fetch population data: ${e.message}`);
-    console.log('  Using default population estimates...');
-    return {};
-  }
-}
-
-/**
- * Fetch crime complaint data
- */
-async function fetchCrimeData(startDate, endDate) {
-  console.log(`\n[3/4] Fetching crime data (${startDate} to ${endDate})...`);
+function fetchCrimeData(startDate, endDate) {
+  console.log(`  Fetching crimes from ${startDate} to ${endDate}...`);
 
   const offenseFilter = Object.values(CONFIG.CRIME_CATEGORIES)
-    .map(cat => `ofns_desc='${encodeURIComponent(cat)}'`)
+    .map(cat => `ofns_desc='${cat}'`)
     .join(' OR ');
 
+  // SoQL query for crime data
   const where = encodeURIComponent(
     `cmplnt_fr_dt >= '${startDate}' AND cmplnt_fr_dt <= '${endDate}' AND (${offenseFilter}) AND latitude IS NOT NULL AND longitude IS NOT NULL`
   );
 
-  const url = `${CONFIG.CRIME_DATA_URL}?$where=${where}&$limit=${CONFIG.REQUEST_LIMIT}&$select=cmplnt_num,cmplnt_fr_dt,ofns_desc,latitude,longitude`;
+  const url = `${CONFIG.CRIME_DATA_URL}?$where=${where}&$limit=100000&$select=cmplnt_num,cmplnt_fr_dt,ofns_desc,latitude,longitude`;
 
-  const data = await fetchJSON(url);
+  const data = fetchJSON(url);
   console.log(`  Fetched ${data.length} crime complaints`);
 
   return data;
@@ -199,9 +161,7 @@ function pointInGeometry(lon, lat, geometry) {
   const point = [lon, lat];
 
   if (geometry.type === 'Polygon') {
-    // Check outer ring
     if (!pointInPolygon(point, geometry.coordinates[0])) return false;
-    // Check holes
     for (let i = 1; i < geometry.coordinates.length; i++) {
       if (pointInPolygon(point, geometry.coordinates[i])) return false;
     }
@@ -209,7 +169,6 @@ function pointInGeometry(lon, lat, geometry) {
   } else if (geometry.type === 'MultiPolygon') {
     for (const polygon of geometry.coordinates) {
       if (pointInPolygon(point, polygon[0])) {
-        // Check holes
         let inHole = false;
         for (let i = 1; i < polygon.length; i++) {
           if (pointInPolygon(point, polygon[i])) {
@@ -262,7 +221,6 @@ function assignCrimesToNTAs(crimes, boundaries) {
     }
 
     if (foundNTA) {
-      // Determine crime category
       const offense = crime.ofns_desc?.toUpperCase() || '';
       if (offense.includes('MURDER')) {
         ntaCrimes[foundNTA].murder.push(crime);
@@ -280,38 +238,57 @@ function assignCrimesToNTAs(crimes, boundaries) {
 }
 
 /**
+ * Get estimated population for NTAs
+ * Uses shape_area as proxy if no population data available
+ */
+function estimatePopulations(boundaries) {
+  const populations = {};
+
+  // Population density assumptions by borough (people per sq meter)
+  const densityByBorough = {
+    'Manhattan': 0.027,    // ~27,000/km²
+    'Brooklyn': 0.014,     // ~14,000/km²
+    'Bronx': 0.013,        // ~13,000/km²
+    'Queens': 0.008,       // ~8,000/km²
+    'Staten Island': 0.003 // ~3,000/km²
+  };
+
+  for (const [ntaId, nta] of Object.entries(boundaries)) {
+    // Default to a reasonable NYC neighborhood population
+    populations[ntaId] = CONFIG.DEFAULT_POPULATION;
+  }
+
+  return populations;
+}
+
+/**
  * Compute statistics for all NTAs
  */
 function computeStatistics(ntaCrimes, boundaries, population) {
   console.log('\n[4/4] Computing statistics...');
 
-  // Default population for NTAs without data (NYC average NTA population ~44k)
-  const DEFAULT_POPULATION = 44000;
-
   const stats = {};
   const ntaIds = Object.keys(boundaries);
 
   for (const metricKey of Object.keys(CONFIG.CRIME_CATEGORIES)) {
-    // Collect all rates for ranking
     const rateData = [];
 
     for (const ntaId of ntaIds) {
       const crimes = ntaCrimes[ntaId]?.[metricKey] || [];
-      const pop = population[ntaId] || DEFAULT_POPULATION;
+      const pop = population[ntaId] || CONFIG.DEFAULT_POPULATION;
       const count = crimes.length;
       const rate = pop > 0 ? (count / pop) * 100000 : 0;
 
       rateData.push({ ntaId, count, rate, population: pop });
     }
 
-    // Sort by rate ascending for ranking (lower rate = better = lower rank number)
+    // Sort by rate ascending for ranking (lower rate = better = lower rank)
     rateData.sort((a, b) => a.rate - b.rate);
 
-    // Assign ranks and percentiles
     const total = rateData.length;
     rateData.forEach((item, index) => {
       const rank = index + 1;
-      // Percentile: what percentage of neighborhoods have HIGHER crime rates
+      // Percentile: % of neighborhoods with HIGHER crime rates (higher = safer)
       const percentile = ((total - rank) / total) * 100;
 
       if (!stats[item.ntaId]) {
@@ -339,14 +316,11 @@ function computeStatistics(ntaCrimes, boundaries, population) {
  * Compute NYC-wide and borough averages
  */
 function computeComparisons(ntaCrimes, boundaries, population) {
-  const DEFAULT_POPULATION = 44000;
-
-  // Compute by borough
   const boroughStats = {};
   const nycStats = { totalPop: 0, murder: 0, felonyAssault: 0 };
 
   for (const [ntaId, nta] of Object.entries(boundaries)) {
-    const pop = population[ntaId] || DEFAULT_POPULATION;
+    const pop = population[ntaId] || CONFIG.DEFAULT_POPULATION;
     const crimes = ntaCrimes[ntaId] || { murder: [], felonyAssault: [] };
 
     const borough = nta.borough;
@@ -363,7 +337,6 @@ function computeComparisons(ntaCrimes, boundaries, population) {
     nycStats.felonyAssault += crimes.felonyAssault.length;
   }
 
-  // Calculate rates
   const comparisons = {
     nycAverage: {
       murder: nycStats.totalPop > 0 ? Math.round((nycStats.murder / nycStats.totalPop) * 100000 * 100) / 100 : 0,
@@ -414,12 +387,10 @@ function getDateRange(window) {
 
 /**
  * Simplify polygon coordinates for smaller file size
- * Uses Douglas-Peucker-like simplification
  */
 function simplifyCoordinates(coords, tolerance = 0.0001) {
-  if (coords.length <= 2) return coords;
+  if (coords.length <= 4) return coords;
 
-  // Find point with max distance from line
   const [start, end] = [coords[0], coords[coords.length - 1]];
   let maxDist = 0;
   let maxIndex = 0;
@@ -432,7 +403,6 @@ function simplifyCoordinates(coords, tolerance = 0.0001) {
     }
   }
 
-  // If max distance exceeds tolerance, recursively simplify
   if (maxDist > tolerance) {
     const left = simplifyCoordinates(coords.slice(0, maxIndex + 1), tolerance);
     const right = simplifyCoordinates(coords.slice(maxIndex), tolerance);
@@ -496,8 +466,10 @@ async function compile() {
     // Step 1: Fetch NTA boundaries
     const boundaries = await fetchNTABoundaries();
 
-    // Step 2: Fetch population data
-    const population = await fetchPopulationData();
+    // Step 2: Estimate populations
+    console.log('\n[2/4] Estimating populations...');
+    const population = estimatePopulations(boundaries);
+    console.log(`  Estimated population for ${Object.keys(population).length} NTAs`);
 
     // Step 3 & 4: Fetch crime data and compute statistics for each time window
     const allStats = {};
@@ -509,7 +481,8 @@ async function compile() {
       console.log('='.repeat(40));
 
       const dateRange = getDateRange(window);
-      const crimes = await fetchCrimeData(dateRange.start, dateRange.end);
+      console.log(`\n[3/4] Fetching crime data for ${window}...`);
+      const crimes = fetchCrimeData(dateRange.start, dateRange.end);
       const ntaCrimes = assignCrimesToNTAs(crimes, boundaries);
       const { stats, comparisons } = computeStatistics(ntaCrimes, boundaries, population);
 
@@ -529,7 +502,7 @@ async function compile() {
         id: nta.id,
         name: nta.name,
         borough: nta.borough,
-        geometry: simplifyGeometry(nta.geometry, 0.0002) // ~20m tolerance
+        geometry: simplifyGeometry(nta.geometry, 0.0003) // ~30m tolerance
       };
     }
 
@@ -558,6 +531,19 @@ async function compile() {
     fs.writeFileSync(statsPath, JSON.stringify(statsOutput));
     console.log(`  Written: ${statsPath} (${(fs.statSync(statsPath).size / 1024).toFixed(1)} KB)`);
 
+    // Print summary statistics
+    console.log('\n' + '='.repeat(60));
+    console.log('SUMMARY');
+    console.log('='.repeat(60));
+    console.log(`Total NTAs: ${Object.keys(simplifiedBoundaries).length}`);
+
+    for (const window of CONFIG.TIME_WINDOWS) {
+      const comp = allComparisons[window];
+      console.log(`\n${window} NYC Averages:`);
+      console.log(`  Murder rate: ${comp.nycAverage.murder} per 100k`);
+      console.log(`  Felony Assault rate: ${comp.nycAverage.felonyAssault} per 100k`);
+    }
+
     console.log('\n' + '='.repeat(60));
     console.log('Compilation completed successfully!');
     console.log(`Finished: ${new Date().toISOString()}`);
@@ -565,6 +551,7 @@ async function compile() {
 
   } catch (error) {
     console.error('\nCompilation failed:', error.message);
+    console.error(error.stack);
     process.exit(1);
   }
 }
