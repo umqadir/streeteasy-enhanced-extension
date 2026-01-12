@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * StreetSafe Data Compiler
+ * SleepEasy Data Compiler
  *
  * Fetches data from NYC Open Data and compiles static JSON files for the extension.
  * This script should be run periodically (e.g., weekly) to update the crime statistics.
@@ -77,19 +77,27 @@ const NTA_POPULATIONS_2020 = {
 const CONFIG = {
   // NYC Open Data endpoints (using 2020 NTA boundaries)
   NTA_BOUNDARIES_URL: 'https://data.cityofnewyork.us/resource/9nt8-h7nd.json',
-  CRIME_DATA_URL: 'https://data.cityofnewyork.us/resource/5uac-w243.json',
+
+  // NYPD complaint data is split across two datasets:
+  // - Historic (all prior years, typically updated with a lag)
+  // - Current year to date
+  // For accurate rolling windows (e.g., 24 months), we merge both and dedupe by `cmplnt_num`.
+  CRIME_DATA_HISTORIC_URL: 'https://data.cityofnewyork.us/resource/qgea-i56i.json',
+  CRIME_DATA_CURRENT_URL: 'https://data.cityofnewyork.us/resource/5uac-w243.json',
 
   // Output paths
   OUTPUT_DIR: path.join(__dirname, '..', 'extension', 'data'),
 
   // Crime categories to track
   CRIME_CATEGORIES: {
-    murder: 'MURDER & NON-NEGL. MANSLAUGHTER',
-    felonyAssault: 'FELONY ASSAULT'
+    murder: ['MURDER & NON-NEGL. MANSLAUGHTER'],
+    felonyAssault: ['FELONY ASSAULT'],
+    // Property crime index (felony-level property offenses)
+    propertyCrime: ['BURGLARY', 'GRAND LARCENY', 'GRAND LARCENY OF MOTOR VEHICLE']
   },
 
   // Time windows to compute
-  TIME_WINDOWS: ['12m', '24m', 'ytd'],
+  TIME_WINDOWS: ['24m'],
 
   // Fallback population if NTA not in census data
   DEFAULT_POPULATION: 40000
@@ -117,6 +125,25 @@ function fetchJSON(url) {
   } catch (e) {
     console.error('  Raw output:', e.stdout?.substring(0, 500));
     throw new Error(`Failed to fetch ${url}: ${e.message}`);
+  }
+}
+
+function sleepMs(ms) {
+  const shared = new Int32Array(new SharedArrayBuffer(4));
+  Atomics.wait(shared, 0, 0, ms);
+}
+
+function toISODate(value) {
+  if (!value) return null;
+  const str = String(value);
+  // Common format: 2025-01-31T00:00:00.000
+  if (str.length >= 10 && /^\d{4}-\d{2}-\d{2}/.test(str)) return str.slice(0, 10);
+  try {
+    const d = new Date(str);
+    if (Number.isNaN(d.getTime())) return null;
+    return d.toISOString().slice(0, 10);
+  } catch {
+    return null;
   }
 }
 
@@ -169,24 +196,95 @@ async function fetchNTABoundaries() {
 /**
  * Fetch crime complaint data for a date range
  */
-function fetchCrimeData(startDate, endDate) {
-  console.log(`  Fetching crimes from ${startDate} to ${endDate}...`);
+function fetchCrimeDataFromDataset(datasetUrl, startDate, endDate, datasetName = 'dataset') {
+  console.log(`  Fetching ${datasetName} crimes from ${startDate} to ${endDate}...`);
 
-  const offenseFilter = Object.values(CONFIG.CRIME_CATEGORIES)
-    .map(cat => `ofns_desc='${cat}'`)
-    .join(' OR ');
+  const offenses = Object.values(CONFIG.CRIME_CATEGORIES).flat();
+  const offenseFilter = `upper(ofns_desc) in(${offenses.map(s => `'${String(s).toUpperCase().replace(/'/g, "''")}'`).join(',')})`;
 
   // SoQL query for crime data
-  const where = encodeURIComponent(
-    `cmplnt_fr_dt >= '${startDate}' AND cmplnt_fr_dt <= '${endDate}' AND (${offenseFilter}) AND latitude IS NOT NULL AND longitude IS NOT NULL`
-  );
+  const where = `cmplnt_fr_dt IS NOT NULL AND cmplnt_fr_dt >= '${startDate}' AND cmplnt_fr_dt <= '${endDate}' AND (${offenseFilter}) AND latitude IS NOT NULL AND longitude IS NOT NULL`;
 
-  const url = `${CONFIG.CRIME_DATA_URL}?$where=${where}&$limit=100000&$select=cmplnt_num,cmplnt_fr_dt,ofns_desc,latitude,longitude`;
+  const LIMIT = 50000;
+  let offset = 0;
+  const all = [];
 
-  const data = fetchJSON(url);
-  console.log(`  Fetched ${data.length} crime complaints`);
+  while (true) {
+    const params = new URLSearchParams({
+      '$where': where,
+      '$limit': String(LIMIT),
+      '$offset': String(offset),
+      '$order': 'cmplnt_num',
+      '$select': 'cmplnt_num,cmplnt_fr_dt,ofns_desc,latitude,longitude'
+    });
 
-  return data;
+    const url = `${datasetUrl}?${params.toString()}`;
+    const page = fetchJSON(url);
+    all.push(...page);
+
+    if (page.length < LIMIT) break;
+    offset += LIMIT;
+
+    // Be a little gentle with Socrata rate limits.
+    sleepMs(200);
+  }
+
+  console.log(`  Fetched ${all.length} crime complaints`);
+  return all;
+}
+
+function mergeAndDedupeCrimes(datasets) {
+  const seen = new Map();
+  let missingId = 0;
+
+  for (const { name, rows } of datasets) {
+    for (const row of rows) {
+      const idRaw = row?.cmplnt_num ?? null;
+      const id = idRaw ? String(idRaw) : null;
+      if (!id) {
+        missingId += 1;
+        continue;
+      }
+      if (!seen.has(id)) {
+        seen.set(id, { ...row, __source: name });
+      }
+    }
+  }
+
+  return { crimes: Array.from(seen.values()), missingId };
+}
+
+function computeDataThrough(crimes) {
+  let max = null;
+  for (const c of crimes) {
+    const d = toISODate(c?.cmplnt_fr_dt);
+    if (!d) continue;
+    if (!max || d > max) max = d;
+  }
+  return max;
+}
+
+/**
+ * Fetch crime complaint data for a date range (merged historic + current).
+ */
+function fetchCrimeData(startDate, endDate) {
+  const historic = fetchCrimeDataFromDataset(CONFIG.CRIME_DATA_HISTORIC_URL, startDate, endDate, 'historic');
+  // Be gentle with Socrata.
+  sleepMs(250);
+  const current = fetchCrimeDataFromDataset(CONFIG.CRIME_DATA_CURRENT_URL, startDate, endDate, 'current');
+
+  const { crimes, missingId } = mergeAndDedupeCrimes([
+    { name: 'historic', rows: historic },
+    { name: 'current', rows: current }
+  ]);
+
+  const dataThrough = computeDataThrough(crimes);
+
+  console.log(`  Combined unique complaints: ${crimes.length} (deduped by cmplnt_num)`);
+  if (missingId) console.log(`  Warning: ${missingId} records missing cmplnt_num were skipped`);
+  if (dataThrough) console.log(`  Data through: ${dataThrough}`);
+
+  return { crimes, dataThrough };
 }
 
 /**
@@ -238,6 +336,38 @@ function pointInGeometry(lon, lat, geometry) {
   return false;
 }
 
+function computeGeometryBBox(geometry) {
+  if (!geometry) return null;
+
+  let minLon = Infinity, minLat = Infinity, maxLon = -Infinity, maxLat = -Infinity;
+
+  const visitRing = (ring) => {
+    for (const coord of ring) {
+      if (!coord || coord.length < 2) continue;
+      const lon = coord[0];
+      const lat = coord[1];
+      if (lon < minLon) minLon = lon;
+      if (lon > maxLon) maxLon = lon;
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+    }
+  };
+
+  if (geometry.type === 'Polygon') {
+    for (const ring of geometry.coordinates || []) visitRing(ring);
+  } else if (geometry.type === 'MultiPolygon') {
+    for (const poly of geometry.coordinates || []) {
+      for (const ring of poly || []) visitRing(ring);
+    }
+  }
+
+  if (!Number.isFinite(minLon) || !Number.isFinite(minLat) || !Number.isFinite(maxLon) || !Number.isFinite(maxLat)) {
+    return null;
+  }
+
+  return { minLon, minLat, maxLon, maxLat };
+}
+
 /**
  * Assign crime complaints to NTAs based on coordinates
  */
@@ -248,12 +378,23 @@ function assignCrimesToNTAs(crimes, boundaries) {
   let assigned = 0;
   let unassigned = 0;
 
+  const metricKeys = Object.keys(CONFIG.CRIME_CATEGORIES);
+  const offenseToMetric = {};
+  for (const [metricKey, offenses] of Object.entries(CONFIG.CRIME_CATEGORIES)) {
+    for (const offense of offenses) {
+      offenseToMetric[String(offense).toUpperCase()] = metricKey;
+    }
+  }
+
+  const ntaIndex = Object.entries(boundaries).map(([ntaId, nta]) => ({
+    ntaId,
+    geometry: nta.geometry,
+    bbox: computeGeometryBBox(nta.geometry)
+  }));
+
   // Initialize counts for all NTAs
   for (const ntaId of Object.keys(boundaries)) {
-    ntaCrimes[ntaId] = {
-      murder: [],
-      felonyAssault: []
-    };
+    ntaCrimes[ntaId] = Object.fromEntries(metricKeys.map(k => [k, 0]));
   }
 
   // Assign each crime to an NTA
@@ -266,21 +407,27 @@ function assignCrimesToNTAs(crimes, boundaries) {
       continue;
     }
 
+    const offense = String(crime.ofns_desc || '').toUpperCase();
+    const metricKey = offenseToMetric[offense] || null;
+    if (!metricKey) {
+      unassigned++;
+      continue;
+    }
+
     let foundNTA = null;
-    for (const [ntaId, nta] of Object.entries(boundaries)) {
+    for (const nta of ntaIndex) {
+      const bbox = nta.bbox;
+      if (bbox) {
+        if (lon < bbox.minLon || lon > bbox.maxLon || lat < bbox.minLat || lat > bbox.maxLat) continue;
+      }
       if (pointInGeometry(lon, lat, nta.geometry)) {
-        foundNTA = ntaId;
+        foundNTA = nta.ntaId;
         break;
       }
     }
 
     if (foundNTA) {
-      const offense = crime.ofns_desc?.toUpperCase() || '';
-      if (offense.includes('MURDER')) {
-        ntaCrimes[foundNTA].murder.push(crime);
-      } else if (offense.includes('ASSAULT')) {
-        ntaCrimes[foundNTA].felonyAssault.push(crime);
-      }
+      ntaCrimes[foundNTA][metricKey] += 1;
       assigned++;
     } else {
       unassigned++;
@@ -329,9 +476,8 @@ function computeStatistics(ntaCrimes, boundaries, population) {
     const rateData = [];
 
     for (const ntaId of ntaIds) {
-      const crimes = ntaCrimes[ntaId]?.[metricKey] || [];
+      const count = Number(ntaCrimes[ntaId]?.[metricKey] || 0);
       const pop = population[ntaId] || CONFIG.DEFAULT_POPULATION;
-      const count = crimes.length;
       const rate = pop > 0 ? (count / pop) * 100000 : 0;
 
       rateData.push({ ntaId, count, rate, population: pop });
@@ -371,40 +517,41 @@ function computeStatistics(ntaCrimes, boundaries, population) {
  * Compute NYC-wide and borough averages
  */
 function computeComparisons(ntaCrimes, boundaries, population) {
+  const metricKeys = Object.keys(CONFIG.CRIME_CATEGORIES);
   const boroughStats = {};
-  const nycStats = { totalPop: 0, murder: 0, felonyAssault: 0 };
+  const nycStats = { totalPop: 0, counts: Object.fromEntries(metricKeys.map(k => [k, 0])) };
 
   for (const [ntaId, nta] of Object.entries(boundaries)) {
     const pop = population[ntaId] || CONFIG.DEFAULT_POPULATION;
-    const crimes = ntaCrimes[ntaId] || { murder: [], felonyAssault: [] };
+    const crimes = ntaCrimes[ntaId] || {};
 
     const borough = nta.borough;
     if (!boroughStats[borough]) {
-      boroughStats[borough] = { totalPop: 0, murder: 0, felonyAssault: 0 };
+      boroughStats[borough] = { totalPop: 0, counts: Object.fromEntries(metricKeys.map(k => [k, 0])) };
     }
 
     boroughStats[borough].totalPop += pop;
-    boroughStats[borough].murder += crimes.murder.length;
-    boroughStats[borough].felonyAssault += crimes.felonyAssault.length;
+    for (const key of metricKeys) {
+      boroughStats[borough].counts[key] += Number(crimes[key] || 0);
+    }
 
     nycStats.totalPop += pop;
-    nycStats.murder += crimes.murder.length;
-    nycStats.felonyAssault += crimes.felonyAssault.length;
+    for (const key of metricKeys) {
+      nycStats.counts[key] += Number(crimes[key] || 0);
+    }
   }
 
+  const ratePer100k = (count, pop) => pop > 0 ? Math.round((count / pop) * 100000 * 100) / 100 : 0;
+
   const comparisons = {
-    nycAverage: {
-      murder: nycStats.totalPop > 0 ? Math.round((nycStats.murder / nycStats.totalPop) * 100000 * 100) / 100 : 0,
-      felonyAssault: nycStats.totalPop > 0 ? Math.round((nycStats.felonyAssault / nycStats.totalPop) * 100000 * 100) / 100 : 0
-    },
+    nycAverage: Object.fromEntries(metricKeys.map(k => [k, ratePer100k(nycStats.counts[k], nycStats.totalPop)])),
     boroughAverage: {}
   };
 
   for (const [borough, stats] of Object.entries(boroughStats)) {
-    comparisons.boroughAverage[borough] = {
-      murder: stats.totalPop > 0 ? Math.round((stats.murder / stats.totalPop) * 100000 * 100) / 100 : 0,
-      felonyAssault: stats.totalPop > 0 ? Math.round((stats.felonyAssault / stats.totalPop) * 100000 * 100) / 100 : 0
-    };
+    comparisons.boroughAverage[borough] = Object.fromEntries(
+      metricKeys.map(k => [k, ratePer100k(stats.counts[k], stats.totalPop)])
+    );
   }
 
   return comparisons;
@@ -508,7 +655,7 @@ function simplifyGeometry(geometry, tolerance = 0.0001) {
  */
 async function compile() {
   console.log('='.repeat(60));
-  console.log('StreetSafe Data Compiler');
+  console.log('SleepEasy Data Compiler');
   console.log('='.repeat(60));
   console.log(`Started: ${new Date().toISOString()}`);
 
@@ -537,12 +684,16 @@ async function compile() {
 
       const dateRange = getDateRange(window);
       console.log(`\n[3/4] Fetching crime data for ${window}...`);
-      const crimes = fetchCrimeData(dateRange.start, dateRange.end);
+      const fetched = fetchCrimeData(dateRange.start, dateRange.end);
+      const crimes = fetched.crimes;
+      const dataThrough = fetched.dataThrough || dateRange.end;
+
       const ntaCrimes = assignCrimesToNTAs(crimes, boundaries);
       const { stats, comparisons } = computeStatistics(ntaCrimes, boundaries, population);
 
       allStats[window] = stats;
       allComparisons[window] = comparisons;
+      stats._meta = { ...(stats._meta || {}), dataThrough };
     }
 
     // Prepare output data
@@ -572,10 +723,20 @@ async function compile() {
     fs.writeFileSync(boundariesPath, JSON.stringify(boundariesOutput));
     console.log(`  Written: ${boundariesPath} (${(fs.statSync(boundariesPath).size / 1024).toFixed(1)} KB)`);
 
+    // Use the most recent observed complaint date as our freshness marker.
+    let dataThrough = null;
+    for (const window of CONFIG.TIME_WINDOWS) {
+      const d = allStats?.[window]?._meta?.dataThrough || null;
+      if (!d) continue;
+      if (!dataThrough || d > dataThrough) dataThrough = d;
+      // Remove internal meta from output stats map.
+      delete allStats[window]._meta;
+    }
+
     // Write crime statistics
     const statsOutput = {
       generated: new Date().toISOString(),
-      dataThrough: new Date().toISOString().split('T')[0],
+      dataThrough: dataThrough || new Date().toISOString().split('T')[0],
       timeWindows: CONFIG.TIME_WINDOWS,
       stats: allStats,
       comparisons: allComparisons,
@@ -595,8 +756,17 @@ async function compile() {
     for (const window of CONFIG.TIME_WINDOWS) {
       const comp = allComparisons[window];
       console.log(`\n${window} NYC Averages:`);
-      console.log(`  Murder rate: ${comp.nycAverage.murder} per 100k`);
-      console.log(`  Felony Assault rate: ${comp.nycAverage.felonyAssault} per 100k`);
+
+      const labels = {
+        murder: 'Murder',
+        felonyAssault: 'Felony Assault',
+        propertyCrime: 'Property Crime'
+      };
+
+      for (const key of Object.keys(CONFIG.CRIME_CATEGORIES)) {
+        const label = labels[key] || key;
+        console.log(`  ${label} rate: ${comp.nycAverage[key]} per 100k`);
+      }
     }
 
     console.log('\n' + '='.repeat(60));

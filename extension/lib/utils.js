@@ -1,5 +1,5 @@
 /**
- * StreetSafe Utility Functions
+ * SleepEasy Utility Functions
  * Shared utilities for coordinate extraction, geocoding, and data fetching
  *
  * Note: This version uses static precompiled data for crime statistics
@@ -8,75 +8,46 @@
 
 // Configuration
 const CONFIG = {
-  NYC_GEOCODE_API: 'https://geosearch.planninglabs.nyc/v1/search',
   CACHE_TTL_MS: 1000 * 60 * 60 * 24, // 24 hours
-  DEFAULT_TIME_WINDOW: '12m'
+  DEFAULT_TIME_WINDOW: '24m',
+  DEFAULT_MEASURE: 'ambient'
 };
 
-/**
- * Extract coordinates from Google Static Maps URL
- * @param {string} imageUrl - The static map image URL
- * @returns {Object|null} {lat, lon} or null
- */
-function extractCoordinatesFromMapUrl(imageUrl) {
-  try {
-    const url = new URL(imageUrl);
-    const centerParam = url.searchParams.get('center');
+const MEASURE_DEFS = {
+  count: { id: 'count', label: 'Raw', unit: 'incidents' },
+  per100k: { id: 'per100k', label: 'Per 100k', unit: '/ 100k' },
+  perSqMi: { id: 'perSqMi', label: 'Per sq mi', unit: '/ sq mi' },
+  ambient: { id: 'ambient', label: 'Ambient', unit: '/ 100k' }
+};
 
-    if (centerParam) {
-      const [lat, lon] = centerParam.split(',').map(parseFloat);
-      if (!isNaN(lat) && !isNaN(lon)) {
-        return { lat, lon };
-      }
-    }
-  } catch (e) {
-    console.error('[StreetSafe] Error parsing map URL:', e);
-  }
-  return null;
+function computeAmbientPopulation(population, jobsWac) {
+  const pop = Number(population) || 0;
+  const jobs = Number(jobsWac) || 0;
+  // Approximate average people present (person-hours) using a simple day/night split.
+  // 16h residents + 8h workers.
+  return ((pop * 16) + (jobs * 8)) / 24;
 }
 
-/**
- * Geocode an address using NYC GeoSearch API (Pelias)
- * @param {string} address - The address to geocode
- * @returns {Promise<Object|null>} {lat, lon, label} or null
- */
-async function geocodeAddress(address) {
-  if (!address || address.trim() === '') {
-    return null;
+function computeMeasureValue({ measure, entry, exposure, areaSqMi }) {
+  if (!entry) return null;
+  const count = Number(entry.count);
+
+  if (measure === 'count') return Number.isFinite(count) ? count : null;
+  if (measure === 'per100k') {
+    const rate = Number(entry.rate);
+    return Number.isFinite(rate) ? rate : null;
   }
 
-  try {
-    const params = new URLSearchParams({
-      text: address,
-      size: 1,
-      // Restrict to NYC bounds
-      'boundary.rect.min_lat': 40.477399,
-      'boundary.rect.min_lon': -74.259090,
-      'boundary.rect.max_lat': 40.917577,
-      'boundary.rect.max_lon': -73.700272
-    });
+  if (measure === 'perSqMi') {
+    const area = Number(areaSqMi);
+    if (!Number.isFinite(count) || !Number.isFinite(area) || area <= 0) return null;
+    return count / area;
+  }
 
-    const response = await fetch(`${CONFIG.NYC_GEOCODE_API}?${params}`);
-
-    if (!response.ok) {
-      console.error('[StreetSafe] Geocoding API error:', response.status);
-      return null;
-    }
-
-    const data = await response.json();
-
-    if (data.features && data.features.length > 0) {
-      const feature = data.features[0];
-      const [lon, lat] = feature.geometry.coordinates;
-
-      return {
-        lat,
-        lon,
-        label: feature.properties.label || address
-      };
-    }
-  } catch (e) {
-    console.error('[StreetSafe] Geocoding error:', e);
+  if (measure === 'ambient') {
+    const ambientPop = computeAmbientPopulation(exposure?.population, exposure?.jobsWac);
+    if (!Number.isFinite(count) || !Number.isFinite(ambientPop) || ambientPop <= 0) return null;
+    return (count / ambientPop) * 100000;
   }
 
   return null;
@@ -95,22 +66,33 @@ async function fetchCrimeStats(lat, lon, window = CONFIG.DEFAULT_TIME_WINDOW) {
     const nta = await ntaLookup.findNTA(lat, lon);
 
     if (!nta) {
-      console.warn('[StreetSafe] Location not found in NYC boundaries');
+      SleepEasyLog.warn('[SleepEasy] Location not found in NYC boundaries');
       return null;
     }
-
-    console.log('[StreetSafe] Found NTA:', nta.name, `(${nta.id})`);
 
     // Get crime statistics from precompiled data
     const stats = await crimeStatsManager.getStats(nta.id, window);
 
     if (!stats) {
-      console.warn('[StreetSafe] No crime statistics for NTA:', nta.id);
+      SleepEasyLog.warn('[SleepEasy] No crime statistics for NTA:', nta.id);
       return null;
     }
 
+    const dataGenerated = crimeStatsManager?.data?.generated || null;
+
     // Get comparisons with borough-specific data
     const comparisons = await crimeStatsManager.getComparisons(window, nta.borough);
+
+    const exposureOk = await (ntaExposureManager?.load?.() ?? Promise.resolve(false));
+    if (!exposureOk) {
+      SleepEasyLog.warn('[SleepEasy] Exposure data unavailable; per-area/ambient measures will be unavailable');
+    }
+
+    const enrichedMetrics = enrichMetricsWithMeasures({
+      ntaId: nta.id,
+      timeWindow: window,
+      metrics: stats.metrics
+    });
 
     // Build response matching the original API format
     return {
@@ -119,18 +101,80 @@ async function fetchCrimeStats(lat, lon, window = CONFIG.DEFAULT_TIME_WINDOW) {
         ntaName: nta.name,
         borough: nta.borough
       },
-      metrics: stats.metrics,
+      metrics: enrichedMetrics,
       timeWindow: window,
+      dataGenerated,
       dataThrough: stats.dataThrough,
       computedAt: new Date().toISOString(),
       comparisons: comparisons || { nycAverage: {}, boroughAverage: {} },
-      methodologyVersion: stats.methodologyVersion
+      methodologyVersion: stats.methodologyVersion,
+      measureDefs: MEASURE_DEFS
     };
 
   } catch (e) {
-    console.error('[StreetSafe] Error fetching crime stats:', e);
+    SleepEasyLog.error('[SleepEasy] Error fetching crime stats:', e);
     return null;
   }
+}
+
+/**
+ * Attach computed measures (count/rate/density/ambient) and NYC risk ranks.
+ * Risk ranks are descending (higher value = higher risk = rank 1).
+ * @param {{ntaId: string, timeWindow: string, metrics: Object}} params
+ * @returns {Object}
+ */
+function enrichMetricsWithMeasures({ ntaId, timeWindow, metrics }) {
+  const windowStats = crimeStatsManager?.data?.stats?.[timeWindow];
+  const boundaries = ntaLookup?.boundaries;
+  const exposures = ntaExposureManager?.exposures;
+  if (!windowStats || !boundaries || !metrics) return metrics;
+
+  const result = {};
+
+  for (const [metricKey, metric] of Object.entries(metrics)) {
+    const ranksByMeasure = {};
+
+    for (const measure of Object.keys(MEASURE_DEFS)) {
+      const items = [];
+      for (const [id, m] of Object.entries(windowStats)) {
+        const entry = m?.[metricKey];
+        if (!entry) continue;
+        const areaSqMi = boundaries[id]?.areaSqMi;
+        const exposure = exposures?.[id] || null;
+        const value = computeMeasureValue({ measure, entry, exposure, areaSqMi });
+        if (!Number.isFinite(value)) continue;
+        items.push({ id, value });
+      }
+
+      items.sort((a, b) => (b.value - a.value) || a.id.localeCompare(b.id));
+      const total = items.length;
+      const index = items.findIndex(x => x.id === ntaId);
+      ranksByMeasure[measure] = {
+        riskRank: index === -1 ? null : index + 1,
+        total: total || null
+      };
+    }
+
+    const areaSqMi = boundaries[ntaId]?.areaSqMi;
+    const exposure = exposures?.[ntaId] || null;
+
+    const measures = {};
+    for (const measure of Object.keys(MEASURE_DEFS)) {
+      const value = computeMeasureValue({ measure, entry: metric, exposure, areaSqMi });
+      measures[measure] = {
+        value: Number.isFinite(value) ? value : null,
+        riskRank: ranksByMeasure[measure]?.riskRank ?? null,
+        total: ranksByMeasure[measure]?.total ?? null
+      };
+    }
+
+    result[metricKey] = {
+      ...metric,
+      measures
+    };
+  }
+
+  return result;
 }
 
 /**
@@ -139,7 +183,8 @@ async function fetchCrimeStats(lat, lon, window = CONFIG.DEFAULT_TIME_WINDOW) {
  * @returns {string} Formatted number
  */
 function formatNumber(num) {
-  return num.toLocaleString('en-US');
+  if (num === null || num === undefined) return '—';
+  return Number(num).toLocaleString('en-US');
 }
 
 /**
@@ -148,7 +193,8 @@ function formatNumber(num) {
  * @returns {string} Formatted rate
  */
 function formatRate(rate) {
-  return rate.toFixed(1);
+  if (rate === null || rate === undefined) return '—';
+  return Number(rate).toFixed(1);
 }
 
 /**
@@ -173,50 +219,14 @@ function getPercentileColorClass(percentile) {
   return 'percentile-very-low'; // Red - Low safety
 }
 
-/**
- * Cache helper for storing data in chrome.storage.local
- */
-const Cache = {
-  async get(key) {
-    try {
-      const result = await chrome.storage.local.get(key);
-      if (result[key]) {
-        const { data, timestamp } = result[key];
-        if (Date.now() - timestamp < CONFIG.CACHE_TTL_MS) {
-          return data;
-        }
-      }
-    } catch (e) {
-      console.error('[StreetSafe] Cache get error:', e);
-    }
-    return null;
-  },
-
-  async set(key, data) {
-    try {
-      await chrome.storage.local.set({
-        [key]: {
-          data,
-          timestamp: Date.now()
-        }
-      });
-    } catch (e) {
-      console.error('[StreetSafe] Cache set error:', e);
-    }
-  }
-};
-
 // Export for use in other scripts
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     CONFIG,
-    extractCoordinatesFromMapUrl,
-    geocodeAddress,
     fetchCrimeStats,
     formatNumber,
     formatRate,
     formatPercentile,
-    getPercentileColorClass,
-    Cache
+    getPercentileColorClass
   };
 }

@@ -1,4 +1,4 @@
--- StreetSafe Database Schema
+-- SleepEasy Database Schema
 -- PostgreSQL with PostGIS extension
 
 -- Enable PostGIS

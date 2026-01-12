@@ -1,5 +1,5 @@
 /**
- * StreetSafe Coordinates Extractor
+ * SleepEasy Coordinates Extractor
  * Extracts listing location from StreetEasy pages
  */
 
@@ -7,6 +7,7 @@ class CoordinatesExtractor {
   constructor() {
     this.coordinates = null;
     this.address = null;
+    this.neighborhood = null;
   }
 
   /**
@@ -14,145 +15,109 @@ class CoordinatesExtractor {
    * @returns {Promise<Object|null>} {lat, lon, source, address}
    */
   async extract() {
-    console.log('[StreetSafe] Starting coordinate extraction...');
-
-    // Method 1: Parse static map image URL (most reliable)
-    const mapCoords = this.extractFromMapImage();
-    if (mapCoords) {
-      console.log('[StreetSafe] Extracted from map image:', mapCoords);
-      this.coordinates = mapCoords;
+    // StreetEasy listing pages include a Google Maps link with coordinates.
+    // This is the canonical source and avoids any need for geocoding.
+    const googleCoords = await this.extractFromGoogleMapsLinkWithRetry();
+    if (googleCoords) {
+      this.coordinates = googleCoords;
       this.address = this.extractAddress();
+      this.neighborhood = this.extractNeighborhood();
       return {
-        ...mapCoords,
-        source: 'map_image',
-        address: this.address
+        ...googleCoords,
+        source: 'google_maps_link',
+        address: this.address,
+        neighborhood: this.neighborhood
       };
     }
 
-    // Method 2: Look for structured data (JSON-LD, meta tags, etc.)
-    const structuredCoords = this.extractFromStructuredData();
-    if (structuredCoords) {
-      console.log('[StreetSafe] Extracted from structured data:', structuredCoords);
-      this.coordinates = structuredCoords;
-      this.address = this.extractAddress();
-      return {
-        ...structuredCoords,
-        source: 'structured_data',
-        address: this.address
-      };
-    }
-
-    // Method 3: Fallback to geocoding the address
-    this.address = this.extractAddress();
-    if (this.address) {
-      console.log('[StreetSafe] Attempting geocoding for:', this.address);
-      const geocodedCoords = await geocodeAddress(this.address);
-      if (geocodedCoords) {
-        console.log('[StreetSafe] Geocoded successfully:', geocodedCoords);
-        this.coordinates = { lat: geocodedCoords.lat, lon: geocodedCoords.lon };
-        return {
-          lat: geocodedCoords.lat,
-          lon: geocodedCoords.lon,
-          source: 'geocoded',
-          address: geocodedCoords.label || this.address
-        };
-      }
-    }
-
-    console.warn('[StreetSafe] Could not extract coordinates');
+    SleepEasyLog.warn('[SleepEasy] Could not extract coordinates');
     return null;
   }
 
   /**
-   * Extract coordinates from static map image URL
-   * @returns {Object|null} {lat, lon}
+   * Retry extraction a few times to handle SPA async render.
+   * @returns {Promise<Object|null>} {lat, lon}
    */
-  extractFromMapImage() {
-    // Look for Google Static Maps images
-    const images = document.querySelectorAll('img[src*="maps.googleapis.com"], img[src*="staticmap"]');
+  async extractFromGoogleMapsLinkWithRetry() {
+    const maxAttempts = 20;
+    const delayMs = 150;
 
-    for (const img of images) {
-      const coords = extractCoordinatesFromMapUrl(img.src);
-      if (coords) {
-        return coords;
-      }
-    }
-
-    // Also check background images in style attributes
-    const elementsWithBg = document.querySelectorAll('[style*="background"]');
-    for (const el of elementsWithBg) {
-      const style = el.getAttribute('style');
-      if (style && (style.includes('maps.googleapis.com') || style.includes('staticmap'))) {
-        const urlMatch = style.match(/url\(['"]?([^'"()]+)['"]?\)/);
-        if (urlMatch) {
-          const coords = extractCoordinatesFromMapUrl(urlMatch[1]);
-          if (coords) {
-            return coords;
-          }
-        }
-      }
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const coords = this.extractFromGoogleMapsLink();
+      if (coords) return coords;
+      await new Promise(resolve => setTimeout(resolve, delayMs));
     }
 
     return null;
   }
 
   /**
-   * Extract coordinates from structured data (JSON-LD, meta tags, etc.)
+   * Extract coordinates from a Google Maps link on the page.
+   * Expected shape: https://www.google.com/maps/place/40.7206,-73.9878
    * @returns {Object|null} {lat, lon}
    */
-  extractFromStructuredData() {
-    // Look for JSON-LD structured data
-    const jsonLdScripts = document.querySelectorAll('script[type="application/ld+json"]');
+  extractFromGoogleMapsLink() {
+    const links = document.querySelectorAll('a[href*="google.com/maps"], a[href*="maps.google."]');
 
-    for (const script of jsonLdScripts) {
-      try {
-        const data = JSON.parse(script.textContent);
+    for (const link of links) {
+      const href = link.getAttribute('href');
+      const coords = this.parseCoordinatesFromGoogleMapsUrl(href);
+      if (coords) return coords;
+    }
 
-        // Check for geo coordinates in various structured data formats
-        if (data.geo) {
-          if (data.geo.latitude && data.geo.longitude) {
-            return {
-              lat: parseFloat(data.geo.latitude),
-              lon: parseFloat(data.geo.longitude)
-            };
-          }
-        }
+    return null;
+  }
 
-        // Check for address with geo
-        if (data.address && data.address.geo) {
-          if (data.address.geo.latitude && data.address.geo.longitude) {
-            return {
-              lat: parseFloat(data.address.geo.latitude),
-              lon: parseFloat(data.address.geo.longitude)
-            };
-          }
-        }
-      } catch (e) {
-        // Invalid JSON, skip
-        continue;
+  /**
+   * Parse coordinates from a Google Maps URL.
+   * @param {string|null} href
+   * @returns {Object|null} {lat, lon}
+   */
+  parseCoordinatesFromGoogleMapsUrl(href) {
+    if (!href) return null;
+
+    let url;
+    try {
+      url = new URL(href, window.location.href);
+    } catch {
+      return null;
+    }
+
+    // 1) /maps/place/<lat>,<lon>
+    const placeMatch = url.pathname.match(/\/maps\/place\/(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
+    if (placeMatch) {
+      const lat = parseFloat(placeMatch[1]);
+      const lon = parseFloat(placeMatch[2]);
+      if (!isNaN(lat) && !isNaN(lon)) return { lat, lon };
+    }
+
+    // 2) /.../@<lat>,<lon>,...
+    const atMatch = url.pathname.match(/@(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
+    if (atMatch) {
+      const lat = parseFloat(atMatch[1]);
+      const lon = parseFloat(atMatch[2]);
+      if (!isNaN(lat) && !isNaN(lon)) return { lat, lon };
+    }
+
+    // 3) ?q=<lat>,<lon> (or variants)
+    const q = url.searchParams.get('q') || url.searchParams.get('query');
+    if (q) {
+      const qMatch = q.match(/(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
+      if (qMatch) {
+        const lat = parseFloat(qMatch[1]);
+        const lon = parseFloat(qMatch[2]);
+        if (!isNaN(lat) && !isNaN(lon)) return { lat, lon };
       }
     }
 
-    // Look for meta tags
-    const latMeta = document.querySelector('meta[property="place:location:latitude"], meta[name="geo.position"]');
-    const lonMeta = document.querySelector('meta[property="place:location:longitude"]');
-
-    if (latMeta && lonMeta) {
-      const lat = parseFloat(latMeta.getAttribute('content'));
-      const lon = parseFloat(lonMeta.getAttribute('content'));
-      if (!isNaN(lat) && !isNaN(lon)) {
-        return { lat, lon };
-      }
-    }
-
-    // Check for geo.position meta tag (format: "lat;lon")
-    if (latMeta) {
-      const content = latMeta.getAttribute('content');
-      if (content && content.includes(';')) {
-        const [lat, lon] = content.split(';').map(parseFloat);
-        if (!isNaN(lat) && !isNaN(lon)) {
-          return { lat, lon };
-        }
+    // 4) ?ll=<lat>,<lon> (embedded Google Maps uses this)
+    const ll = url.searchParams.get('ll') || url.searchParams.get('sll') || url.searchParams.get('center');
+    if (ll) {
+      const llMatch = ll.match(/(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
+      if (llMatch) {
+        const lat = parseFloat(llMatch[1]);
+        const lon = parseFloat(llMatch[2]);
+        if (!isNaN(lat) && !isNaN(lon)) return { lat, lon };
       }
     }
 
@@ -182,20 +147,57 @@ class CoordinatesExtractor {
         // Clean up the address
         text = text.replace(/\s+/g, ' ').trim();
         if (text.length > 5 && text.length < 200) {
-          // Add "New York, NY" if not present
-          if (!text.toLowerCase().includes('new york') && !text.toLowerCase().includes('ny')) {
-            text += ', New York, NY';
+          // Basic heuristic: prefer strings that look like a street address (contain a number)
+          if (/\d/.test(text)) {
+            if (!/,\s*NY\b/i.test(text)) {
+              text += ', New York, NY';
+            }
+            return text;
           }
-          return text;
         }
       }
     }
 
-    // Try to extract from URL if it contains neighborhood info
-    const urlMatch = window.location.pathname.match(/\/([^/]+)\/[^/]+$/);
-    if (urlMatch) {
-      const neighborhood = urlMatch[1].replace(/-/g, ' ');
-      return `${neighborhood}, New York, NY`;
+    // Many building/listing titles include "... at <address> in <neighborhood> ..."
+    const title = document.title || '';
+    const titleMatch = title.match(/\bat\s+([^|:]+?)\s+in\s+/i);
+    if (titleMatch && titleMatch[1]) {
+      const candidate = titleMatch[1].trim().replace(/\s+/g, ' ');
+      if (candidate.length > 5 && candidate.length < 200 && /\d/.test(candidate)) {
+        if (!/,\s*NY\b/i.test(candidate)) {
+          return `${candidate}, New York, NY`;
+        }
+        return candidate;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Extract StreetEasy neighborhood name for context (not used for stats lookup).
+   * @returns {string|null}
+   */
+  extractNeighborhood() {
+    // Many StreetEasy page titles contain "... in <Neighborhood> : ..."
+    const title = document.title || '';
+    const match = title.match(/\bin\s+([^:|]+)\s*[:|]/i);
+    if (match && match[1]) {
+      const name = match[1].trim();
+      if (name && name.length < 80) return name;
+    }
+
+    // Breadcrumb fallback
+    const breadcrumb = document.querySelector('nav[aria-label="breadcrumb"], [aria-label="breadcrumb"]');
+    if (breadcrumb) {
+      const links = Array.from(breadcrumb.querySelectorAll('a'))
+        .map(a => (a.textContent || '').trim())
+        .filter(Boolean);
+      // Often: ... > <Neighborhood> > <Building/Listing>
+      if (links.length >= 2) {
+        const candidate = links[links.length - 1];
+        if (candidate && candidate.length < 80) return candidate;
+      }
     }
 
     return null;

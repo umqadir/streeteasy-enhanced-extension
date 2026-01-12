@@ -1,5 +1,5 @@
 /**
- * StreetSafe Backend API
+ * SleepEasy Backend API
  * Serves crime statistics for NYC locations
  */
 
@@ -252,8 +252,8 @@ function getDateRangeForWindow(window) {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`[StreetSafe API] Server running on port ${PORT}`);
-  console.log(`[StreetSafe API] Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`[SleepEasy API] Server running on port ${PORT}`);
+  console.log(`[SleepEasy API] Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
 // Graceful shutdown

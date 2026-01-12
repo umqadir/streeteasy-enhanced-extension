@@ -1,12 +1,18 @@
-/* StreetSafe Inline Module Styles
+/* SleepEasy Inline Module Styles
  * Note: Primary styles are injected via Shadow DOM in ui-injector.js
  * This file provides fallback/base styles for the container
  */
 
 .streetsafe-container {
-  /* Container positioning */
   position: relative;
-  z-index: 100;
   width: 100%;
-  margin: 16px 0;
+  margin: 0;
+  padding: 0;
+}
+
+@media (max-width: 768px) {
+  .streetsafe-container {
+    margin: 0;
+    padding: 0;
+  }
 }

@@ -1,7 +1,7 @@
 {
   "name": "streetsafe-backend",
   "version": "1.0.0",
-  "description": "Backend API for StreetSafe Chrome extension",
+  "description": "Backend API for SleepEasy Chrome extension",
   "main": "api/server.js",
   "scripts": {
     "start": "node api/server.js",

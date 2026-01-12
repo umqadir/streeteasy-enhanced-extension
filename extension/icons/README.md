@@ -1,4 +1,4 @@
-# StreetSafe Icons
+# SleepEasy Icons
 
 This directory should contain the extension icons in the following sizes:
 
@@ -11,7 +11,7 @@ This directory should contain the extension icons in the following sizes:
 You can create icons using any graphic design tool. The icons should:
 
 1. Be recognizable at small sizes
-2. Use the StreetSafe brand colors (purple/blue gradient)
+2. Use the SleepEasy brand colors (purple/blue gradient)
 3. Represent safety/security (e.g., shield, location pin with check mark)
 
 ## Placeholder

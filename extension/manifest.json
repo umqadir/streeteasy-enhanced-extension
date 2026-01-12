@@ -1,24 +1,17 @@
 {
   "manifest_version": 3,
-  "name": "StreetSafe - Crime Context for StreetEasy",
+  "name": "SleepEasy",
   "version": "1.0.0",
-  "description": "Adds neighborhood crime statistics and safety context to StreetEasy apartment listings using precompiled NYC Open Data",
-  "permissions": [
-    "storage",
-    "sidePanel"
-  ],
-  "host_permissions": [
-    "https://streeteasy.com/*",
-    "https://*.streeteasy.com/*"
-  ],
-  "background": {
-    "service_worker": "background/service-worker.js"
-  },
+  "description": "Adds inline NYC crime statistics to StreetEasy listing pages using precompiled NYC Open Data",
   "content_scripts": [
     {
       "matches": [
-        "https://streeteasy.com/*",
-        "https://*.streeteasy.com/*"
+        "https://streeteasy.com/building/*",
+        "https://streeteasy.com/rental/*",
+        "https://streeteasy.com/sale/*",
+        "https://*.streeteasy.com/building/*",
+        "https://*.streeteasy.com/rental/*",
+        "https://*.streeteasy.com/sale/*"
       ],
       "js": [
         "lib/geo-utils.js",
@@ -33,11 +26,8 @@
       "run_at": "document_idle"
     }
   ],
-  "side_panel": {
-    "default_path": "ui/side-panel.html"
-  },
   "action": {
-    "default_title": "StreetSafe - View Crime Statistics"
+    "default_title": "SleepEasy"
   },
   "icons": {
     "16": "icons/icon-16.png",
@@ -47,10 +37,9 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "ui/inline-module.html",
-        "ui/inline-module.css",
         "data/nta-boundaries.json",
-        "data/crime-stats.json"
+        "data/crime-stats.json",
+        "data/nta-exposure.json"
       ],
       "matches": [
         "https://streeteasy.com/*",
