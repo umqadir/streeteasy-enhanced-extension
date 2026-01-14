@@ -91,6 +91,14 @@ class CoordinatesExtractor {
       if (!isNaN(lat) && !isNaN(lon)) return { lat, lon };
     }
 
+    // 1b) /maps/place/<address>/<lat>,<lon>,... (StreetEasy often uses this shape)
+    const pathCoordsMatch = url.pathname.match(/(?:^|\/)(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)(?:,|$)/);
+    if (pathCoordsMatch) {
+      const lat = parseFloat(pathCoordsMatch[1]);
+      const lon = parseFloat(pathCoordsMatch[2]);
+      if (!isNaN(lat) && !isNaN(lon)) return { lat, lon };
+    }
+
     // 2) /.../@<lat>,<lon>,...
     const atMatch = url.pathname.match(/@(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
     if (atMatch) {

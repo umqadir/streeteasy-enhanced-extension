@@ -112,10 +112,13 @@ function fetchJSON(url) {
   try {
     // Escape the URL for shell and use single quotes to prevent variable expansion
     const escapedUrl = url.replace(/'/g, "'\\''");
-    const result = execSync(`curl -s --max-time 120 '${escapedUrl}'`, {
+    const result = execSync(
+      `curl -fsS --compressed --retry 3 --retry-delay 1 --max-time 120 '${escapedUrl}'`,
+      {
       encoding: 'utf8',
       maxBuffer: 100 * 1024 * 1024 // 100MB buffer
-    });
+      }
+    );
 
     const parsed = JSON.parse(result);
     if (!Array.isArray(parsed)) {
@@ -123,7 +126,10 @@ function fetchJSON(url) {
     }
     return parsed;
   } catch (e) {
-    console.error('  Raw output:', e.stdout?.substring(0, 500));
+    const stderr = e.stderr ? String(e.stderr) : '';
+    const stdout = e.stdout ? String(e.stdout) : '';
+    if (stderr.trim()) console.error('  Curl stderr:', stderr.trim().substring(0, 500));
+    if (stdout.trim()) console.error('  Curl stdout:', stdout.trim().substring(0, 500));
     throw new Error(`Failed to fetch ${url}: ${e.message}`);
   }
 }
@@ -199,21 +205,20 @@ async function fetchNTABoundaries() {
 function fetchCrimeDataFromDataset(datasetUrl, startDate, endDate, datasetName = 'dataset') {
   console.log(`  Fetching ${datasetName} crimes from ${startDate} to ${endDate}...`);
 
-  const offenses = Object.values(CONFIG.CRIME_CATEGORIES).flat();
-  const offenseFilter = `upper(ofns_desc) in(${offenses.map(s => `'${String(s).toUpperCase().replace(/'/g, "''")}'`).join(',')})`;
-
   // SoQL query for crime data
-  const where = `cmplnt_fr_dt IS NOT NULL AND cmplnt_fr_dt >= '${startDate}' AND cmplnt_fr_dt <= '${endDate}' AND (${offenseFilter}) AND latitude IS NOT NULL AND longitude IS NOT NULL`;
+  const baseWhere = `${getOffenseWhereClause()} AND cmplnt_num IS NOT NULL AND cmplnt_fr_dt >= '${startDate}' AND cmplnt_fr_dt <= '${endDate}'`;
 
   const LIMIT = 50000;
-  let offset = 0;
+  let lastComplaintNum = null;
   const all = [];
 
   while (true) {
+    const lastEscaped = lastComplaintNum ? String(lastComplaintNum).replace(/'/g, "''") : null;
+    const where = lastEscaped ? `${baseWhere} AND cmplnt_num > '${lastEscaped}'` : baseWhere;
+
     const params = new URLSearchParams({
       '$where': where,
       '$limit': String(LIMIT),
-      '$offset': String(offset),
       '$order': 'cmplnt_num',
       '$select': 'cmplnt_num,cmplnt_fr_dt,ofns_desc,latitude,longitude'
     });
@@ -222,8 +227,21 @@ function fetchCrimeDataFromDataset(datasetUrl, startDate, endDate, datasetName =
     const page = fetchJSON(url);
     all.push(...page);
 
+    if (page.length === 0) break;
     if (page.length < LIMIT) break;
-    offset += LIMIT;
+
+    const lastRow = page[page.length - 1];
+    const parsed = lastRow?.cmplnt_num ? String(lastRow.cmplnt_num) : null;
+    if (!parsed) {
+      console.warn(`  Warning: ${datasetName} pagination stopped (invalid last cmplnt_num)`);
+      break;
+    }
+    if (lastComplaintNum !== null && parsed <= lastComplaintNum) {
+      console.warn(`  Warning: ${datasetName} pagination stopped (cmplnt_num did not advance)`);
+      break;
+    }
+
+    lastComplaintNum = parsed;
 
     // Be a little gentle with Socrata rate limits.
     sleepMs(200);
@@ -262,6 +280,51 @@ function computeDataThrough(crimes) {
     if (!max || d > max) max = d;
   }
   return max;
+}
+
+function getOffenseWhereClause() {
+  const offenses = Object.values(CONFIG.CRIME_CATEGORIES).flat();
+  const offenseFilter = `upper(ofns_desc) in(${offenses.map(s => `'${String(s).toUpperCase().replace(/'/g, "''")}'`).join(',')})`;
+  return `cmplnt_fr_dt IS NOT NULL AND (${offenseFilter}) AND latitude IS NOT NULL AND longitude IS NOT NULL`;
+}
+
+function fetchMaxComplaintDate(datasetUrl, datasetName) {
+  console.log(`  Fetching ${datasetName} max complaint date...`);
+
+  const where = getOffenseWhereClause();
+  const params = new URLSearchParams({
+    '$select': 'max(cmplnt_fr_dt)',
+    '$where': where,
+    '$limit': '1'
+  });
+
+  const url = `${datasetUrl}?${params.toString()}`;
+  const rows = fetchJSON(url);
+  const raw = rows?.[0]?.max_cmplnt_fr_dt ?? null;
+  const iso = toISODate(raw);
+  if (!iso) {
+    console.warn(`  Warning: Could not determine max complaint date for ${datasetName}`);
+  } else {
+    console.log(`  ${datasetName} data through: ${iso}`);
+  }
+  return iso;
+}
+
+function fetchWindowEndDate() {
+  console.log('\nDetermining latest available date...');
+
+  const historic = fetchMaxComplaintDate(CONFIG.CRIME_DATA_HISTORIC_URL, 'historic');
+  sleepMs(200);
+  const current = fetchMaxComplaintDate(CONFIG.CRIME_DATA_CURRENT_URL, 'current');
+
+  const endDate = [historic, current].filter(Boolean).sort().pop() || null;
+  if (!endDate) {
+    console.warn('  Warning: Falling back to today for date windows');
+    return new Date().toISOString().split('T')[0];
+  }
+
+  console.log(`  Using end date: ${endDate}`);
+  return endDate;
 }
 
 /**
@@ -560,30 +623,33 @@ function computeComparisons(ntaCrimes, boundaries, population) {
 /**
  * Get date range for a time window
  */
-function getDateRange(window) {
-  const now = new Date();
+function getDateRange(window, endDateISO) {
+  if (!window || typeof window !== 'string') throw new Error('getDateRange requires a window string');
+  if (!endDateISO) throw new Error('getDateRange requires an endDateISO (YYYY-MM-DD)');
+
+  const endDate = new Date(`${endDateISO}T00:00:00Z`);
   let startDate;
 
   switch (window) {
     case '12m':
-      startDate = new Date(now);
-      startDate.setMonth(now.getMonth() - 12);
+      startDate = new Date(endDate);
+      startDate.setMonth(endDate.getMonth() - 12);
       break;
     case '24m':
-      startDate = new Date(now);
-      startDate.setMonth(now.getMonth() - 24);
+      startDate = new Date(endDate);
+      startDate.setMonth(endDate.getMonth() - 24);
       break;
     case 'ytd':
-      startDate = new Date(now.getFullYear(), 0, 1);
+      startDate = new Date(endDate.getUTCFullYear(), 0, 1);
       break;
     default:
-      startDate = new Date(now);
-      startDate.setMonth(now.getMonth() - 12);
+      startDate = new Date(endDate);
+      startDate.setMonth(endDate.getMonth() - 12);
   }
 
   return {
     start: startDate.toISOString().split('T')[0],
-    end: now.toISOString().split('T')[0]
+    end: endDateISO
   };
 }
 
@@ -673,6 +739,8 @@ async function compile() {
     const population = estimatePopulations(boundaries);
     console.log(`  Estimated population for ${Object.keys(population).length} NTAs`);
 
+    const windowEndDateISO = fetchWindowEndDate();
+
     // Step 3 & 4: Fetch crime data and compute statistics for each time window
     const allStats = {};
     const allComparisons = {};
@@ -682,7 +750,7 @@ async function compile() {
       console.log(`Processing time window: ${window}`);
       console.log('='.repeat(40));
 
-      const dateRange = getDateRange(window);
+      const dateRange = getDateRange(window, windowEndDateISO);
       console.log(`\n[3/4] Fetching crime data for ${window}...`);
       const fetched = fetchCrimeData(dateRange.start, dateRange.end);
       const crimes = fetched.crimes;

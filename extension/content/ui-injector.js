@@ -186,7 +186,7 @@ class UIInjector {
       return this.generateErrorHTML('Unexpected data format');
     }
 
-    const { geography, metrics, timeWindow, measureDefs } = stats;
+    const { geography, metrics, timeWindow, measureDefs, dataThrough } = stats;
     const measure = uiState?.measure || 'ambient';
 
     const orderedMetricKeys = ['felonyAssault', 'propertyCrime', 'murder'];
@@ -213,14 +213,14 @@ class UIInjector {
             <span class="value">${this.escapeHtml(formattedValue)}</span>
             <span class="unit">${this.escapeHtml(unit)}</span>
           </div>
-          ${rank && total ? `<div class="metric-rank">NYC risk rank ${rank}/${total}</div>` : ''}
+          ${rank && total ? `<div class="metric-rank">NYC rank ${rank}/${total}</div>` : ''}
         </div>
       `;
     })
     .join('');
 
     const measureLabel = this.getMeasureLabel(measure);
-    const tooltip = this.getMeasureTooltip(measure);
+    const tooltip = this.getMeasureTooltip(measure, dataThrough);
 
     return `
       <div class="streetsafe-module">
@@ -517,8 +517,9 @@ class UIInjector {
     return labels[measure] || 'Measure';
   }
 
-  getMeasureTooltip(measure) {
-    const base = 'Uses NYPD complaint counts mapped to the NYC NTA containing the listing (may differ from StreetEasy neighborhood labels). Last 24 months. NYC risk rank: 1 is highest risk.';
+  getMeasureTooltip(measure, dataThrough) {
+    const through = dataThrough ? ` (through ${dataThrough})` : '';
+    const base = `Uses NYPD complaint counts mapped to the NYC NTA containing the listing (may differ from StreetEasy neighborhood labels). Last 24 months${through}. NYC rank: 1 is lowest risk.`;
     const map = {
       ambient: `Ambient risk index: incidents per 100k average people present (residents + daytime workers). ${base}`,
       per100k: `Per 100k residents: incidents per 100k census residents. ${base}`,

@@ -28,7 +28,7 @@ Then reload the extension.
 
 ## Data sources
 
-- NYPD Complaint Data: `https://data.cityofnewyork.us/resource/5uac-w243.json`
+- NYPD Complaint Data (merged): `qgea-i56i` (historic) + `5uac-w243` (current)
 - NTA boundaries: `https://data.cityofnewyork.us/resource/9nt8-h7nd.json`
 
 ## Disclaimer

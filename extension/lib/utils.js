@@ -119,7 +119,7 @@ async function fetchCrimeStats(lat, lon, window = CONFIG.DEFAULT_TIME_WINDOW) {
 
 /**
  * Attach computed measures (count/rate/density/ambient) and NYC risk ranks.
- * Risk ranks are descending (higher value = higher risk = rank 1).
+ * NYC rank is ascending: 1 = lowest risk (lowest value).
  * @param {{ntaId: string, timeWindow: string, metrics: Object}} params
  * @returns {Object}
  */
@@ -146,11 +146,26 @@ function enrichMetricsWithMeasures({ ntaId, timeWindow, metrics }) {
         items.push({ id, value });
       }
 
-      items.sort((a, b) => (b.value - a.value) || a.id.localeCompare(b.id));
+      // NYC rank: 1 = lowest risk (lowest value).
+      // Use a tie-aware competition rank so identical values share the same rank.
+      items.sort((a, b) => (a.value - b.value) || a.id.localeCompare(b.id));
+
       const total = items.length;
-      const index = items.findIndex(x => x.id === ntaId);
+      const ranks = {};
+      let currentRank = 0;
+      let lastValue = null;
+      for (let i = 0; i < items.length; i++) {
+        const v = items[i].value;
+        if (i === 0 || v !== lastValue) {
+          currentRank = i + 1;
+          lastValue = v;
+        }
+        ranks[items[i].id] = currentRank;
+      }
+
+      const rank = ranks[ntaId] ?? null;
       ranksByMeasure[measure] = {
-        riskRank: index === -1 ? null : index + 1,
+        riskRank: rank,
         total: total || null
       };
     }
