@@ -8,7 +8,7 @@
  *   PORT=4173 node scripts/serve-debug-map.js
  *
  * Then open:
- *   http://localhost:<port>/docs/debug-murder-map.html
+ *   http://localhost:<port>/docs/data-explorer.html
  */
 
 const http = require('http');
@@ -65,7 +65,7 @@ const server = http.createServer((req, res) => {
     }
 
     if (pathname === '/') {
-      pathname = '/docs/debug-murder-map.html';
+      pathname = '/docs/data-explorer.html';
     }
 
     if (pathname.startsWith('/docs/')) {
@@ -88,5 +88,5 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, '127.0.0.1', () => {
   // eslint-disable-next-line no-console
-  console.log(`SleepEasy debug server: http://localhost:${PORT}/docs/debug-murder-map.html`);
+  console.log(`SleepEasy debug server: http://localhost:${PORT}/docs/data-explorer.html`);
 });

@@ -97,7 +97,7 @@ const CONFIG = {
   },
 
   // Time windows to compute
-  TIME_WINDOWS: ['24m'],
+  TIME_WINDOWS: ['3m', '6m', '12m', '24m', 'ytd'],
 
   // Fallback population if NTA not in census data
   DEFAULT_POPULATION: 40000
@@ -437,7 +437,7 @@ function computeGeometryBBox(geometry) {
 function assignCrimesToNTAs(crimes, boundaries) {
   console.log('\n  Assigning crimes to NTAs...');
 
-  const ntaCrimes = {};
+  const events = [];
   let assigned = 0;
   let unassigned = 0;
 
@@ -455,17 +455,13 @@ function assignCrimesToNTAs(crimes, boundaries) {
     bbox: computeGeometryBBox(nta.geometry)
   }));
 
-  // Initialize counts for all NTAs
-  for (const ntaId of Object.keys(boundaries)) {
-    ntaCrimes[ntaId] = Object.fromEntries(metricKeys.map(k => [k, 0]));
-  }
-
   // Assign each crime to an NTA
   for (const crime of crimes) {
     const lon = parseFloat(crime.longitude);
     const lat = parseFloat(crime.latitude);
+    const date = toISODate(crime.cmplnt_fr_dt);
 
-    if (isNaN(lon) || isNaN(lat)) {
+    if (isNaN(lon) || isNaN(lat) || !date) {
       unassigned++;
       continue;
     }
@@ -490,7 +486,7 @@ function assignCrimesToNTAs(crimes, boundaries) {
     }
 
     if (foundNTA) {
-      ntaCrimes[foundNTA][metricKey] += 1;
+      events.push({ ntaId: foundNTA, metricKey, date });
       assigned++;
     } else {
       unassigned++;
@@ -498,7 +494,45 @@ function assignCrimesToNTAs(crimes, boundaries) {
   }
 
   console.log(`  Assigned ${assigned} crimes, ${unassigned} could not be assigned`);
-  return ntaCrimes;
+  return { events, assigned, unassigned };
+}
+
+function initNTACounts(boundaries) {
+  const metricKeys = Object.keys(CONFIG.CRIME_CATEGORIES);
+  const result = {};
+  for (const ntaId of Object.keys(boundaries)) {
+    result[ntaId] = Object.fromEntries(metricKeys.map(k => [k, 0]));
+  }
+  return result;
+}
+
+function computeCountsByWindow(events, boundaries, windowRanges) {
+  const metricKeys = Object.keys(CONFIG.CRIME_CATEGORIES);
+  if (!Array.isArray(windowRanges) || windowRanges.length === 0) {
+    throw new Error('computeCountsByWindow requires windowRanges');
+  }
+  const byWindow = {};
+  for (const r of windowRanges) {
+    byWindow[r.window] = initNTACounts(boundaries);
+  }
+
+  const firstWindow = windowRanges[0].window;
+  for (const event of events) {
+    if (!event) continue;
+    const ntaId = event.ntaId;
+    const metricKey = event.metricKey;
+    const date = event.date;
+    if (!ntaId || !metricKey || !date) continue;
+    if (!byWindow[firstWindow]?.[ntaId]) continue;
+    if (!metricKeys.includes(metricKey)) continue;
+
+    for (const r of windowRanges) {
+      if (date < r.start || date > r.end) continue;
+      byWindow[r.window][ntaId][metricKey] += 1;
+    }
+  }
+
+  return byWindow;
 }
 
 /**
@@ -631,6 +665,14 @@ function getDateRange(window, endDateISO) {
   let startDate;
 
   switch (window) {
+    case '3m':
+      startDate = new Date(endDate);
+      startDate.setMonth(endDate.getMonth() - 3);
+      break;
+    case '6m':
+      startDate = new Date(endDate);
+      startDate.setMonth(endDate.getMonth() - 6);
+      break;
     case '12m':
       startDate = new Date(endDate);
       startDate.setMonth(endDate.getMonth() - 12);
@@ -741,27 +783,37 @@ async function compile() {
 
     const windowEndDateISO = fetchWindowEndDate();
 
-    // Step 3 & 4: Fetch crime data and compute statistics for each time window
+    // Step 3 & 4: Fetch crimes once (max window), then compute all requested windows from that set.
     const allStats = {};
     const allComparisons = {};
 
-    for (const window of CONFIG.TIME_WINDOWS) {
+    const windowRanges = CONFIG.TIME_WINDOWS.map((window) => ({
+      window,
+      ...getDateRange(window, windowEndDateISO)
+    }));
+
+    const earliestStart = windowRanges.map(r => r.start).filter(Boolean).sort()[0];
+    if (!earliestStart) throw new Error('Could not determine earliest start date');
+
+    console.log(`\n[3/4] Fetching crime data (from ${earliestStart} to ${windowEndDateISO})...`);
+    const fetched = fetchCrimeData(earliestStart, windowEndDateISO);
+    const crimes = fetched.crimes;
+    const dataThroughISO = fetched.dataThrough || windowEndDateISO;
+
+    const assigned = assignCrimesToNTAs(crimes, boundaries);
+    const countsByWindow = computeCountsByWindow(assigned.events, boundaries, windowRanges);
+
+    for (const r of windowRanges) {
       console.log(`\n${'='.repeat(40)}`);
-      console.log(`Processing time window: ${window}`);
+      console.log(`Computing time window: ${r.window} (${r.start} to ${r.end})`);
       console.log('='.repeat(40));
 
-      const dateRange = getDateRange(window, windowEndDateISO);
-      console.log(`\n[3/4] Fetching crime data for ${window}...`);
-      const fetched = fetchCrimeData(dateRange.start, dateRange.end);
-      const crimes = fetched.crimes;
-      const dataThrough = fetched.dataThrough || dateRange.end;
-
-      const ntaCrimes = assignCrimesToNTAs(crimes, boundaries);
+      const ntaCrimes = countsByWindow[r.window];
       const { stats, comparisons } = computeStatistics(ntaCrimes, boundaries, population);
 
-      allStats[window] = stats;
-      allComparisons[window] = comparisons;
-      stats._meta = { ...(stats._meta || {}), dataThrough };
+      allStats[r.window] = stats;
+      allComparisons[r.window] = comparisons;
+      stats._meta = { ...(stats._meta || {}), dataThrough: dataThroughISO };
     }
 
     // Prepare output data

@@ -1,0 +1,1116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SleepEasy Debug — Data Explorer</title>
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+
+    <style>
+      :root {
+        --bg: #0b1220;
+        --panel: rgba(17, 24, 39, 0.92);
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --border: rgba(255, 255, 255, 0.12);
+        --chip: rgba(255, 255, 255, 0.08);
+        --input: rgba(255, 255, 255, 0.06);
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      #app {
+        position: relative;
+        height: 100%;
+      }
+
+      #map { height: 100%; width: 100%; }
+
+      .panel {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        width: min(480px, calc(100vw - 32px));
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px;
+        box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+        backdrop-filter: blur(8px);
+        z-index: 1000;
+      }
+
+      .title {
+        font-size: 14px;
+        font-weight: 800;
+        margin: 0 0 8px 0;
+      }
+
+      .row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin: 8px 0;
+      }
+
+      .muted { color: var(--muted); font-size: 12px; }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 8px;
+        border-radius: 999px;
+        background: var(--chip);
+        border: 1px solid var(--border);
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .field {
+        flex: 1;
+        min-width: 220px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .field-inline {
+        min-width: 140px;
+        flex: 0 0 auto;
+      }
+
+      input[type="text"], select {
+        width: 100%;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--input);
+        color: var(--text);
+        padding: 10px 12px;
+        font-size: 13px;
+        outline: none;
+      }
+
+      select { cursor: pointer; }
+
+      label {
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        font-size: 12px;
+        color: var(--muted);
+        user-select: none;
+      }
+
+      .legend {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid var(--border);
+      }
+
+      .legend-bar {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 6px;
+        margin-top: 8px;
+      }
+
+      .swatch {
+        height: 10px;
+        border-radius: 6px;
+        border: 1px solid rgba(255,255,255,0.18);
+      }
+
+      .kvs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px 10px;
+        margin-top: 10px;
+        font-size: 12px;
+      }
+
+      .kvs .k { color: var(--muted); }
+
+      .section {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid var(--border);
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 10px;
+      }
+
+      .list {
+        margin-top: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        max-height: 160px;
+        overflow: auto;
+        padding-right: 4px;
+      }
+
+      .item {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 10px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(255,255,255,0.05);
+        padding: 8px 10px;
+        cursor: pointer;
+      }
+
+      .item:hover { background: rgba(255,255,255,0.08); }
+      .item .left { font-size: 12px; font-weight: 700; color: var(--text); }
+      .item .right { font-size: 12px; font-weight: 800; color: var(--text); white-space: nowrap; }
+      .item .sub { color: var(--muted); font-weight: 600; margin-left: 6px; }
+
+      .status {
+        font-size: 12px;
+        font-weight: 700;
+        color: rgba(229, 231, 235, 0.9);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div id="map"></div>
+
+      <div class="panel" role="region" aria-label="Controls">
+        <h1 class="title">SleepEasy Debug — Data Explorer</h1>
+
+        <div class="row">
+          <div class="chip" id="meta">Loading…</div>
+          <div class="chip" id="totals">—</div>
+        </div>
+
+        <div class="row">
+          <div class="field field-inline">
+            <div class="muted">Metric</div>
+            <select id="metric"></select>
+          </div>
+          <div class="field field-inline">
+            <div class="muted">Timeframe</div>
+            <select id="window"></select>
+          </div>
+          <div class="field field-inline">
+            <div class="muted">Measure</div>
+            <select id="measure"></select>
+          </div>
+          <div class="field field-inline">
+            <div class="muted">Incidents</div>
+            <select id="incidentsMode">
+              <option value="off" selected>Off</option>
+              <option value="points">Points (selected NTA)</option>
+              <option value="heat">Heat (selected NTA)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="muted">Search NTA (code or name)</div>
+          <input id="search" type="text" placeholder="e.g. MN0303 or East Village or Astoria" autocomplete="off" />
+          <div class="row">
+            <label><input id="onlyNonZero" type="checkbox" /> Value &gt; 0</label>
+            <label><input id="sortHighToLow" type="checkbox" checked /> Sort high → low</label>
+          </div>
+        </div>
+
+        <div class="legend">
+          <div class="muted" id="legendLabel">Color scale</div>
+          <div class="legend-bar" id="legendBar"></div>
+          <div class="kvs">
+            <div class="k">Selected</div><div class="v" id="selectedLabel">—</div>
+            <div class="k">Value</div><div class="v" id="selectedValue">—</div>
+            <div class="k">NYC rank</div><div class="v" id="selectedRank">—</div>
+            <div class="k">Murders</div><div class="v" id="selectedMurders">—</div>
+            <div class="k">Felony Assault</div><div class="v" id="selectedFelonyAssault">—</div>
+            <div class="k">Property Crime</div><div class="v" id="selectedPropertyCrime">—</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-header">
+            <div class="muted">Matches</div>
+            <div class="muted" id="matchCount">—</div>
+          </div>
+          <div class="list" id="matchesList" aria-label="Matching NTAs"></div>
+        </div>
+
+        <div class="section">
+          <div class="section-header">
+            <div class="muted">Incidents</div>
+            <div class="status" id="incidentStatus">Off</div>
+          </div>
+          <div class="list" id="incidentList" aria-label="Incident list"></div>
+        </div>
+      </div>
+    </div>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js" crossorigin=""></script>
+
+    <script>
+      const DATASETS = {
+        historic: 'https://data.cityofnewyork.us/resource/qgea-i56i.json',
+        current: 'https://data.cityofnewyork.us/resource/5uac-w243.json'
+      };
+
+      const METRICS = {
+        murder: {
+          label: 'Murder',
+          offenses: ['MURDER & NON-NEGL. MANSLAUGHTER']
+        },
+        felonyAssault: {
+          label: 'Felony Assault',
+          offenses: ['FELONY ASSAULT']
+        },
+        propertyCrime: {
+          label: 'Property Crime',
+          offenses: ['BURGLARY', 'GRAND LARCENY', 'GRAND LARCENY OF MOTOR VEHICLE']
+        }
+      };
+
+      const MEASURES = {
+        count: { label: 'Raw (count)', unit: 'incidents' },
+        per100k: { label: 'Per 100k residents', unit: '/ 100k' },
+        perSqMi: { label: 'Per sq mi', unit: '/ sq mi' },
+        ambient: { label: 'Ambient risk index', unit: '/ 100k' }
+      };
+
+      const byId = (id) => document.getElementById(id);
+
+      const state = {
+        map: null,
+        choropleth: null,
+        incidentLayer: null,
+        heatLayer: null,
+        boundaries: null,
+        stats: null,
+        exposures: null,
+        featureCollection: null,
+        ntaMetaById: new Map(),
+        selectedId: null,
+        valueByNta: new Map(),
+        countByNta: new Map(),
+        rankByNta: new Map(),
+        incidentAbort: null,
+        lastIncidentKey: null
+      };
+
+      const EARTH_RADIUS_M = 6378137;
+      const SQ_METERS_PER_SQ_MILE = 2589988.110336;
+      const MAX_INCIDENTS_FETCH = 15000;
+      const MAX_POINTS_RENDER = 5000;
+      const MAX_INCIDENTS_LIST = 250;
+
+      function clamp(num, min, max) {
+        return Math.min(max, Math.max(min, num));
+      }
+
+      function toRad(deg) {
+        return (deg * Math.PI) / 180;
+      }
+
+      function projectLonLatToMeters(lon, lat, refLatRad) {
+        const x = toRad(lon) * EARTH_RADIUS_M * Math.cos(refLatRad);
+        const y = toRad(lat) * EARTH_RADIUS_M;
+        return [x, y];
+      }
+
+      function ringAreaSqMeters(ring) {
+        if (!Array.isArray(ring) || ring.length < 3) return 0;
+
+        let sumLat = 0;
+        let count = 0;
+        for (const coord of ring) {
+          if (!coord || coord.length < 2) continue;
+          sumLat += coord[1];
+          count += 1;
+        }
+        const refLatRad = toRad(count ? sumLat / count : 40.72);
+
+        const n = ring.length;
+        let twiceArea = 0;
+        for (let i = 0; i < n; i++) {
+          const [lon1, lat1] = ring[i];
+          const [lon2, lat2] = ring[(i + 1) % n];
+          const [x1, y1] = projectLonLatToMeters(lon1, lat1, refLatRad);
+          const [x2, y2] = projectLonLatToMeters(lon2, lat2, refLatRad);
+          twiceArea += (x1 * y2) - (x2 * y1);
+        }
+
+        return Math.abs(twiceArea) / 2;
+      }
+
+      function geometryAreaSqMeters(geometry) {
+        if (!geometry) return 0;
+
+        if (geometry.type === 'Polygon') {
+          const rings = geometry.coordinates || [];
+          if (rings.length === 0) return 0;
+          const outer = ringAreaSqMeters(rings[0]);
+          const holes = rings.slice(1).reduce((acc, r) => acc + ringAreaSqMeters(r), 0);
+          return Math.max(0, outer - holes);
+        }
+
+        if (geometry.type === 'MultiPolygon') {
+          const polys = geometry.coordinates || [];
+          let total = 0;
+          for (const poly of polys) {
+            if (!poly || poly.length === 0) continue;
+            const outer = ringAreaSqMeters(poly[0]);
+            const holes = poly.slice(1).reduce((acc, r) => acc + ringAreaSqMeters(r), 0);
+            total += Math.max(0, outer - holes);
+          }
+          return total;
+        }
+
+        return 0;
+      }
+
+      function computeGeometryBBox(geometry) {
+        if (!geometry) return null;
+        let minLon = Infinity, minLat = Infinity, maxLon = -Infinity, maxLat = -Infinity;
+
+        const visitRing = (ring) => {
+          for (const coord of ring) {
+            if (!coord || coord.length < 2) continue;
+            const lon = coord[0];
+            const lat = coord[1];
+            if (lon < minLon) minLon = lon;
+            if (lon > maxLon) maxLon = lon;
+            if (lat < minLat) minLat = lat;
+            if (lat > maxLat) maxLat = lat;
+          }
+        };
+
+        if (geometry.type === 'Polygon') {
+          for (const ring of geometry.coordinates || []) visitRing(ring);
+        } else if (geometry.type === 'MultiPolygon') {
+          for (const poly of geometry.coordinates || []) {
+            for (const ring of poly || []) visitRing(ring);
+          }
+        }
+
+        if (!Number.isFinite(minLon) || !Number.isFinite(minLat) || !Number.isFinite(maxLon) || !Number.isFinite(maxLat)) {
+          return null;
+        }
+
+        return { minLon, minLat, maxLon, maxLat };
+      }
+
+      function pointInPolygon(point, polygon) {
+        const [x, y] = point;
+        let inside = false;
+
+        for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+          const [xi, yi] = polygon[i];
+          const [xj, yj] = polygon[j];
+
+          if (((yi > y) !== (yj > y)) && (x < ((xj - xi) * (y - yi)) / (yj - yi) + xi)) {
+            inside = !inside;
+          }
+        }
+
+        return inside;
+      }
+
+      function pointInGeometry(lon, lat, geometry) {
+        const point = [lon, lat];
+
+        if (geometry.type === 'Polygon') {
+          if (!pointInPolygon(point, geometry.coordinates[0])) return false;
+          for (let i = 1; i < geometry.coordinates.length; i++) {
+            if (pointInPolygon(point, geometry.coordinates[i])) return false;
+          }
+          return true;
+        }
+
+        if (geometry.type === 'MultiPolygon') {
+          for (const polygon of geometry.coordinates) {
+            if (!pointInPolygon(point, polygon[0])) continue;
+            let inHole = false;
+            for (let i = 1; i < polygon.length; i++) {
+              if (pointInPolygon(point, polygon[i])) {
+                inHole = true;
+                break;
+              }
+            }
+            if (!inHole) return true;
+          }
+        }
+
+        return false;
+      }
+
+      function computeAmbientPopulation(population, jobsWac) {
+        const pop = Number(population) || 0;
+        const jobs = Number(jobsWac) || 0;
+        return ((pop * 16) + (jobs * 8)) / 24;
+      }
+
+      function labelForWindow(windowId) {
+        if (typeof windowId !== 'string') return String(windowId);
+        if (windowId === 'ytd') return 'YTD';
+        const m = windowId.match(/^(\d+)m$/);
+        if (m) return `Last ${Number(m[1])} months`;
+        return windowId;
+      }
+
+      function computeWindowRange(windowId, dataThroughISO) {
+        const endISO = dataThroughISO || new Date().toISOString().slice(0, 10);
+        const end = new Date(`${endISO}T00:00:00Z`);
+
+        if (windowId === 'ytd') {
+          const start = new Date(Date.UTC(end.getUTCFullYear(), 0, 1));
+          return { startISO: start.toISOString().slice(0, 10), endISO };
+        }
+
+        const m = String(windowId).match(/^(\d+)m$/);
+        if (m) {
+          const months = Number(m[1]);
+          const start = new Date(end);
+          start.setUTCMonth(start.getUTCMonth() - months);
+          return { startISO: start.toISOString().slice(0, 10), endISO };
+        }
+
+        return { startISO: null, endISO };
+      }
+
+      function formatValue(value, measure) {
+        if (!Number.isFinite(value)) return '—';
+        if (measure === 'count') return Math.round(value).toLocaleString('en-US');
+        return value.toFixed(1);
+      }
+
+      function colorForValue(value, max) {
+        if (!Number.isFinite(value)) return 'rgba(148, 163, 184, 0.25)'; // slate-400-ish
+        const t = max <= 0 ? 0 : clamp(value / max, 0, 1);
+        const start = { r: 236, g: 253, b: 245 }; // #ecfdf5
+        const end = { r: 239, g: 68, b: 68 };    // #ef4444
+        const r = Math.round(start.r + (end.r - start.r) * t);
+        const g = Math.round(start.g + (end.g - start.g) * t);
+        const b = Math.round(start.b + (end.b - start.b) * t);
+        return `rgb(${r}, ${g}, ${b})`;
+      }
+
+      function buildLegend(max, measure) {
+        const steps = 6;
+        const bar = byId('legendBar');
+        bar.innerHTML = '';
+
+        for (let i = 0; i < steps; i++) {
+          const value = max <= 0 ? 0 : (max * i) / (steps - 1);
+          const swatch = document.createElement('div');
+          swatch.className = 'swatch';
+          swatch.title = formatValue(value, measure);
+          swatch.style.background = colorForValue(value, max);
+          bar.appendChild(swatch);
+        }
+      }
+
+      function computeCompetitionRanks(valueByNta) {
+        const entries = Array.from(valueByNta.entries())
+          .filter(([, v]) => Number.isFinite(v))
+          .map(([id, value]) => ({ id, value }));
+
+        entries.sort((a, b) => (a.value - b.value) || a.id.localeCompare(b.id));
+
+        const ranks = new Map();
+        let currentRank = 0;
+        let lastValue = null;
+        for (let i = 0; i < entries.length; i++) {
+          const v = entries[i].value;
+          if (i === 0 || v !== lastValue) {
+            currentRank = i + 1;
+            lastValue = v;
+          }
+          ranks.set(entries[i].id, currentRank);
+        }
+
+        return { ranks, total: entries.length };
+      }
+
+      function getActiveSelections() {
+        return {
+          metric: byId('metric').value || 'murder',
+          window: byId('window').value || '24m',
+          measure: byId('measure').value || 'count',
+          incidentsMode: byId('incidentsMode').value || 'off'
+        };
+      }
+
+      function computeValuesForSelection({ metric, window, measure }) {
+        const windowStats = state.stats?.stats?.[window] || null;
+        if (!windowStats) throw new Error(`Missing stats window "${window}"`);
+
+        state.valueByNta.clear();
+        state.countByNta.clear();
+
+        for (const feature of state.featureCollection.features) {
+          const ntaId = feature.properties.id;
+          const entry = windowStats?.[ntaId]?.[metric] || null;
+          const count = Number(entry?.count ?? NaN);
+          const rate = Number(entry?.rate ?? NaN);
+          state.countByNta.set(ntaId, Number.isFinite(count) ? count : 0);
+
+          const meta = state.ntaMetaById.get(ntaId) || {};
+          const exposure = state.exposures?.[ntaId] || null;
+          const areaSqMi = meta.areaSqMi;
+
+          let value = null;
+          if (measure === 'count') value = Number.isFinite(count) ? count : null;
+          else if (measure === 'per100k') value = Number.isFinite(rate) ? rate : null;
+          else if (measure === 'perSqMi') {
+            if (Number.isFinite(count) && Number.isFinite(areaSqMi) && areaSqMi > 0) value = count / areaSqMi;
+          } else if (measure === 'ambient') {
+            const ambientPop = computeAmbientPopulation(exposure?.population, exposure?.jobsWac);
+            if (Number.isFinite(count) && Number.isFinite(ambientPop) && ambientPop > 0) value = (count / ambientPop) * 100000;
+          }
+
+          state.valueByNta.set(ntaId, Number.isFinite(value) ? value : null);
+        }
+
+        const maxValue = Math.max(0, ...Array.from(state.valueByNta.values()).map(v => Number.isFinite(v) ? v : 0));
+        const { ranks, total } = computeCompetitionRanks(state.valueByNta);
+        state.rankByNta = ranks;
+        state.rankTotal = total;
+
+        return { maxValue, windowStats };
+      }
+
+      function styleFeature(feature, maxValue) {
+        const ntaId = feature.properties.id;
+        const value = state.valueByNta.get(ntaId);
+        const fill = colorForValue(value, maxValue);
+        const selected = state.selectedId && state.selectedId === ntaId;
+        return {
+          color: selected ? '#111827' : 'rgba(17,24,39,0.35)',
+          weight: selected ? 2.5 : 1,
+          opacity: 1,
+          fillColor: fill,
+          fillOpacity: Number.isFinite(value) ? 0.75 : 0.35
+        };
+      }
+
+      function setSelected(ntaId) {
+        state.selectedId = ntaId || null;
+
+        const meta = ntaId ? state.ntaMetaById.get(ntaId) : null;
+        const name = meta?.name || (ntaId || '—');
+        byId('selectedLabel').textContent = ntaId ? `${name} (${ntaId})` : '—';
+
+        const { metric, window, measure } = getActiveSelections();
+        const windowStats = state.stats?.stats?.[window] || null;
+        const metrics = ntaId && windowStats ? windowStats[ntaId] : null;
+
+        const value = ntaId ? state.valueByNta.get(ntaId) : null;
+        byId('selectedValue').textContent = formatValue(value, measure) + (MEASURES[measure]?.unit ? ` ${MEASURES[measure].unit}` : '');
+
+        const rank = ntaId ? (state.rankByNta.get(ntaId) ?? null) : null;
+        byId('selectedRank').textContent = rank && state.rankTotal ? `${rank}/${state.rankTotal} (1 = lowest)` : '—';
+
+        byId('selectedMurders').textContent = metrics?.murder?.count ?? '—';
+        byId('selectedFelonyAssault').textContent = metrics?.felonyAssault?.count ?? '—';
+        byId('selectedPropertyCrime').textContent = metrics?.propertyCrime?.count ?? '—';
+      }
+
+      function renderChoropleth({ maxValue }) {
+        if (state.choropleth) {
+          state.choropleth.remove();
+          state.choropleth = null;
+        }
+
+        state.choropleth = L.geoJSON(state.featureCollection, {
+          style: (feature) => styleFeature(feature, maxValue),
+          onEachFeature: (feature, layer) => {
+            const ntaId = feature.properties.id;
+            const name = feature.properties.name;
+            layer.on('click', () => {
+              setSelected(ntaId);
+              renderAll(); // refresh styles + (optional) incidents
+            });
+
+            const { metric, measure } = getActiveSelections();
+            const v = state.valueByNta.get(ntaId);
+            const raw = state.countByNta.get(ntaId) || 0;
+            const unit = MEASURES[measure]?.unit || '';
+            const label = METRICS[metric]?.label || metric;
+            const valText = formatValue(v, measure);
+            layer.bindTooltip(
+              `${name} (${ntaId})<br/>${label}: <b>${valText}</b> <span style="opacity:.8">${unit}</span><br/>Raw count: <b>${raw}</b>`,
+              { sticky: true }
+            );
+          }
+        }).addTo(state.map);
+      }
+
+      function renderMatchesList() {
+        const query = (byId('search').value || '').trim().toLowerCase();
+        const onlyNonZero = byId('onlyNonZero').checked === true;
+        const sortHighToLow = byId('sortHighToLow').checked === true;
+
+        const { metric, window, measure } = getActiveSelections();
+        const label = METRICS[metric]?.label || metric;
+        const unit = MEASURES[measure]?.unit || '';
+
+        const entries = [];
+        for (const feature of state.featureCollection.features) {
+          const id = feature.properties.id;
+          const name = feature.properties.name;
+          const value = state.valueByNta.get(id);
+          const count = state.countByNta.get(id) || 0;
+
+          if (onlyNonZero && (!Number.isFinite(value) || value <= 0)) continue;
+          if (query) {
+            const idLower = String(id).toLowerCase();
+            const nameLower = String(name).toLowerCase();
+            if (!idLower.includes(query) && !nameLower.includes(query)) continue;
+          }
+
+          entries.push({ id, name, value, count });
+        }
+
+        entries.sort((a, b) => {
+          const av = Number.isFinite(a.value) ? a.value : -Infinity;
+          const bv = Number.isFinite(b.value) ? b.value : -Infinity;
+          if (av !== bv) return sortHighToLow ? (bv - av) : (av - bv);
+          return a.name.localeCompare(b.name);
+        });
+
+        byId('matchCount').textContent = `${entries.length} / ${state.featureCollection.features.length}`;
+        const list = byId('matchesList');
+        list.innerHTML = '';
+
+        for (const entry of entries.slice(0, 20)) {
+          const el = document.createElement('div');
+          el.className = 'item';
+          el.setAttribute('role', 'button');
+          el.setAttribute('tabindex', '0');
+
+          const valueText = formatValue(entry.value, measure);
+          const countText = entry.count.toLocaleString('en-US');
+          el.innerHTML = `
+            <div class="left">${entry.name} <span class="sub">(${entry.id})</span></div>
+            <div class="right">${valueText}<span class="sub">${unit}</span></div>
+          `;
+
+          const activate = () => {
+            setSelected(entry.id);
+            try {
+              const tmp = L.geoJSON(state.ntaMetaById.get(entry.id)?.feature);
+              state.map.fitBounds(tmp.getBounds().pad(0.08));
+            } catch {}
+            renderAll();
+          };
+
+          el.addEventListener('click', activate);
+          el.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') activate();
+          });
+
+          list.appendChild(el);
+        }
+      }
+
+      function updateHeaderChips({ metric, window, measure, windowStats }) {
+        const label = METRICS[metric]?.label || metric;
+        const comparisons = state.stats?.comparisons?.[window] || null;
+        const nycAvg = comparisons?.nycAverage?.[metric] ?? null;
+
+        let totalCount = 0;
+        for (const metrics of Object.values(windowStats)) {
+          totalCount += Number(metrics?.[metric]?.count || 0);
+        }
+
+        const avgText = Number.isFinite(nycAvg) ? ` · NYC avg: ${nycAvg.toFixed(2)}/100k` : '';
+        byId('totals').textContent = `NYC total ${label}: ${totalCount.toLocaleString('en-US')}${avgText}`;
+      }
+
+      function clearIncidents() {
+        if (state.incidentLayer) {
+          state.incidentLayer.remove();
+          state.incidentLayer = null;
+        }
+        if (state.heatLayer) {
+          state.heatLayer.remove();
+          state.heatLayer = null;
+        }
+        state.lastIncidentKey = null;
+        byId('incidentList').innerHTML = '';
+        byId('incidentStatus').textContent = 'Off';
+      }
+
+      function escapeSoqlString(value) {
+        return String(value).replace(/'/g, "''");
+      }
+
+      function cleanText(value) {
+        if (value === null || value === undefined) return null;
+        const str = String(value).trim();
+        if (!str) return null;
+        const lower = str.toLowerCase();
+        if (lower === '(null)' || lower === 'null') return null;
+        return str;
+      }
+
+      async function fetchIncidentsFromDataset(datasetUrl, whereBase, signal) {
+        const incidents = [];
+        const LIMIT = 50000;
+        let last = null;
+
+        while (true) {
+          if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+          const where = last ? `${whereBase} AND cmplnt_num > '${escapeSoqlString(last)}'` : whereBase;
+
+          const params = new URLSearchParams({
+            '$where': where,
+            '$limit': String(LIMIT),
+            '$order': 'cmplnt_num',
+            '$select': 'cmplnt_num,cmplnt_fr_dt,ofns_desc,pd_desc,latitude,longitude'
+          });
+
+          const url = `${datasetUrl}?${params.toString()}`;
+          const res = await fetch(url, { signal });
+          if (!res.ok) throw new Error(`Incident fetch failed (${res.status})`);
+          const page = await res.json();
+          if (!Array.isArray(page) || page.length === 0) break;
+
+          incidents.push(...page);
+          if (incidents.length >= MAX_INCIDENTS_FETCH) break;
+          if (page.length < LIMIT) break;
+
+          const lastRow = page[page.length - 1];
+          const nextLast = lastRow?.cmplnt_num ? String(lastRow.cmplnt_num) : null;
+          if (!nextLast || nextLast === last) break;
+          last = nextLast;
+        }
+
+        return incidents;
+      }
+
+      async function loadAndRenderIncidents({ metric, window, incidentsMode }) {
+        if (incidentsMode === 'off' || !state.selectedId) {
+          clearIncidents();
+          return;
+        }
+
+        const key = `${state.selectedId}:${metric}:${window}:${incidentsMode}`;
+        if (state.lastIncidentKey === key) return;
+        state.lastIncidentKey = key;
+
+        if (state.incidentAbort) state.incidentAbort.abort();
+        state.incidentAbort = new AbortController();
+        const { signal } = state.incidentAbort;
+
+        const selectedMeta = state.ntaMetaById.get(state.selectedId) || null;
+        const geometry = selectedMeta?.geometry || null;
+        const bbox = selectedMeta?.bbox || null;
+        if (!geometry || !bbox) {
+          byId('incidentStatus').textContent = 'No geometry';
+          return;
+        }
+
+        const range = computeWindowRange(window, state.stats?.dataThrough);
+        if (!range.startISO || !range.endISO) {
+          byId('incidentStatus').textContent = 'Bad window';
+          return;
+        }
+
+        const offenses = METRICS[metric]?.offenses || [];
+        const offenseFilter = `upper(ofns_desc) in(${offenses.map(o => `'${escapeSoqlString(String(o).toUpperCase())}'`).join(',')})`;
+
+        const bboxFilter = [
+          `latitude >= ${bbox.minLat}`,
+          `latitude <= ${bbox.maxLat}`,
+          `longitude >= ${bbox.minLon}`,
+          `longitude <= ${bbox.maxLon}`
+        ].join(' AND ');
+
+        const whereBase = [
+          `cmplnt_fr_dt IS NOT NULL`,
+          `cmplnt_fr_dt >= '${range.startISO}'`,
+          `cmplnt_fr_dt <= '${range.endISO}'`,
+          `cmplnt_num IS NOT NULL`,
+          `latitude IS NOT NULL`,
+          `longitude IS NOT NULL`,
+          offenseFilter,
+          bboxFilter
+        ].join(' AND ');
+
+        byId('incidentStatus').textContent = 'Loading…';
+        byId('incidentList').innerHTML = '';
+
+        try {
+          const [historicRows, currentRows] = await Promise.all([
+            fetchIncidentsFromDataset(DATASETS.historic, whereBase, signal),
+            fetchIncidentsFromDataset(DATASETS.current, whereBase, signal)
+          ]);
+
+          const seen = new Set();
+          const merged = [];
+          for (const row of [...historicRows, ...currentRows]) {
+            const id = row?.cmplnt_num ? String(row.cmplnt_num) : null;
+            if (!id || seen.has(id)) continue;
+            seen.add(id);
+            merged.push(row);
+          }
+
+          const filtered = [];
+          for (const row of merged) {
+            const lat = Number(row?.latitude);
+            const lon = Number(row?.longitude);
+            if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+            if (!pointInGeometry(lon, lat, geometry)) continue;
+            filtered.push({
+              id: row?.cmplnt_num ? String(row.cmplnt_num) : '—',
+              date: row?.cmplnt_fr_dt ? String(row.cmplnt_fr_dt).slice(0, 10) : null,
+              offense: cleanText(row?.ofns_desc),
+              detail: cleanText(row?.pd_desc),
+              lat,
+              lon
+            });
+          }
+
+          filtered.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')) || a.id.localeCompare(b.id));
+
+          renderIncidentsOnMap(filtered, incidentsMode);
+          renderIncidentList(filtered);
+
+          const truncated = merged.length >= MAX_INCIDENTS_FETCH;
+          byId('incidentStatus').textContent = `${filtered.length.toLocaleString('en-US')}${truncated ? '+' : ''}`;
+        } catch (err) {
+          if (err?.name === 'AbortError') return;
+          byId('incidentStatus').textContent = 'Error';
+          console.error(err);
+        }
+      }
+
+      function renderIncidentsOnMap(incidents, mode) {
+        if (state.incidentLayer) {
+          state.incidentLayer.remove();
+          state.incidentLayer = null;
+        }
+        if (state.heatLayer) {
+          state.heatLayer.remove();
+          state.heatLayer = null;
+        }
+
+        if (!Array.isArray(incidents) || incidents.length === 0) return;
+
+        if (mode === 'heat' && typeof L.heatLayer === 'function') {
+          const pts = incidents.map(i => [i.lat, i.lon, 1]);
+          state.heatLayer = L.heatLayer(pts, { radius: 18, blur: 18, maxZoom: 14 }).addTo(state.map);
+          return;
+        }
+
+        const points = incidents.slice(0, MAX_POINTS_RENDER);
+        const group = L.layerGroup();
+        for (const inc of points) {
+          const marker = L.circleMarker([inc.lat, inc.lon], {
+            radius: 3,
+            color: 'rgba(255,255,255,0.55)',
+            weight: 1,
+            fillColor: '#60a5fa',
+            fillOpacity: 0.85
+          });
+          marker.bindTooltip(`${inc.date || '—'}<br/>${inc.detail || inc.offense || '—'}<br/><span style="opacity:.75">#${inc.id}</span>`);
+          marker.addTo(group);
+        }
+        group.addTo(state.map);
+        state.incidentLayer = group;
+      }
+
+      function renderIncidentList(incidents) {
+        const list = byId('incidentList');
+        list.innerHTML = '';
+
+        if (!Array.isArray(incidents) || incidents.length === 0) {
+          const el = document.createElement('div');
+          el.className = 'muted';
+          el.textContent = 'No incidents found for selection.';
+          list.appendChild(el);
+          return;
+        }
+
+        const limited = incidents.slice(0, MAX_INCIDENTS_LIST);
+        for (const inc of limited) {
+          const el = document.createElement('div');
+          el.className = 'item';
+          el.setAttribute('role', 'button');
+          el.setAttribute('tabindex', '0');
+          el.innerHTML = `
+            <div class="left">${inc.date || '—'} <span class="sub">#${inc.id}</span></div>
+            <div class="right">${(inc.detail || inc.offense || '—').slice(0, 40)}<span class="sub"></span></div>
+          `;
+          const activate = () => {
+            try {
+              state.map.setView([inc.lat, inc.lon], Math.max(15, state.map.getZoom()));
+            } catch {}
+          };
+          el.addEventListener('click', activate);
+          el.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') activate();
+          });
+          list.appendChild(el);
+        }
+
+        if (incidents.length > MAX_INCIDENTS_LIST) {
+          const more = document.createElement('div');
+          more.className = 'muted';
+          more.textContent = `Showing ${MAX_INCIDENTS_LIST} of ${incidents.length.toLocaleString('en-US')} incidents`;
+          list.appendChild(more);
+        }
+      }
+
+      function populateSelect(select, items, { selected } = {}) {
+        select.innerHTML = '';
+        for (const item of items) {
+          const opt = document.createElement('option');
+          opt.value = item.value;
+          opt.textContent = item.label;
+          if (selected && item.value === selected) opt.selected = true;
+          select.appendChild(opt);
+        }
+      }
+
+      function initMap() {
+        state.map = L.map('map', { preferCanvas: true });
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+          attribution: '&copy; OpenStreetMap &copy; CARTO',
+          subdomains: 'abcd',
+          maxZoom: 18
+        }).addTo(state.map);
+      }
+
+      async function loadBundledData() {
+        const [boundariesRes, statsRes] = await Promise.all([
+          fetch('/data/nta-boundaries.json'),
+          fetch('/data/crime-stats.json')
+        ]);
+
+        if (!boundariesRes.ok) throw new Error(`Failed to load NTA boundaries: ${boundariesRes.status}`);
+        if (!statsRes.ok) throw new Error(`Failed to load crime stats: ${statsRes.status}`);
+
+        const boundaries = await boundariesRes.json();
+        const stats = await statsRes.json();
+
+        let exposures = null;
+        try {
+          const expRes = await fetch('/data/nta-exposure.json');
+          if (expRes.ok) {
+            const exp = await expRes.json();
+            exposures = exp?.exposures || null;
+          }
+        } catch {}
+
+        state.boundaries = boundaries?.boundaries || {};
+        state.stats = stats;
+        state.exposures = exposures;
+
+        const features = Object.values(state.boundaries).map((nta) => ({
+          type: 'Feature',
+          properties: { id: nta.id, name: nta.name, borough: nta.borough },
+          geometry: nta.geometry
+        }));
+
+        state.featureCollection = { type: 'FeatureCollection', features };
+        state.ntaMetaById.clear();
+
+        for (const f of features) {
+          const areaSqMi = geometryAreaSqMeters(f.geometry) / SQ_METERS_PER_SQ_MILE;
+          const bbox = computeGeometryBBox(f.geometry);
+          state.ntaMetaById.set(f.properties.id, {
+            id: f.properties.id,
+            name: f.properties.name,
+            borough: f.properties.borough,
+            geometry: f.geometry,
+            bbox,
+            areaSqMi,
+            feature: f
+          });
+        }
+
+        const windows = Array.isArray(stats.timeWindows) ? stats.timeWindows.slice() : Object.keys(stats.stats || {});
+        windows.sort((a, b) => {
+          const pa = a === 'ytd' ? -1 : (Number(a.match(/^(\d+)m$/)?.[1] ?? 9999));
+          const pb = b === 'ytd' ? -1 : (Number(b.match(/^(\d+)m$/)?.[1] ?? 9999));
+          return pa - pb;
+        });
+
+        populateSelect(byId('metric'), Object.entries(METRICS).map(([value, def]) => ({ value, label: def.label })), { selected: 'murder' });
+        populateSelect(byId('window'), windows.map(w => ({ value: w, label: labelForWindow(w) })), { selected: windows.includes('24m') ? '24m' : windows[0] });
+        populateSelect(byId('measure'), Object.entries(MEASURES).map(([value, def]) => ({ value, label: def.label })), { selected: 'count' });
+
+        byId('meta').textContent = `dataThrough: ${stats.dataThrough || '—'} · generated: ${stats.generated || '—'}`;
+
+        const bounds = L.geoJSON(state.featureCollection).getBounds();
+        state.map.fitBounds(bounds.pad(0.05));
+      }
+
+      function renderAll() {
+        const { metric, window, measure, incidentsMode } = getActiveSelections();
+        const { maxValue, windowStats } = computeValuesForSelection({ metric, window, measure });
+
+        byId('legendLabel').textContent = `Color scale (${METRICS[metric]?.label || metric}, ${MEASURES[measure]?.label || measure})`;
+        buildLegend(maxValue, measure);
+
+        renderChoropleth({ maxValue });
+        updateHeaderChips({ metric, window, measure, windowStats });
+        renderMatchesList();
+        setSelected(state.selectedId);
+
+        loadAndRenderIncidents({ metric, window, incidentsMode });
+      }
+
+      function wireControls() {
+        byId('metric').addEventListener('change', () => renderAll());
+        byId('window').addEventListener('change', () => renderAll());
+        byId('measure').addEventListener('change', () => renderAll());
+        byId('incidentsMode').addEventListener('change', () => renderAll());
+        byId('search').addEventListener('input', () => renderMatchesList());
+        byId('onlyNonZero').addEventListener('change', () => renderMatchesList());
+        byId('sortHighToLow').addEventListener('change', () => renderMatchesList());
+      }
+
+      (async function main() {
+        try {
+          initMap();
+          wireControls();
+          await loadBundledData();
+          renderAll();
+        } catch (err) {
+          byId('meta').textContent = 'Error';
+          byId('totals').textContent = String(err?.message || err);
+          console.error(err);
+        }
+      })();
+    </script>
+  </body>
+</html>

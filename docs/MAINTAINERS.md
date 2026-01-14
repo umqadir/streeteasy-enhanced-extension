@@ -24,10 +24,10 @@ This is for development/debugging/release notes. End-user usage lives in `README
 
 ## Debug map
 
-Interactive murder map (by NTA) for sanity checks:
+Interactive data explorer (by NTA) for sanity checks:
 
 - Run: `node scripts/serve-debug-map.js`
-- Open: `http://localhost:4173/docs/debug-murder-map.html`
+- Open: `http://localhost:4173/docs/data-explorer.html`
 
 ## Chrome Web Store sanity
 
