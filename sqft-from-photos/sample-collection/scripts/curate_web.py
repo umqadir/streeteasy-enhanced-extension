@@ -183,7 +183,8 @@ const state = {
   photos: [],
   excluded: new Set(),
   urlById: new Map(),
-  hasSqftById: new Map(),
+  hasSqftById: new Map(),  // labelable: flagged or has numeric sqft
+  flagById: new Map(),     // from source dataset's has_sqft_data field
   sqftById: new Map(),
 };
 
@@ -253,13 +254,21 @@ function renderListings(){
   for(const l of state.listings){
     const id=l.id;
     if(q && !id.toLowerCase().includes(q)) continue;
-    if(onlyHasSqft && !state.hasSqftById.get(id)) continue;
+    const queued = (batch[id] != null);
+    const flagged = !!state.flagById.get(id);
+    const sqft = state.sqftById.get(id)||'';
+    const labelable = flagged || !!sqft || queued || !!state.hasSqftById.get(id);
+    if(onlyHasSqft && !labelable) continue;
     shown++;
     const div=document.createElement('div');
     div.className='row'+(id===state.activeId?' active':'');
-    const sqft=state.sqftById.get(id)||'';
-    const queued = (batch[id] != null);
-    div.innerHTML=`<b>${id}</b> ${sqft?`<span class="pill">${sqft} sqft</span>`:''} ${queued?`<span class="pill">queued</span>`:''}<small>${(l.photo_count||0)} photos</small>`;
+    const needsSqft = flagged && !sqft;
+    div.innerHTML=`<b>${id}</b>
+      ${sqft?`<span class="pill">${sqft} sqft</span>`:''}
+      ${flagged?`<span class="pill">flagged</span>`:''}
+      ${needsSqft?`<span class="pill">needs sqft</span>`:''}
+      ${queued?`<span class="pill">queued</span>`:''}
+      <small>${(l.photo_count||0)} photos</small>`;
     div.onclick=()=>loadListing(id);
     list.appendChild(div);
   }
@@ -333,7 +342,17 @@ async function init(){
   const meta=await apiGet('/api/meta'); qs('outDir').textContent=meta.out_dir;
   qs('batchCount').textContent = String(Object.keys(getBatch()).length);
   const data=await apiGet('/api/listings'); state.listings=data.listings;
-  for(const l of state.listings){ state.urlById.set(l.id,l.url||''); state.hasSqftById.set(l.id,!!l.has_sqft_data); }
+  for(const l of state.listings){
+    state.urlById.set(l.id,l.url||'');
+    const flagged = !!l.has_sqft_data;
+    state.flagById.set(l.id, flagged);
+    if(typeof l.sqft === 'number' && Number.isFinite(l.sqft)){
+      state.sqftById.set(l.id, String(Math.round(l.sqft)));
+      state.hasSqftById.set(l.id, true);
+    }else{
+      state.hasSqftById.set(l.id, flagged);
+    }
+  }
   renderListings(); if(state.listings.length) await loadListing(state.listings[0].id);
 }
 init().catch(err=>{ setStatus(String(err)); console.error(err); });
@@ -429,11 +448,15 @@ class App:
             listing_id = str(l.get("id") or "").strip()
             if not listing_id:
                 continue
+            sqft = l.get("sqft", None)
+            if not isinstance(sqft, (int, float)):
+                sqft = None
             out.append(
                 {
                     "id": listing_id,
                     "url": l.get("url"),
                     "has_sqft_data": bool(l.get("has_sqft_data")) if "has_sqft_data" in l else False,
+                    "sqft": sqft,
                     "photo_count": int(l.get("photo_count") or 0),
                 }
             )
