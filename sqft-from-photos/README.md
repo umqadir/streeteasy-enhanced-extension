@@ -125,8 +125,7 @@ To avoid doing any selection/exclusion on RunPod, curate a “clean set” local
 Run the local web UI against the evaluation dataset:
 
 ```bash
-cd cv-pipeline
-uv run python scripts/curate_web.py --dataset ../sample-collection/streeteasy_eval_dataset/listings.json
+python sample-collection/scripts/curate_web.py --dataset sample-collection/streeteasy_eval_dataset/listings.json
 ```
 
 Open the printed URL, exclude bad photos, optionally type the listing sqft, and click “Export listing”.

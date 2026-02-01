@@ -3,18 +3,16 @@
 """
 Local-only HTML curation UI for creating a "clean set" of listings.
 
-Why this exists:
-  - RunPod SSH environments are great for running the pipeline but awkward for manually excluding photos.
-  - This script runs a tiny local web app that lets you click-to-exclude photos and then exports a clean dataset
-    folder with ONLY the selected images (no filters needed on RunPod).
+Goal:
+  Click-to-exclude bad photos (exteriors/amenities/etc), optionally type sqft for that listing, then export
+  a tiny dataset folder you can upload to RunPod and run immediately.
 
 Export format:
   <out_dir>/
     listings.json
     photos/<listing_id>/photo_00.jpg ...
 
-Then on RunPod you just upload/copy <out_dir> somewhere (e.g. /workspace/data/streeteasy_clean_set)
-and run:
+RunPod then:
   uv run cv-pipeline eval-streeteasy --dataset /workspace/data/streeteasy_clean_set/listings.json --has-sqft
 """
 
@@ -23,7 +21,6 @@ from __future__ import annotations
 import argparse
 import json
 import mimetypes
-import os
 import shutil
 import sys
 import time
@@ -45,12 +42,10 @@ def _read_json(path: Path) -> dict:
 
 
 def _safe_relpath(p: str) -> str:
-    # Normalize slashes and strip leading ./ and /
     p = p.replace("\\", "/").strip()
     while p.startswith("./"):
         p = p[2:]
     p = p.lstrip("/")
-    # Prevent traversal
     if ".." in Path(p).parts:
         raise ValueError("path traversal not allowed")
     return p
@@ -67,12 +62,10 @@ def _load_dataset(dataset_path: Path) -> tuple[Path, list[dict[str, object]]]:
 
 
 def _list_listing_photos(dataset_root: Path, listing: dict[str, object]) -> list[str]:
-    # Prefer the dataset's photo_paths if present (relative paths).
     photo_paths = listing.get("photo_paths")
     if isinstance(photo_paths, list) and photo_paths and all(isinstance(p, str) for p in photo_paths):
         return [_safe_relpath(p) for p in photo_paths]
 
-    # Fallback: enumerate under photos/<listing_id>/
     listing_id = str(listing.get("id") or "").strip()
     if not listing_id:
         return []
@@ -126,7 +119,7 @@ INDEX_HTML = """<!doctype html>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>sqft-from-photos: curate clean set</title>
+  <title>Curate clean set</title>
   <style>
     body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; margin: 0; }
     header { padding: 12px 16px; border-bottom: 1px solid #ddd; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
@@ -141,7 +134,7 @@ INDEX_HTML = """<!doctype html>
     .controls { display:flex; gap:8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
     button { border: 1px solid #bbb; background: #fff; border-radius: 10px; padding: 8px 10px; cursor: pointer; }
     button.primary { background:#000; color:#fff; border-color:#000; }
-    input, select { border:1px solid #bbb; border-radius: 10px; padding: 8px 10px; }
+    input { border:1px solid #bbb; border-radius: 10px; padding: 8px 10px; }
     .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
     .tile { border: 2px solid #ddd; border-radius: 12px; padding: 6px; }
     .tile.excluded { opacity: 0.35; border-color: #ff4d4d; }
@@ -185,151 +178,86 @@ INDEX_HTML = """<!doctype html>
 const state = {
   listings: [],
   activeId: null,
-  photos: [],            // relpaths (strings)
-  excluded: new Set(),   // relpaths excluded
+  photos: [],
+  excluded: new Set(),
   urlById: new Map(),
   hasSqftById: new Map(),
-  sqftById: new Map(),   // numeric string
+  sqftById: new Map(),
 };
-
 function qs(id){ return document.getElementById(id); }
 function setStatus(msg){ qs('status').textContent = msg; }
-
-async function apiGet(url){
-  const r = await fetch(url);
-  if(!r.ok) throw new Error(`GET ${url} => ${r.status}`);
-  return await r.json();
-}
+async function apiGet(url){ const r=await fetch(url); if(!r.ok) throw new Error(`GET ${url} => ${r.status}`); return await r.json(); }
 async function apiPost(url, body){
   const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
   if(!r.ok) throw new Error(`POST ${url} => ${r.status}: ${await r.text()}`);
   return await r.json();
 }
-
 function renderListings(){
-  const list = qs('listingList');
-  list.innerHTML = '';
+  const list = qs('listingList'); list.innerHTML='';
   const onlyHasSqft = qs('onlyHasSqft').checked;
   const q = qs('filterText').value.trim().toLowerCase();
-
-  let shown = 0;
+  let shown=0;
   for(const l of state.listings){
-    const id = l.id;
+    const id=l.id;
     if(q && !id.toLowerCase().includes(q)) continue;
     if(onlyHasSqft && !state.hasSqftById.get(id)) continue;
-    shown += 1;
-
-    const div = document.createElement('div');
-    div.className = 'row' + (id === state.activeId ? ' active' : '');
-    const sqft = state.sqftById.get(id) || '';
-    div.innerHTML = `<b>${id}</b> ${sqft ? `<span class="pill">${sqft} sqft</span>` : ''}<small>${(l.photo_count||0)} photos</small>`;
-    div.onclick = () => loadListing(id);
+    shown++;
+    const div=document.createElement('div');
+    div.className='row'+(id===state.activeId?' active':'');
+    const sqft=state.sqftById.get(id)||'';
+    div.innerHTML=`<b>${id}</b> ${sqft?`<span class="pill">${sqft} sqft</span>`:''}<small>${(l.photo_count||0)} photos</small>`;
+    div.onclick=()=>loadListing(id);
     list.appendChild(div);
   }
-  if(shown === 0){
-    const div = document.createElement('div');
-    div.className = 'status';
-    div.textContent = 'No listings match.';
-    list.appendChild(div);
-  }
+  if(shown===0){ const d=document.createElement('div'); d.className='status'; d.textContent='No listings match.'; list.appendChild(d); }
 }
-
 function renderGrid(){
-  const grid = qs('grid');
-  grid.innerHTML = '';
-  const excluded = state.excluded;
+  const grid=qs('grid'); grid.innerHTML='';
   for(let i=0;i<state.photos.length;i++){
-    const rel = state.photos[i];
-    const tile = document.createElement('div');
-    tile.className = 'tile' + (excluded.has(rel) ? ' excluded' : '');
-    const thumb = `/thumb?path=${encodeURIComponent(rel)}&w=320`;
-    tile.innerHTML = `
-      <img src="${thumb}" loading="lazy" />
-      <div class="cap"><span>#${String(i).padStart(3,'0')}</span><span class="pill">${excluded.has(rel) ? 'excluded' : 'included'}</span></div>
-    `;
-    tile.onclick = () => {
-      if(excluded.has(rel)) excluded.delete(rel); else excluded.add(rel);
-      renderGrid();
-      updateMeta();
-    };
+    const rel=state.photos[i];
+    const tile=document.createElement('div');
+    tile.className='tile'+(state.excluded.has(rel)?' excluded':'');
+    const thumb=`/thumb?path=${encodeURIComponent(rel)}&w=320`;
+    tile.innerHTML=`<img src="${thumb}" loading="lazy" /><div class="cap"><span>#${String(i).padStart(3,'0')}</span><span class="pill">${state.excluded.has(rel)?'excluded':'included'}</span></div>`;
+    tile.onclick=()=>{ if(state.excluded.has(rel)) state.excluded.delete(rel); else state.excluded.add(rel); renderGrid(); updateMeta(); };
     grid.appendChild(tile);
   }
 }
-
 function updateMeta(){
-  const id = state.activeId;
-  if(!id) return;
-  const total = state.photos.length;
-  const excluded = state.excluded.size;
-  const included = total - excluded;
-  const url = state.urlById.get(id) || '';
-  qs('listingMeta').innerHTML = `<b>${id}</b> — included ${included}/${total} — <a href="${url}" target="_blank" rel="noreferrer noopener">open listing</a>`;
-  qs('sqft').value = state.sqftById.get(id) || '';
+  const id=state.activeId; if(!id) return;
+  const total=state.photos.length; const excluded=state.excluded.size; const included=total-excluded;
+  const url=state.urlById.get(id)||'';
+  qs('listingMeta').innerHTML=`<b>${id}</b> — included ${included}/${total} — <a href="${url}" target="_blank" rel="noreferrer noopener">open listing</a>`;
+  qs('sqft').value=state.sqftById.get(id)||'';
 }
-
 async function loadListing(id){
-  state.activeId = id;
-  setStatus('Loading photos…');
-  const data = await apiGet(`/api/listing?id=${encodeURIComponent(id)}`);
-  state.photos = data.photo_paths;
-  state.excluded = new Set(data.excluded || []);
-  if(data.sqft != null) state.sqftById.set(id, String(data.sqft));
-  renderListings();
-  renderGrid();
-  updateMeta();
-  setStatus('');
+  state.activeId=id; setStatus('Loading photos…');
+  const data=await apiGet(`/api/listing?id=${encodeURIComponent(id)}`);
+  state.photos=data.photo_paths; state.excluded=new Set(data.excluded||[]);
+  if(data.sqft!=null) state.sqftById.set(id,String(data.sqft));
+  renderListings(); renderGrid(); updateMeta(); setStatus('');
 }
-
 qs('onlyHasSqft').addEventListener('change', renderListings);
 qs('filterText').addEventListener('input', renderListings);
-qs('includeAll').onclick = () => { state.excluded = new Set(); renderGrid(); updateMeta(); };
-qs('excludeAll').onclick = () => { state.excluded = new Set(state.photos); renderGrid(); updateMeta(); };
-qs('invert').onclick = () => {
-  const next = new Set();
-  for(const rel of state.photos){ if(!state.excluded.has(rel)) next.add(rel); }
-  state.excluded = next;
-  renderGrid(); updateMeta();
-};
-
-qs('sqft').addEventListener('input', () => {
-  const id = state.activeId;
-  if(!id) return;
-  const v = qs('sqft').value.trim();
-  if(v) state.sqftById.set(id, v); else state.sqftById.delete(id);
-  renderListings();
-});
-
-qs('exportOne').onclick = async () => {
-  const id = state.activeId;
-  if(!id) return;
-  const sqft = (state.sqftById.get(id) || '').trim();
+qs('includeAll').onclick=()=>{ state.excluded=new Set(); renderGrid(); updateMeta(); };
+qs('excludeAll').onclick=()=>{ state.excluded=new Set(state.photos); renderGrid(); updateMeta(); };
+qs('invert').onclick=()=>{ const next=new Set(); for(const rel of state.photos){ if(!state.excluded.has(rel)) next.add(rel); } state.excluded=next; renderGrid(); updateMeta(); };
+qs('sqft').addEventListener('input',()=>{ const id=state.activeId; if(!id) return; const v=qs('sqft').value.trim(); if(v) state.sqftById.set(id,v); else state.sqftById.delete(id); renderListings(); });
+qs('exportOne').onclick=async()=>{
+  const id=state.activeId; if(!id) return;
+  const sqft=(state.sqftById.get(id)||'').trim();
   setStatus('Exporting…');
-  const res = await apiPost('/api/export', {
-    listing_id: id,
-    excluded: Array.from(state.excluded),
-    sqft: sqft ? Number(sqft) : null,
-  });
+  const res=await apiPost('/api/export',{ listing_id:id, excluded:Array.from(state.excluded), sqft: sqft?Number(sqft):null });
   setStatus(`Exported ${id} → ${res.out_dir}`);
-  state.hasSqftById.set(id, sqft ? true : state.hasSqftById.get(id));
   renderListings();
 };
-
 async function init(){
-  const meta = await apiGet('/api/meta');
-  qs('outDir').textContent = meta.out_dir;
-  const data = await apiGet('/api/listings');
-  state.listings = data.listings;
-  for(const l of state.listings){
-    state.urlById.set(l.id, l.url || '');
-    state.hasSqftById.set(l.id, !!l.has_sqft_data);
-  }
-  renderListings();
-  if(state.listings.length){
-    await loadListing(state.listings[0].id);
-  }
+  const meta=await apiGet('/api/meta'); qs('outDir').textContent=meta.out_dir;
+  const data=await apiGet('/api/listings'); state.listings=data.listings;
+  for(const l of state.listings){ state.urlById.set(l.id,l.url||''); state.hasSqftById.set(l.id,!!l.has_sqft_data); }
+  renderListings(); if(state.listings.length) await loadListing(state.listings[0].id);
 }
-
-init().catch(err => { setStatus(String(err)); console.error(err); });
+init().catch(err=>{ setStatus(String(err)); console.error(err); });
 </script>
 </body>
 </html>
@@ -357,24 +285,16 @@ class Handler(BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
         qs = urllib.parse.parse_qs(parsed.query)
-
         try:
             if path == "/":
                 return self._send(HTTPStatus.OK, INDEX_HTML.encode("utf-8"), content_type="text/html; charset=utf-8")
-
             if path == "/api/meta":
-                return self._send_json(
-                    HTTPStatus.OK,
-                    {"dataset": str(self.app.cfg.dataset_path), "out_dir": str(self.app.cfg.out_dir)},
-                )
-
+                return self._send_json(HTTPStatus.OK, {"dataset": str(self.app.cfg.dataset_path), "out_dir": str(self.app.cfg.out_dir)})
             if path == "/api/listings":
                 return self._send_json(HTTPStatus.OK, {"listings": self.app.listings_public()})
-
             if path == "/api/listing":
                 listing_id = (qs.get("id") or [""])[0]
                 return self._send_json(HTTPStatus.OK, self.app.listing_payload(listing_id))
-
             if path == "/thumb":
                 rel = _safe_relpath((qs.get("path") or [""])[0])
                 w = int((qs.get("w") or ["320"])[0])
@@ -386,14 +306,6 @@ class Handler(BaseHTTPRequestHandler):
                 if not dst.exists() or dst.stat().st_mtime < src.stat().st_mtime:
                     _make_thumb(src, dst, width=w)
                 return self._send_file(dst)
-
-            if path.startswith("/file/"):
-                rel = _safe_relpath(path[len("/file/") :])
-                src = self.app.cfg.dataset_root / rel
-                if not src.exists():
-                    return self._send_json(HTTPStatus.NOT_FOUND, {"error": f"missing file: {rel}"})
-                return self._send_file(src)
-
             return self._send_json(HTTPStatus.NOT_FOUND, {"error": "not found"})
         except Exception as e:
             return self._send_json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(e)})
@@ -409,7 +321,6 @@ class Handler(BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         if parsed.path != "/api/export":
             return self._send_json(HTTPStatus.NOT_FOUND, {"error": "not found"})
-
         try:
             n = int(self.headers.get("Content-Length", "0"))
             raw = self.rfile.read(n)
@@ -419,7 +330,7 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             return self._send_json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(e)})
 
-    def log_message(self, fmt: str, *args: object) -> None:  # quieter
+    def log_message(self, fmt: str, *args: object) -> None:
         sys.stderr.write("%s - - [%s] %s\n" % (self.client_address[0], self.log_date_time_string(), fmt % args))
 
 
@@ -473,7 +384,7 @@ class App:
                 "name": "streeteasy_clean_set",
                 "created_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
                 "source_dataset": str(self.cfg.dataset_path),
-                "notes": "Exported by cv-pipeline/scripts/curate_web.py",
+                "notes": "Exported by sample-collection/scripts/curate_web.py",
             },
             "listings": [],
         }
@@ -503,7 +414,6 @@ class App:
         if not kept:
             raise ValueError("No photos selected (everything excluded).")
 
-        # Copy into output with normalized names.
         out_photos_dir = self.cfg.out_dir / "photos" / listing_id
         out_photos_dir.mkdir(parents=True, exist_ok=True)
         for i, rel in enumerate(kept):
@@ -513,7 +423,6 @@ class App:
             dst = out_photos_dir / f"photo_{i:02d}{src.suffix.lower()}"
             shutil.copy2(src, dst)
 
-        # Update export dataset JSON.
         export_obj = self._load_export_dataset()
         listings = export_obj.get("listings", [])
         if not isinstance(listings, list):
@@ -558,7 +467,13 @@ def main() -> None:
     out_dir = out_dir.resolve()
 
     dataset_root, _ = _load_dataset(dataset_path)
-    cfg = AppConfig(dataset_path=dataset_path.resolve(), dataset_root=dataset_root.resolve(), out_dir=out_dir, port=int(args.port), host=str(args.host))
+    cfg = AppConfig(
+        dataset_path=dataset_path.resolve(),
+        dataset_root=dataset_root.resolve(),
+        out_dir=out_dir,
+        port=int(args.port),
+        host=str(args.host),
+    )
 
     app = App(cfg)
 
@@ -566,10 +481,9 @@ def main() -> None:
     httpd.app = app  # type: ignore[attr-defined]
 
     url = f"http://{cfg.host}:{cfg.port}/"
-    print("OK: serving curation UI at:", url)
-    print("Dataset:", cfg.dataset_path)
-    print("Export dir:", cfg.out_dir)
-    print("Tip: export 5–10 listings, then upload the export dir to RunPod.")
+    print("OPEN:", url)
+    print("DATASET:", cfg.dataset_path)
+    print("EXPORT:", cfg.out_dir)
 
     try:
         httpd.serve_forever()
