@@ -1,3 +1,5 @@
+Note: operational “how to run this on RunPod / how to evaluate / how to sweep configs” is in `../../README.md`.
+
 Below is a technical research + implementation guide for a **photo-only** pipeline that estimates apartment square footage (sqft) **without EXIF, without floor plans, and without domain fine-tuning at v1**, while still producing **a best estimate + calibrated uncertainty** and giving you clear iteration forks.
 
 ---

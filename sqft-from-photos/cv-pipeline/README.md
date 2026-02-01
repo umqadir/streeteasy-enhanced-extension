@@ -1,29 +1,10 @@
-# cv-pipeline (sqft from photos)
+# cv-pipeline
 
-Implements the pipeline described in `docs/PROJECT-PLAN.md`:
+Documentation is consolidated in `../README.md`.
 
-- Multi-view SfM (COLMAP) when possible
-- Metric scale via zero-shot metric depth models
-- Floor plane + footprint extraction → sqft estimate
-- Diagnostics + uncertainty interval (v0 heuristic, calibrate later)
+Key entrypoints:
 
-Project status + “what to run next” is tracked in `../STATUS.md`.
-
-## Quick start (RunPod)
-
-See `docs/RUNPOD.md`.
-
-## Local dev
-
-This repo uses `uv` for Python management.
-
-```bash
-cd cv-pipeline
-uv sync
-uv run cv-pipeline --help
-```
-
-Notes:
-
-- `cv-pipeline run` defaults to a **depth-only fallback** unless you pass `--colmap`.
-- `cv-pipeline eval-streeteasy` runs the **COLMAP + metric-depth** path by default.
+- CLI: `src/cv_pipeline/cli.py` (`cv-pipeline ...`)
+- Pipeline: `src/cv_pipeline/pipeline/runner.py`
+- RunPod bootstrap: `scripts/runpod_bootstrap.sh`
+- Long-form research roadmap: `docs/PROJECT-PLAN.md`

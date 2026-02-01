@@ -73,9 +73,10 @@ def preprocess_images(
     *,
     max_side: int = 1600,
     dedup_hamming_threshold: int = 4,
+    image_paths: list[Path] | None = None,
 ) -> PreprocessResult:
     out_dir.mkdir(parents=True, exist_ok=True)
-    all_images = list_images(images_dir)
+    all_images = list(image_paths) if image_paths is not None else list_images(images_dir)
     mapping: dict[str, str] = {}
     info: dict[Path, dict[str, float]] = {}
 

@@ -25,6 +25,7 @@ from cv_pipeline.geometry.footprint import estimate_floor_footprint_sqft
 from cv_pipeline.geometry.planes import estimate_gravity_up, find_floor_plane
 from cv_pipeline.fusion import tsdf_fuse_open3d
 from cv_pipeline.image import preprocess_images
+from cv_pipeline.image.selection import ImageSelectionSpec, parse_filter_file, select_image_paths
 from cv_pipeline.paths import VolumePaths, WorkPaths, default_volume_root, default_work_root, ensure_dirs, setup_model_caches
 from cv_pipeline.pipeline.types import RunArtifacts
 from cv_pipeline.retrieval import EmbeddingBackend, build_topk_pairs, compute_image_embeddings, connected_components_from_pairs
@@ -547,6 +548,7 @@ def run_listing(
     images_dir: Path,
     listing_id: str | None,
     label_sqft: float | None,
+    image_selection: ImageSelectionSpec | None = None,
     max_side: int,
     use_colmap: bool,
     sfm_matching: str = "exhaustive",  # exhaustive|lightglue
@@ -578,6 +580,8 @@ def run_listing(
     volume_dir = volume.runs_dir / run_id
     ensure_dirs(work_dir, volume_dir)
 
+    selected_images, sel_diag = select_image_paths(images_dir, spec=image_selection) if image_selection else (None, None)
+
     artifacts = RunArtifacts(
         run_id=run_id,
         work_dir=work_dir,
@@ -589,7 +593,12 @@ def run_listing(
     )
     ensure_dirs(artifacts.preprocessed_dir, artifacts.colmap_dir, artifacts.depth_dir)
 
-    pre = preprocess_images(images_dir, artifacts.preprocessed_dir, max_side=max_side)
+    pre = preprocess_images(
+        images_dir,
+        artifacts.preprocessed_dir,
+        max_side=max_side,
+        image_paths=selected_images,
+    )
     # Run SfM on the deduplicated subset to avoid near-duplicate failure modes.
     sfm_images_dir = work_dir / "images_sfm"
     ensure_dirs(sfm_images_dir)
@@ -605,10 +614,19 @@ def run_listing(
             shutil.copy2(src, dst)
 
     diagnostics: dict[str, object] = {"preprocess": pre.diagnostics}
+    if sel_diag is not None:
+        diagnostics["image_selection"] = sel_diag
+        try:
+            rel = [str(p.relative_to(images_dir).as_posix()) for p in selected_images or []]
+        except Exception:
+            rel = [str(p) for p in selected_images or []]
+        _write_json(volume_dir / "selected_images.json", {"images_dir": str(images_dir), "images": rel})
+        _write_text(volume_dir / "selected_images.txt", "\n".join(rel) + ("\n" if rel else ""))
     run_config: dict[str, object] = {
         "images_dir": str(images_dir),
         "listing_id": listing_id,
         "label_sqft": label_sqft,
+        "image_selection": sel_diag.get("filters") if isinstance(sel_diag, dict) else None,
         "max_side": max_side,
         "use_colmap": use_colmap,
         "sfm_matching": sfm_matching,
@@ -1066,9 +1084,10 @@ def run_listing(
             "work_dir": str(work_dir),
             "depth_dir": str(artifacts.depth_dir),
             "colmap_dir": str(artifacts.colmap_dir),
-            "images_preprocessed": str(artifacts.preprocessed_dir),
-            "footprint_wkt": str(volume_dir / "footprint.wkt"),
-        },
+        "images_preprocessed": str(artifacts.preprocessed_dir),
+        "footprint_wkt": str(volume_dir / "footprint.wkt"),
+        "selected_images": str(volume_dir / "selected_images.txt"),
+    },
     }
 
     _write_json(volume_dir / "run_config.json", run_config)
@@ -1086,9 +1105,21 @@ def run_streeteasy_eval(
     dataset_path: Path,
     downloads_dir: Path | None,
     limit: int,
+    has_sqft: bool = False,
+    listing_ids: list[str] | None = None,
+    filters_dir: Path | None = None,
     out_json: Path | None,
 ) -> dict[str, object]:
     examples = load_streeteasy_dataset(dataset_path, downloads_dir)
+    if has_sqft:
+        examples = [ex for ex in examples if isinstance(ex.sqft, (int, float))]
+
+    if listing_ids:
+        wanted = [str(s).strip() for s in listing_ids if str(s).strip()]
+        wanted_set = set(wanted)
+        ex_by_id = {ex.listing_id: ex for ex in examples}
+        examples = [ex_by_id[i] for i in wanted if i in wanted_set and i in ex_by_id]
+
     if limit and limit > 0:
         examples = examples[:limit]
 
@@ -1105,10 +1136,19 @@ def run_streeteasy_eval(
             )
             continue
         try:
+            image_selection = None
+            filter_path = None
+            if filters_dir is not None:
+                p = filters_dir / f"{ex.listing_id}.txt"
+                if p.exists():
+                    filter_path = str(p)
+                    image_selection = parse_filter_file(p)
+
             res = run_listing(
                 images_dir=ex.images_dir,
                 listing_id=ex.listing_id,
                 label_sqft=ex.sqft,
+                image_selection=image_selection,
                 max_side=1600,
                 use_colmap=True,
                 depth_model="depth-anything-metric",
@@ -1129,6 +1169,7 @@ def run_streeteasy_eval(
                     "interval_90": res["sqft_interval_90"],
                     "confidence": res["confidence_score"],
                     "run_id": res["run_id"],
+                    "filter_file": filter_path,
                 }
             )
         except Exception as e:  # pragma: no cover
@@ -1138,6 +1179,7 @@ def run_streeteasy_eval(
                     "listing_url": ex.listing_url,
                     "label_sqft": ex.sqft,
                     "error": str(e),
+                    "filter_file": str((filters_dir / f"{ex.listing_id}.txt")) if filters_dir else None,
                 }
             )
 
@@ -1154,6 +1196,9 @@ def run_streeteasy_eval(
     summary: dict[str, object] = {
         "dataset": str(dataset_path),
         "downloads": str(downloads_dir),
+        "filters_dir": str(filters_dir) if filters_dir else None,
+        "listing_ids": listing_ids,
+        "has_sqft": bool(has_sqft),
         "n": len(rows),
         "n_labeled": len(labeled),
         "mae_sqft": mae,

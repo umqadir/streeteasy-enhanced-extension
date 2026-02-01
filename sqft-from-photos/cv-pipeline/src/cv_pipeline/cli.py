@@ -7,8 +7,12 @@ from pathlib import Path
 import numpy as np
 
 from cv_pipeline.calibration import fit_conformal_interval_calibrator
+from cv_pipeline.dataset import load_streeteasy_dataset
+from cv_pipeline.experiments.curate import curate_streeteasy
 from cv_pipeline.experiments.report import load_conformal_calibrator, summarize_eval_rows
 from cv_pipeline.experiments.sweep import run_streeteasy_sweep
+from cv_pipeline.image.selection import ImageSelectionSpec, parse_filter_file
+from cv_pipeline.image.preprocess import list_images
 from cv_pipeline.pipeline.runner import run_listing, run_streeteasy_eval
 
 
@@ -16,11 +20,61 @@ def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="cv-pipeline", description="sqft-from-photos CV pipeline")
     sub = p.add_subparsers(dest="cmd", required=True)
 
+    ls = sub.add_parser("list-images", help="List images under a directory with stable indices.")
+    ls.add_argument("--images", type=Path, required=True, help="Directory containing listing photos.")
+    ls.add_argument("--out", type=Path, default=None, help="Optional path to write the listing to (text).")
+    ls.set_defaults(func=_cmd_list_images)
+
+    lsd = sub.add_parser("list-streeteasy", help="List listings from a Streeteasy dataset (IDs, urls, sqft).")
+    lsd.add_argument("--dataset", type=Path, required=True)
+    lsd.add_argument(
+        "--downloads",
+        type=Path,
+        default=None,
+        help="Directory containing downloaded listing photo folders. Optional for datasets that include photo paths.",
+    )
+    lsd.add_argument("--has-sqft", action="store_true", help="Only show listings with ground-truth sqft.")
+    lsd.add_argument("--limit", type=int, default=0, help="0 => all listings")
+    lsd.set_defaults(func=_cmd_list_streeteasy)
+
     run = sub.add_parser("run", help="Run pipeline on a directory of images.")
     run.add_argument("--images", type=Path, required=True, help="Directory containing listing photos.")
     run.add_argument("--listing-id", type=str, default=None)
     run.add_argument("--label-sqft", type=float, default=None)
     run.add_argument("--out-json", type=Path, default=None, help="Optional explicit output JSON path.")
+
+    run.add_argument("--filter-file", type=Path, default=None, help="Optional text file with include/exclude rules.")
+    run.add_argument(
+        "--include-glob",
+        action="append",
+        default=[],
+        help="Glob (relative to --images) to include. Repeatable.",
+    )
+    run.add_argument(
+        "--exclude-glob",
+        action="append",
+        default=[],
+        help="Glob (relative to --images) to exclude. Repeatable.",
+    )
+    run.add_argument(
+        "--include-indices",
+        type=str,
+        default=None,
+        help="Comma-separated indices/ranges (e.g. '0-10,12') in the order of `cv-pipeline contact-sheet` / list_images().",
+    )
+    run.add_argument("--exclude-indices", type=str, default=None)
+    run.add_argument(
+        "--include-file",
+        type=Path,
+        default=None,
+        help="Newline-separated basenames or relative paths to include (lines starting with # ignored).",
+    )
+    run.add_argument(
+        "--exclude-file",
+        type=Path,
+        default=None,
+        help="Newline-separated basenames or relative paths to exclude (lines starting with # ignored).",
+    )
 
     run.add_argument("--max-side", type=int, default=1600)
     run.add_argument("--colmap", action="store_true", help="Enable COLMAP SfM (recommended).")
@@ -79,8 +133,44 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Directory containing downloaded listing photo folders. Optional for datasets that include photo paths.",
     )
     ev.add_argument("--limit", type=int, default=0, help="0 => all listings")
+    ev.add_argument("--has-sqft", action="store_true", help="Only evaluate listings with ground-truth sqft.")
+    ev.add_argument(
+        "--listing-ids",
+        type=str,
+        default=None,
+        help="Comma-separated listing IDs to run (applied before --limit).",
+    )
+    ev.add_argument(
+        "--filters-dir",
+        type=Path,
+        default=None,
+        help="Optional directory containing per-listing filter files: <filters_dir>/<listing_id>.txt",
+    )
     ev.add_argument("--out-json", type=Path, default=None, help="Optional explicit output JSON path.")
     ev.set_defaults(func=_cmd_eval)
+
+    cur = sub.add_parser("curate-streeteasy", help="Create per-listing filter files + contact sheets (no GUI).")
+    cur.add_argument("--dataset", type=Path, required=True)
+    cur.add_argument(
+        "--downloads",
+        type=Path,
+        default=None,
+        help="Directory containing downloaded listing photo folders. Optional for datasets that include photo paths.",
+    )
+    cur.add_argument("--out-dir", type=Path, default=None, help="Output directory (defaults under CVP_VOLUME).")
+    cur.add_argument("--limit", type=int, default=0, help="0 => all listings")
+    cur.add_argument("--has-sqft", action="store_true", help="Only include listings with ground-truth sqft.")
+    cur.add_argument(
+        "--listing-ids",
+        type=str,
+        default=None,
+        help="Comma-separated listing IDs to curate (applied before --limit).",
+    )
+    cur.add_argument("--overwrite", action="store_true", help="Overwrite existing files under out-dir.")
+    cur.add_argument("--cols", type=int, default=6, help="Contact sheet columns.")
+    cur.add_argument("--thumb-size", type=int, default=256, help="Contact sheet thumbnail size.")
+    cur.add_argument("--max-images", type=int, default=120, help="Max images rendered into the contact sheet.")
+    cur.set_defaults(func=_cmd_curate)
 
     sweep = sub.add_parser("sweep-streeteasy", help="Run a set/grid of configs over the Streeteasy dataset.")
     sweep.add_argument("--dataset", type=Path, required=True)
@@ -92,6 +182,19 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     sweep.add_argument("--config", type=Path, default=None, help="Optional JSON config (runs/grid).")
     sweep.add_argument("--limit", type=int, default=0, help="0 => all listings")
+    sweep.add_argument("--has-sqft", action="store_true", help="Only evaluate listings with ground-truth sqft.")
+    sweep.add_argument(
+        "--listing-ids",
+        type=str,
+        default=None,
+        help="Comma-separated listing IDs to run (applied before --limit).",
+    )
+    sweep.add_argument(
+        "--filters-dir",
+        type=Path,
+        default=None,
+        help="Optional directory containing per-listing filter files: <filters_dir>/<listing_id>.txt",
+    )
     sweep.add_argument("--out-json", type=Path, default=None, help="Optional explicit output JSON path.")
     sweep.set_defaults(func=_cmd_sweep)
 
@@ -109,15 +212,75 @@ def _build_parser() -> argparse.ArgumentParser:
     return p
 
 
+def _cmd_list_images(args: argparse.Namespace) -> None:
+    imgs = list_images(args.images)
+    lines = []
+    for i, p in enumerate(imgs):
+        try:
+            rel = p.relative_to(args.images).as_posix()
+        except Exception:
+            rel = p.name
+        lines.append(f"{i:04d}\t{rel}")
+    text = "\n".join(lines) + ("\n" if lines else "")
+    if args.out:
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_text(text, encoding="utf-8")
+    print(text, end="")
+
+
+def _cmd_list_streeteasy(args: argparse.Namespace) -> None:
+    examples = load_streeteasy_dataset(args.dataset, args.downloads)
+    if args.has_sqft:
+        examples = [ex for ex in examples if isinstance(ex.sqft, (int, float))]
+    if args.limit and args.limit > 0:
+        examples = examples[: args.limit]
+
+    rows = []
+    for ex in examples:
+        sqft = "" if ex.sqft is None else f"{float(ex.sqft):.0f}"
+        rows.append(f"{ex.listing_id}\t{sqft}\t{ex.images_dir}\t{ex.listing_url}")
+    print("\n".join(rows))
+
+
 def _cmd_run(args: argparse.Namespace) -> None:
     depth_ensemble = None
     if args.depth_ensemble:
         depth_ensemble = [s.strip() for s in str(args.depth_ensemble).split(",") if s.strip()]
 
+    def _read_list(path: Path) -> list[str]:
+        items: list[str] = []
+        for raw in path.read_text(encoding="utf-8").splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#"):
+                continue
+            items.append(line)
+        return items
+
+    base = parse_filter_file(args.filter_file) if args.filter_file else ImageSelectionSpec()
+    include_names = base.include_names + (_read_list(args.include_file) if args.include_file else [])
+    exclude_names = base.exclude_names + (_read_list(args.exclude_file) if args.exclude_file else [])
+    include_indices = list(base.include_indices)
+    exclude_indices = list(base.exclude_indices)
+    if args.include_indices:
+        include_indices.append(str(args.include_indices))
+    if args.exclude_indices:
+        exclude_indices.append(str(args.exclude_indices))
+    sel = ImageSelectionSpec(
+        include_globs=base.include_globs + list(args.include_glob or []),
+        exclude_globs=base.exclude_globs + list(args.exclude_glob or []),
+        include_indices=include_indices,
+        exclude_indices=exclude_indices,
+        include_names=include_names,
+        exclude_names=exclude_names,
+    )
+    if not (sel.has_includes() or sel.exclude_globs or sel.exclude_indices or sel.exclude_names):
+        sel = None
+
     result = run_listing(
         images_dir=args.images,
         listing_id=args.listing_id,
         label_sqft=args.label_sqft,
+        image_selection=sel,
         max_side=args.max_side,
         use_colmap=args.colmap,
         sfm_matching=args.sfm_matching,
@@ -143,22 +306,53 @@ def _cmd_run(args: argparse.Namespace) -> None:
 
 
 def _cmd_eval(args: argparse.Namespace) -> None:
+    listing_ids = None
+    if args.listing_ids:
+        listing_ids = [s.strip() for s in str(args.listing_ids).split(",") if s.strip()]
     result = run_streeteasy_eval(
         dataset_path=args.dataset,
         downloads_dir=args.downloads,
         limit=args.limit,
+        has_sqft=bool(args.has_sqft),
+        listing_ids=listing_ids,
+        filters_dir=args.filters_dir,
         out_json=args.out_json,
     )
     print(json.dumps(result, indent=2))
 
 
 def _cmd_sweep(args: argparse.Namespace) -> None:
+    listing_ids = None
+    if args.listing_ids:
+        listing_ids = [s.strip() for s in str(args.listing_ids).split(",") if s.strip()]
     result = run_streeteasy_sweep(
         dataset_path=args.dataset,
         downloads_dir=args.downloads,
         config_path=args.config,
         limit=args.limit,
+        has_sqft=bool(args.has_sqft),
+        listing_ids=listing_ids,
+        filters_dir=args.filters_dir,
         out_json=args.out_json,
+    )
+    print(json.dumps(result, indent=2))
+
+
+def _cmd_curate(args: argparse.Namespace) -> None:
+    listing_ids = None
+    if args.listing_ids:
+        listing_ids = [s.strip() for s in str(args.listing_ids).split(",") if s.strip()]
+    result = curate_streeteasy(
+        dataset_path=args.dataset,
+        downloads_dir=args.downloads,
+        out_dir=args.out_dir,
+        limit=args.limit,
+        has_sqft=bool(args.has_sqft),
+        listing_ids=listing_ids,
+        overwrite=bool(args.overwrite),
+        cols=args.cols,
+        thumb_size=args.thumb_size,
+        max_images=args.max_images,
     )
     print(json.dumps(result, indent=2))
 

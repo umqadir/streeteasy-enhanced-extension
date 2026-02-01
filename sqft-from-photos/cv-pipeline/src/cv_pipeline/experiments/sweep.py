@@ -10,6 +10,7 @@ import numpy as np
 
 from cv_pipeline.dataset import load_streeteasy_dataset
 from cv_pipeline.experiments.report import summarize_eval_rows
+from cv_pipeline.image.selection import parse_filter_file
 from cv_pipeline.paths import VolumePaths, default_volume_root
 from cv_pipeline.pipeline.runner import run_listing
 from cv_pipeline.utils.ids import new_run_id
@@ -57,6 +58,9 @@ def run_streeteasy_sweep(
     downloads_dir: Path | None,
     config_path: Path | None,
     limit: int,
+    has_sqft: bool = False,
+    listing_ids: list[str] | None = None,
+    filters_dir: Path | None = None,
     out_json: Path | None,
 ) -> dict[str, object]:
     """
@@ -89,8 +93,21 @@ def run_streeteasy_sweep(
             runs = [_normalize_run_cfg(r) for r in _expand_grid(base, grid)]
 
     examples = load_streeteasy_dataset(dataset_path, downloads_dir)
+    if has_sqft:
+        examples = [ex for ex in examples if isinstance(ex.sqft, (int, float))]
+    if listing_ids:
+        wanted = [str(s).strip() for s in listing_ids if str(s).strip()]
+        ex_by_id = {ex.listing_id: ex for ex in examples}
+        examples = [ex_by_id[i] for i in wanted if i in ex_by_id]
     if limit and limit > 0:
         examples = examples[:limit]
+
+    selection_by_id = {}
+    if filters_dir is not None:
+        for ex in examples:
+            p = filters_dir / f"{ex.listing_id}.txt"
+            if p.exists():
+                selection_by_id[ex.listing_id] = parse_filter_file(p)
 
     sweep_id = new_run_id(prefix="sweep")
     volume = VolumePaths(root=default_volume_root())
@@ -137,10 +154,12 @@ def run_streeteasy_sweep(
                 )
                 continue
             try:
+                image_selection = selection_by_id.get(ex.listing_id)
                 res = run_listing(
                     images_dir=ex.images_dir,
                     listing_id=ex.listing_id,
                     label_sqft=ex.sqft,
+                    image_selection=image_selection,
                     out_json=None,
                     **run_cfg,
                 )
@@ -154,6 +173,7 @@ def run_streeteasy_sweep(
                         "confidence": res["confidence_score"],
                         "run_id": res["run_id"],
                         "cfg_id": cfg_id,
+                        "filter_file": str((filters_dir / f"{ex.listing_id}.txt")) if filters_dir else None,
                     }
                 )
             except Exception as e:
@@ -164,6 +184,7 @@ def run_streeteasy_sweep(
                         "label_sqft": ex.sqft,
                         "error": str(e),
                         "cfg_id": cfg_id,
+                        "filter_file": str((filters_dir / f"{ex.listing_id}.txt")) if filters_dir else None,
                     }
                 )
 
@@ -181,6 +202,9 @@ def run_streeteasy_sweep(
         "sweep_id": sweep_id,
         "dataset": str(dataset_path),
         "downloads": str(downloads_dir),
+        "filters_dir": str(filters_dir) if filters_dir else None,
+        "listing_ids": listing_ids,
+        "has_sqft": bool(has_sqft),
         "n_runs": len(run_summaries),
         "runs": run_summaries,
     }
