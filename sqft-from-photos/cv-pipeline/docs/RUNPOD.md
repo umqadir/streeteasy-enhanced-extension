@@ -1,86 +1,97 @@
-Moved to `../README.md` (RunPod runbook + all experiments).
-  --depth-ensemble "metric3d-v2,unidepth-v1,depth-anything-metric" \
-  --fusion tsdf \
-  --uncertainty montecarlo
-```
+# RunPod Workflow
 
-Conservative multi-component aggregation:
+Simple workflow for a solo dev. Assumes `/workspace` persists across pod restarts.
+
+## After Pod Restart (10 seconds)
 
 ```bash
+source /workspace/cv_pipeline_env.sh
+cd /workspace/streeteasy-enhanced-extension/sqft-from-photos/cv-pipeline
+```
+
+That's it. Everything is already there.
+
+## First-Time Setup (One Time)
+
+```bash
+cd /workspace
+git clone https://github.com/umqadir/streeteasy-enhanced-extension.git
+cd streeteasy-enhanced-extension/sqft-from-photos
+
+# Install deps + create env file
+bash cv-pipeline/scripts/runpod_bootstrap.sh
+source /workspace/cv_pipeline_env.sh
+
+# Build COLMAP with CUDA (~20 min, persists forever)
+cd cv-pipeline
+bash scripts/build_colmap_cuda.sh
+
+# Download all models (~13 GB, persists forever)
+uv run python scripts/download_models.py all
+
+# Verify
+uv run python scripts/doctor.py
+```
+
+## Running Experiments
+
+```bash
+cd /workspace/streeteasy-enhanced-extension/sqft-from-photos/cv-pipeline
+
+# Single listing
 uv run cv-pipeline run \
-  --images /path/to/listing_images \
+  --images /workspace/data/streeteasy_clean_set/photos/listing_073 \
   --colmap \
-  --multi-component sum
+  --sfm-matching exhaustive
+
+# Batch eval
+uv run cv-pipeline eval-streeteasy \
+  --dataset /workspace/data/streeteasy_clean_set/listings.json \
+  --limit 10
 ```
 
-## Recommended pod sizing (to run the full research plan)
+## What's On Your Volume
 
-You can run models sequentially, so VRAM is driven by the “largest single model / step”.
-
-- **Recommended (comfortable):** 1× `48GB` GPU (e.g., L40S 48GB / RTX A6000 48GB), `16 vCPU`, `64GB RAM`
-- **Minimum (can run everything with more compromises):** 1× `24GB` GPU (e.g., RTX 4090 24GB), `8–16 vCPU`, `32–64GB RAM`
-- **No-compromise:** 1× `80GB` GPU (A100 80GB), `32 vCPU`, `128GB RAM`
-
-Storage:
-
-- **Network volume (persistent):** `>=200GB` recommended (models + caches + runs), `>=100GB` minimum for small experiments
-- **Container disk (ephemeral):** `>=50GB` (COLMAP databases/intermediates + temporary outputs)
-
-Quick sanity check (prints GPU VRAM + COLMAP availability):
-
-```bash
-uv run python cv-pipeline/scripts/doctor.py
+```
+/workspace/
+├── cv_pipeline_env.sh           # Source this after restart
+├── models/                      # ~15 GB (checkpoints + vendor repos)
+├── tools/colmap/                # ~500 MB (CUDA COLMAP binary)
+├── .cache/                      # ~12 GB (uv/pip cache)
+├── streeteasy-enhanced-extension/  # Code + venv
+├── data/                        # Your photos
+├── work/                        # Pipeline intermediates
+└── runs/                        # Pipeline outputs
 ```
 
-## VRAM profiling (before you decide on smaller GPUs)
+## Resource Requirements
 
-Once you’ve downloaded the model assets onto `CVP_VOLUME`, you can **measure peak CUDA memory** for the heavy steps.
+| GPU | Works For |
+|-----|-----------|
+| RTX 4090 (24 GB) | Everything |
+| RTX 3090 (24 GB) | Everything |
+| 16 GB GPU | Standard pipeline, no DUSt3R/MASt3R |
 
-1) Download the “full plan” model set (large):
+Volume: 70-100 GB recommended.
 
-```bash
-uv run python cv-pipeline/scripts/download_models.py all
-```
+## Git Authentication (for pushing changes)
 
-2) Run the VRAM profiler suite (DepthAnything + DUSt3R + MASt3R):
+1. Create a GitHub Personal Access Token (PAT):
+   - GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)
+   - Create with `repo` scope
 
-```bash
-uv run python cv-pipeline/scripts/profile_vram.py all --amp --n-images 4 --size 512
-```
+2. Add as RunPod Secret:
+   - RunPod console → Settings → Secrets
+   - Add `GITHUB_TOKEN` with your PAT
 
-If you want the global alignment step included (more realistic for DUSt3R/MASt3R “reconstruction”):
+3. Enable the secret when creating/editing your pod
 
-```bash
-uv run python cv-pipeline/scripts/profile_vram.py all --amp --dust3r-align --mast3r-align --n-images 4 --size 512
-```
+After sourcing the env file, git push/pull will work automatically.
 
-3) Save a JSON report:
+## Common Issues
 
-```bash
-uv run python cv-pipeline/scripts/profile_vram.py all --amp --dust3r-align --mast3r-align --print-json \\
-  --json-out \"$CVP_VOLUME/runs/vram_profile.json\"
-```
+**COLMAP fails**: Rebuild with `bash scripts/build_colmap_cuda.sh`
 
-Interpretation:
+**Out of VRAM**: Use `--depth-encoder vitb` or `--depth-input-size 384`
 
-- The script reports **peak VRAM reserved** and a **recommended minimum** (`peak + 2GiB buffer`).
-- If your peaks are far below `24GB`, you can likely run on smaller GPUs by reducing `--size`, `--n-images`, and keeping `--batch-size 1`.
-
-## Storage sizing (verify before allocating a big volume)
-
-This repo includes a “no download” estimator for the **model weight** footprint:
-
-```bash
-python cv-pipeline/scripts/estimate_storage.py
-```
-
-On `2026-02-01`, the “full plan” weight set is about **13GB** (`total_known_human`), and the script suggests:
-
-- **Models-only minimum**: ~`26GB` (weights + conservative cache overhead)
-- **Practical minimum for experiments**: `100GB`
-- **Comfortable headroom**: `200GB`
-
-Rule of thumb:
-
-- Models-only: often `~20–40GB` is enough (weights + caches + vendor repos)
-- Models + growing dataset + lots of runs: `100–200GB` becomes reasonable
+**cv-pipeline not found**: Run `uv sync` from the cv-pipeline directory

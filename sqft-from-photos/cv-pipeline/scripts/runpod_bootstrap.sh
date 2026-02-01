@@ -71,7 +71,8 @@ pick_volume_root() {
 
 export CVP_VOLUME
 CVP_VOLUME="$(pick_volume_root)"
-export CVP_WORKDIR="${CVP_WORKDIR:-/tmp/cv_pipeline_work}"
+# Use /workspace/work instead of /tmp so work persists across restarts
+export CVP_WORKDIR="${CVP_WORKDIR:-$CVP_VOLUME/work}"
 
 mkdir -p "$CVP_VOLUME"/{models,runs,tools,.cache} "$CVP_WORKDIR"
 
@@ -88,7 +89,12 @@ export PATH="$NPM_CONFIG_PREFIX/bin:$HOME/.local/bin:$PATH"
 env_file="$CVP_VOLUME/cv_pipeline_env.sh"
 cat >"$env_file" <<EOF
 export CVP_VOLUME="${CVP_VOLUME}"
-export CVP_WORKDIR="${CVP_WORKDIR}"
+export CVP_WORKDIR="\${CVP_WORKDIR:-$CVP_VOLUME/work}"  # Persists across restarts
+
+# Use CUDA COLMAP if available (built via build_colmap_cuda.sh)
+if [[ -x "\$CVP_VOLUME/tools/colmap/bin/colmap" ]]; then
+  export PATH="\$CVP_VOLUME/tools/colmap/bin:\$PATH"
+fi
 
 export TORCH_HOME="\${TORCH_HOME:-$CVP_VOLUME/models/torch}"
 export HF_HOME="\${HF_HOME:-$CVP_VOLUME/models/hf}"
@@ -100,6 +106,14 @@ export XDG_CACHE_HOME="\${XDG_CACHE_HOME:-$CVP_VOLUME/.cache}"
 export MPLCONFIGDIR="\${MPLCONFIGDIR:-$CVP_VOLUME/.cache/matplotlib}"
 export NPM_CONFIG_PREFIX="\${NPM_CONFIG_PREFIX:-$CVP_VOLUME/tools/npm}"
 export PATH="\$NPM_CONFIG_PREFIX/bin:\$HOME/.local/bin:\$PATH"
+
+# Git auth: if GITHUB_TOKEN is set (via RunPod secret), configure git to use it
+if [[ -n "\${GITHUB_TOKEN:-}" ]]; then
+  git config --global credential.helper store
+  git config --global user.email "uzairq93@gmail.com"
+  git config --global user.name "umqadir"
+  echo "https://oauth2:\${GITHUB_TOKEN}@github.com" > ~/.git-credentials 2>/dev/null || true
+fi
 EOF
 
 echo "CVP_VOLUME=$CVP_VOLUME"
