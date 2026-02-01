@@ -7,6 +7,8 @@ Implements the pipeline described in `docs/PROJECT-PLAN.md`:
 - Floor plane + footprint extraction → sqft estimate
 - Diagnostics + uncertainty interval (v0 heuristic, calibrate later)
 
+Project status + “what to run next” is tracked in `../STATUS.md`.
+
 ## Quick start (RunPod)
 
 See `docs/RUNPOD.md`.

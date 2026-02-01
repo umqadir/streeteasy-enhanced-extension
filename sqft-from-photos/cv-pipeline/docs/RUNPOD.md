@@ -10,6 +10,28 @@ Defaults:
 - If `CVP_VOLUME` is unset, the code prefers `/runpod-volume`, then `/workspace`.
 - If `CVP_WORKDIR` is unset, the code uses `/tmp/cv_pipeline_work`.
 
+RunPod UI mapping:
+
+- **Volume disk** = persistent storage (mount it at `/workspace` and/or set `CVP_VOLUME`)
+- **Container disk** = ephemeral working disk (use this for `CVP_WORKDIR`)
+
+## One-command bootstrap (recommended)
+
+After you `git clone` the repo **into your mounted volume** (commonly `/workspace`), run:
+
+```bash
+bash cv-pipeline/scripts/runpod_bootstrap.sh
+```
+
+This will:
+
+- install system deps (COLMAP)
+- create a Python env via `uv` (reusing the image’s torch via `--system-site-packages`)
+- install Codex + Claude Code CLIs into `"$CVP_VOLUME/tools/npm"` (persistent)
+- write an env file at `"$CVP_VOLUME/cv_pipeline_env.sh"` for new shells
+
+It does **not** download model weights (run `download_models.py` after).
+
 ## Can I run without a network volume?
 
 Yes, but you lose persistence.
@@ -23,7 +45,7 @@ export CVP_VOLUME=/workspace
 Everything (model weights, caches, and run outputs) will be stored on the pod’s **container disk**. This works for experiments, but:
 
 - If the pod is **terminated/recreated**, you’ll re-download models and lose run outputs.
-- You’ll need a **large container disk** (often `>=200GB` if you download multiple large checkpoints).
+- You’ll need a **large container disk** if you download multiple large checkpoints.
 
 ## 1) System deps (COLMAP)
 
@@ -175,6 +197,12 @@ This repo includes a “no download” estimator for the **model weight** footpr
 ```bash
 python cv-pipeline/scripts/estimate_storage.py
 ```
+
+On `2026-02-01`, the “full plan” weight set is about **13GB** (`total_known_human`), and the script suggests:
+
+- **Models-only minimum**: ~`26GB` (weights + conservative cache overhead)
+- **Practical minimum for experiments**: `100GB`
+- **Comfortable headroom**: `200GB`
 
 Rule of thumb:
 

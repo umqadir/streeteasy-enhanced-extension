@@ -11,9 +11,13 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y --no-install-recommends \
   ca-certificates \
+  curl \
   git \
+  libgl1 \
+  libglib2.0-0 \
+  ffmpeg \
+  unzip \
   wget \
   colmap
 
 echo "OK: installed system deps (colmap)."
-
