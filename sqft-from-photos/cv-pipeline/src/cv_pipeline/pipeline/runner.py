@@ -1110,9 +1110,35 @@ def run_streeteasy_eval(
     filters_dir: Path | None = None,
     out_json: Path | None,
 ) -> dict[str, object]:
+    # Helpful diagnostic for a common dataset issue:
+    # has_sqft_data=true but the numeric sqft value wasn't saved in JSON.
+    flagged_true = None
+    flagged_missing = None
+    try:
+        data = json.loads(dataset_path.read_text(encoding="utf-8"))
+        if isinstance(data, dict) and isinstance(data.get("listings"), list):
+            flagged_true = 0
+            flagged_missing = 0
+            for item in data["listings"]:
+                if not isinstance(item, dict):
+                    continue
+                if bool(item.get("has_sqft_data")):
+                    flagged_true += 1
+                    if not isinstance(item.get("sqft"), (int, float)):
+                        flagged_missing += 1
+    except Exception:
+        flagged_true = None
+        flagged_missing = None
+
     examples = load_streeteasy_dataset(dataset_path, downloads_dir)
     if has_sqft:
         examples = [ex for ex in examples if isinstance(ex.sqft, (int, float))]
+        if not examples and flagged_true:
+            raise SystemExit(
+                "No numeric sqft labels found in dataset. "
+                f"Dataset has has_sqft_data=true for {flagged_true} listings, but sqft is missing for {flagged_missing}. "
+                "Fix by creating a clean-set export (with numeric sqft) and evaluating that JSON instead."
+            )
 
     if listing_ids:
         wanted = [str(s).strip() for s in listing_ids if str(s).strip()]
@@ -1199,6 +1225,8 @@ def run_streeteasy_eval(
         "filters_dir": str(filters_dir) if filters_dir else None,
         "listing_ids": listing_ids,
         "has_sqft": bool(has_sqft),
+        "dataset_flagged_has_sqft_data": flagged_true,
+        "dataset_flagged_missing_sqft": flagged_missing,
         "n": len(rows),
         "n_labeled": len(labeled),
         "mae_sqft": mae,

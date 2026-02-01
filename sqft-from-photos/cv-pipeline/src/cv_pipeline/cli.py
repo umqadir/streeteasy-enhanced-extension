@@ -229,6 +229,19 @@ def _cmd_list_images(args: argparse.Namespace) -> None:
 
 
 def _cmd_list_streeteasy(args: argparse.Namespace) -> None:
+    # Also show the dataset's "flag" field (has_sqft_data), because some datasets
+    # may have has_sqft_data=true but still be missing numeric sqft.
+    raw = json.loads(args.dataset.read_text(encoding="utf-8"))
+    flag_by_id: dict[str, bool] = {}
+    if isinstance(raw, dict) and isinstance(raw.get("listings"), list):
+        for item in raw["listings"]:
+            if not isinstance(item, dict):
+                continue
+            listing_id = str(item.get("id") or "").strip()
+            if not listing_id:
+                continue
+            flag_by_id[listing_id] = bool(item.get("has_sqft_data")) if "has_sqft_data" in item else False
+
     examples = load_streeteasy_dataset(args.dataset, args.downloads)
     if args.has_sqft:
         examples = [ex for ex in examples if isinstance(ex.sqft, (int, float))]
@@ -237,8 +250,9 @@ def _cmd_list_streeteasy(args: argparse.Namespace) -> None:
 
     rows = []
     for ex in examples:
+        flag = 1 if flag_by_id.get(ex.listing_id, False) else 0
         sqft = "" if ex.sqft is None else f"{float(ex.sqft):.0f}"
-        rows.append(f"{ex.listing_id}\t{sqft}\t{ex.images_dir}\t{ex.listing_url}")
+        rows.append(f"{ex.listing_id}\tflag={flag}\tsqft={sqft}\t{ex.images_dir}\t{ex.listing_url}")
     print("\n".join(rows))
 
 
