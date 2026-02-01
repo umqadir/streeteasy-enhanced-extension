@@ -43,6 +43,18 @@ uv run cv-pipeline list-images --images <path>
 uv run python scripts/doctor.py
 ```
 
+## Make a labeled-only eval set (local)
+
+If your `sample-collection/streeteasy_eval_dataset/listings.json` contains numeric `sqft` for a subset of listings,
+export a labeled-only JSON:
+
+```bash
+python sample-collection/scripts/export_labeled_subset.py \
+  --dataset sample-collection/streeteasy_eval_dataset/listings.json
+```
+
+This writes `sample-collection/streeteasy_eval_dataset/listings_labeled_only.json`.
+
 ## Key Options
 
 | Option | Default | Notes |
