@@ -1084,7 +1084,7 @@ def run_listing(
 def run_streeteasy_eval(
     *,
     dataset_path: Path,
-    downloads_dir: Path,
+    downloads_dir: Path | None,
     limit: int,
     out_json: Path | None,
 ) -> dict[str, object]:

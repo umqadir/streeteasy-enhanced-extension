@@ -54,7 +54,7 @@ def _normalize_run_cfg(cfg: dict[str, Any]) -> dict[str, Any]:
 def run_streeteasy_sweep(
     *,
     dataset_path: Path,
-    downloads_dir: Path,
+    downloads_dir: Path | None,
     config_path: Path | None,
     limit: int,
     out_json: Path | None,
@@ -186,4 +186,3 @@ def run_streeteasy_sweep(
     }
     out_path.write_text(json.dumps(sweep_summary, indent=2), encoding="utf-8")
     return sweep_summary
-

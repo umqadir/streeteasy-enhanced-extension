@@ -93,6 +93,14 @@ uv run cv-pipeline eval-streeteasy \
   --limit 3
 ```
 
+If you uploaded the larger evaluation bundle (`sample-collection/streeteasy_eval_dataset/`), run:
+
+```bash
+uv run cv-pipeline eval-streeteasy \
+  --dataset ../sample-collection/streeteasy_eval_dataset/listings.json \
+  --limit 10
+```
+
 Outputs go to `"$CVP_VOLUME/runs/<run_id>/"` (so they persist on the volume).
 
 ## Verify VRAM + storage before you scale down
@@ -127,5 +135,5 @@ Paste this into Codex/Claude Code after you `cd` into `.../sqft-from-photos` on 
 > Steps:
 > 1) `bash cv-pipeline/scripts/runpod_bootstrap.sh && source /workspace/cv_pipeline_env.sh`
 > 2) `cd cv-pipeline && uv run python scripts/download_models.py all`
-> 3) `uv run cv-pipeline eval-streeteasy --dataset ../sample-collection/data/streeteasy_examples_20.json --downloads ../sample-collection/data/downloads --limit 3`
-> 4) `uv run cv-pipeline sweep-streeteasy --dataset ../sample-collection/data/streeteasy_examples_20.json --downloads ../sample-collection/data/downloads --limit 3`
+> 3) `uv run cv-pipeline eval-streeteasy --dataset ../sample-collection/streeteasy_eval_dataset/listings.json --limit 10`
+> 4) `uv run cv-pipeline sweep-streeteasy --dataset ../sample-collection/streeteasy_eval_dataset/listings.json --limit 10`

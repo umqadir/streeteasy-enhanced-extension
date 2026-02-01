@@ -150,6 +150,14 @@ uv run cv-pipeline eval-streeteasy \
 
 Outputs land in `"$CVP_VOLUME/runs/<run_id>/"`.
 
+If you uploaded `sample-collection/streeteasy_eval_dataset/` (contains `listings.json` and `photos/`), you can omit `--downloads`:
+
+```bash
+uv run cv-pipeline eval-streeteasy \
+  --dataset /path/to/streeteasy_eval_dataset/listings.json \
+  --limit 10
+```
+
 ## Sweeps + reports
 
 Run a small built-in sweep:

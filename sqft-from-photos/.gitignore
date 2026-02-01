@@ -1,4 +1,4 @@
 # Large local artifacts (upload to RunPod volume instead of committing)
 sample-collection/data/downloads/
 sample-collection/data/photos/
-
+sample-collection/streeteasy_eval_dataset/photos/

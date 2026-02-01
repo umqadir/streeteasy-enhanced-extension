@@ -72,14 +72,24 @@ def _build_parser() -> argparse.ArgumentParser:
 
     ev = sub.add_parser("eval-streeteasy", help="Run on sample-collection format and compute metrics.")
     ev.add_argument("--dataset", type=Path, required=True)
-    ev.add_argument("--downloads", type=Path, required=True)
+    ev.add_argument(
+        "--downloads",
+        type=Path,
+        default=None,
+        help="Directory containing downloaded listing photo folders. Optional for datasets that include photo paths.",
+    )
     ev.add_argument("--limit", type=int, default=0, help="0 => all listings")
     ev.add_argument("--out-json", type=Path, default=None, help="Optional explicit output JSON path.")
     ev.set_defaults(func=_cmd_eval)
 
     sweep = sub.add_parser("sweep-streeteasy", help="Run a set/grid of configs over the Streeteasy dataset.")
     sweep.add_argument("--dataset", type=Path, required=True)
-    sweep.add_argument("--downloads", type=Path, required=True)
+    sweep.add_argument(
+        "--downloads",
+        type=Path,
+        default=None,
+        help="Directory containing downloaded listing photo folders. Optional for datasets that include photo paths.",
+    )
     sweep.add_argument("--config", type=Path, default=None, help="Optional JSON config (runs/grid).")
     sweep.add_argument("--limit", type=int, default=0, help="0 => all listings")
     sweep.add_argument("--out-json", type=Path, default=None, help="Optional explicit output JSON path.")
