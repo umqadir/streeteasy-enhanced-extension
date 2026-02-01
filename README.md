@@ -34,3 +34,43 @@ Then reload the extension.
 ## Disclaimer
 
 Independent project; not affiliated with StreetEasy/Zillow/NYPD/NYC. Complaint counts are not a guarantee of future safety.
+
+---
+
+## CV Pipeline (sqft-from-photos)
+
+Computer vision pipeline for estimating apartment square footage from photos.
+
+### RunPod Setup
+
+**First time setup:**
+```bash
+bash sqft-from-photos/cv-pipeline/scripts/runpod_bootstrap.sh
+source /workspace/cv_pipeline_env.sh
+```
+
+This installs:
+- System dependencies (COLMAP)
+- Python environment (via uv)
+- Node.js (via NVM) + Codex + Claude Code CLIs
+
+**After pod restart:**
+```bash
+source /workspace/cv_pipeline_env.sh
+```
+
+The env file persists in `/workspace` and loads NVM automatically, making `node`, `npm`, `codex`, and `claude` available.
+
+### Using Codex
+
+After sourcing the env file:
+```bash
+codex          # Start Codex CLI
+claude         # Start Claude Code CLI
+```
+
+### Project Structure
+
+- `sqft-from-photos/cv-pipeline/` - Main pipeline code
+- `sqft-from-photos/sample-collection/` - Data collection scripts
+- See `sqft-from-photos/cv-pipeline/docs/PROJECT-PLAN.md` for roadmap

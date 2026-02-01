@@ -574,3 +574,33 @@ If you want, I can also provide:
 [16]: https://openaccess.thecvf.com/content/CVPR2024/papers/Wang_DUSt3R_Geometric_3D_Vision_Made_Easy_CVPR_2024_paper.pdf?utm_source=chatgpt.com
 
 [17]: https://arxiv.org/pdf/2512.02952?utm_source=chatgpt.com
+
+---
+
+## 12) Engineering Log
+
+Track problems encountered during experiments. This drives iteration priorities.
+
+### 2026-02-01: First pipeline run (listing_073)
+
+**Config**: `--colmap --sfm-matching exhaustive`
+
+**Results**:
+- **SfM**: Only 2/14 images registered (14% success rate)
+- **Scale estimation**: FAILED - insufficient alignment pairs (need ~200 per image)
+- **Fallback**: depth-only activated
+- **Estimate**: 564 sqft (90% CI: 210-1127, confidence: 0.08)
+
+**Analysis**:
+- Interior photos have limited visual overlap between rooms
+- Close-up shots of features don't match well with wide room shots
+- COLMAP's exhaustive matching couldn't find enough correspondences
+
+**Decision Point A applies**: SfM is failing frequently. Next steps:
+1. Try learned matchers (LightGlue via `--sfm-matching lightglue`)
+2. Enable DUSt3R/MASt3R fallback for listings where COLMAP fails
+3. Filter close-up/detail photos from SfM (use for semantics only)
+
+**Blocked**: No ground truth sqft in dataset to measure actual error
+- eval_dataset has 21 listings with `has_sqft_data=True` but sqft values not scraped
+- Need to populate sqft values to enable evaluation metrics (MAPE, calibration)

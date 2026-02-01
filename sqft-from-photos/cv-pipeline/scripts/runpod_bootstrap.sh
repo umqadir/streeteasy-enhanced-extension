@@ -83,8 +83,7 @@ export HUGGINGFACE_HUB_CACHE="${HUGGINGFACE_HUB_CACHE:-$CVP_VOLUME/models/hf/hub
 export UV_CACHE_DIR="${UV_CACHE_DIR:-$CVP_VOLUME/.cache/uv}"
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$CVP_VOLUME/.cache}"
 export MPLCONFIGDIR="${MPLCONFIGDIR:-$CVP_VOLUME/.cache/matplotlib}"
-export NPM_CONFIG_PREFIX="${NPM_CONFIG_PREFIX:-$CVP_VOLUME/tools/npm}"
-export PATH="$NPM_CONFIG_PREFIX/bin:$HOME/.local/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
 
 env_file="$CVP_VOLUME/cv_pipeline_env.sh"
 cat >"$env_file" <<EOF
@@ -96,6 +95,14 @@ if [[ -x "\$CVP_VOLUME/tools/colmap/bin/colmap" ]]; then
   export PATH="\$CVP_VOLUME/tools/colmap/bin:\$PATH"
 fi
 
+# Git auth: if GITHUB_TOKEN is set (via RunPod secret), configure git to use it
+if [[ -n "\${GITHUB_TOKEN:-}" ]]; then
+  git config --global credential.helper store
+  git config --global user.email "uzairq93@gmail.com"
+  git config --global user.name "umqadir"
+  echo "https://oauth2:\${GITHUB_TOKEN}@github.com" > ~/.git-credentials 2>/dev/null || true
+fi
+
 export TORCH_HOME="\${TORCH_HOME:-$CVP_VOLUME/models/torch}"
 export HF_HOME="\${HF_HOME:-$CVP_VOLUME/models/hf}"
 export TRANSFORMERS_CACHE="\${TRANSFORMERS_CACHE:-$CVP_VOLUME/models/hf/transformers}"
@@ -104,16 +111,16 @@ export HUGGINGFACE_HUB_CACHE="\${HUGGINGFACE_HUB_CACHE:-$CVP_VOLUME/models/hf/hu
 export UV_CACHE_DIR="\${UV_CACHE_DIR:-$CVP_VOLUME/.cache/uv}"
 export XDG_CACHE_HOME="\${XDG_CACHE_HOME:-$CVP_VOLUME/.cache}"
 export MPLCONFIGDIR="\${MPLCONFIGDIR:-$CVP_VOLUME/.cache/matplotlib}"
-export NPM_CONFIG_PREFIX="\${NPM_CONFIG_PREFIX:-$CVP_VOLUME/tools/npm}"
-export PATH="\$NPM_CONFIG_PREFIX/bin:\$HOME/.local/bin:\$PATH"
 
-# Git auth: if GITHUB_TOKEN is set (via RunPod secret), configure git to use it
-if [[ -n "\${GITHUB_TOKEN:-}" ]]; then
-  git config --global credential.helper store
-  git config --global user.email "uzairq93@gmail.com"
-  git config --global user.name "umqadir"
-  echo "https://oauth2:\${GITHUB_TOKEN}@github.com" > ~/.git-credentials 2>/dev/null || true
+# Node.js via NVM (for Codex and other CLIs)
+# Note: NVM manages its own npm global packages in \$NVM_DIR/versions/node/*/bin
+export NVM_DIR="\${NVM_DIR:-$CVP_VOLUME/tools/nvm}"
+if [[ -s "\$NVM_DIR/nvm.sh" ]]; then
+  unset NPM_CONFIG_PREFIX  # NVM conflicts with NPM_CONFIG_PREFIX
+  source "\$NVM_DIR/nvm.sh"
 fi
+
+export PATH="\$HOME/.local/bin:\$PATH"
 EOF
 
 echo "CVP_VOLUME=$CVP_VOLUME"
@@ -205,9 +212,8 @@ ensure_node() {
 
 install_node_tools() {
   ensure_node
-  mkdir -p "$NPM_CONFIG_PREFIX"
 
-  echo "Installing CLIs to: $NPM_CONFIG_PREFIX"
+  echo "Installing CLIs globally via npm (managed by NVM)"
   npm install -g @openai/codex @anthropic-ai/claude-code
 
   echo "OK: codex=$(command -v codex || true)"
