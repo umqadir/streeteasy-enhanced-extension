@@ -132,6 +132,7 @@ def _cmd_vendor_all(args: argparse.Namespace) -> None:
         ("metric3d", "https://github.com/YvanYin/Metric3D.git", "metric3d", False),
         ("unidepth", "https://github.com/lpiccinelli-eth/UniDepth.git", "unidepth", False),
         ("moge", "https://github.com/microsoft/MoGe.git", "moge", False),
+        ("lightglue", "https://github.com/cvg/LightGlue.git", "lightglue", False),
         ("dust3r", "https://github.com/naver/dust3r.git", "dust3r", True),
         ("mast3r", "https://github.com/naver/mast3r.git", "mast3r", True),
     ]
@@ -414,4 +415,3 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         raise SystemExit(130)
-

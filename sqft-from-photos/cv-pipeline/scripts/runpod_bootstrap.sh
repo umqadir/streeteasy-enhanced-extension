@@ -77,6 +77,8 @@ export HF_HOME="${HF_HOME:-$CVP_VOLUME/models/hf}"
 export TRANSFORMERS_CACHE="${TRANSFORMERS_CACHE:-$CVP_VOLUME/models/hf/transformers}"
 export HUGGINGFACE_HUB_CACHE="${HUGGINGFACE_HUB_CACHE:-$CVP_VOLUME/models/hf/hub}"
 export UV_CACHE_DIR="${UV_CACHE_DIR:-$CVP_VOLUME/.cache/uv}"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$CVP_VOLUME/.cache}"
+export MPLCONFIGDIR="${MPLCONFIGDIR:-$CVP_VOLUME/.cache/matplotlib}"
 export NPM_CONFIG_PREFIX="${NPM_CONFIG_PREFIX:-$CVP_VOLUME/tools/npm}"
 export PATH="$NPM_CONFIG_PREFIX/bin:$HOME/.local/bin:$PATH"
 
@@ -91,6 +93,8 @@ export TRANSFORMERS_CACHE="\${TRANSFORMERS_CACHE:-$CVP_VOLUME/models/hf/transfor
 export HUGGINGFACE_HUB_CACHE="\${HUGGINGFACE_HUB_CACHE:-$CVP_VOLUME/models/hf/hub}"
 
 export UV_CACHE_DIR="\${UV_CACHE_DIR:-$CVP_VOLUME/.cache/uv}"
+export XDG_CACHE_HOME="\${XDG_CACHE_HOME:-$CVP_VOLUME/.cache}"
+export MPLCONFIGDIR="\${MPLCONFIGDIR:-$CVP_VOLUME/.cache/matplotlib}"
 export NPM_CONFIG_PREFIX="\${NPM_CONFIG_PREFIX:-$CVP_VOLUME/tools/npm}"
 export PATH="\$NPM_CONFIG_PREFIX/bin:\$HOME/.local/bin:\$PATH"
 EOF
@@ -146,7 +150,7 @@ install_python() {
   uv venv --system-site-packages --allow-existing .venv
   # shellcheck disable=SC1091
   source .venv/bin/activate
-  uv sync --extra gpu --extra research --active
+  uv sync --extra gpu --extra sfm --extra depth --extra open3d --extra research --active
   echo "OK: Python env ready at $project_dir/.venv"
 }
 

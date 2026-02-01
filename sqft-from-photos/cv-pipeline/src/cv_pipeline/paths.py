@@ -66,4 +66,5 @@ def setup_model_caches(volume: VolumePaths) -> None:
     os.environ.setdefault("HF_HOME", str(models / "hf"))
     os.environ.setdefault("TRANSFORMERS_CACHE", str(models / "hf" / "transformers"))
     os.environ.setdefault("HUGGINGFACE_HUB_CACHE", str(models / "hf" / "hub"))
-
+    os.environ.setdefault("XDG_CACHE_HOME", str(volume.root / ".cache"))
+    os.environ.setdefault("MPLCONFIGDIR", str(volume.root / ".cache" / "matplotlib"))

@@ -9,35 +9,51 @@ The long-form research roadmap is in `cv-pipeline/docs/PROJECT-PLAN.md`.
 
 ## What’s implemented (today)
 
-- End-to-end pipeline that can run on a set of listing photos:
-  - Image preprocessing (resize + copy)
-  - SfM with COLMAP (feature_extractor → exhaustive_matcher → mapper)
-  - Metric depth via Depth-Anything-V2 metric (Hypersim + ViT-L default)
-  - Robust scale fit between SfM depths and metric depths
-  - Point cloud build + floor plane fit + footprint extraction
-  - Sqft estimate + a basic uncertainty interval + diagnostics JSON
+- End-to-end geometry pipeline (multi-view first):
+  - Image preprocessing (resize + dedup)
+  - Overlap graph via embeddings (for selective matching + clustering)
+  - SfM with COLMAP:
+    - `--sfm-matching exhaustive` (vanilla COLMAP)
+    - `--sfm-matching lightglue` (retrieval → LightGlue matches → COLMAP mapper)
+  - Metric depth backends:
+    - DepthAnythingV2 metric, Metric3D v2, UniDepth v1, MoGe v2, ZoeDepth
+    - `--depth-model ensemble` to mix multiple depth models
+  - Metric scale recovery by aligning SfM depths to metric depth maps
+  - Dense fusion option: `--fusion tsdf` (Open3D TSDF)
+  - Floor plane fit + footprint extraction
+  - Multi-component handling when COLMAP fragments:
+    - `--multi-component best` (use best sub-model)
+    - `--multi-component sum` (conservative aggregation w/ overlap clustering)
+  - Uncertainty:
+    - `--uncertainty heuristic`
+    - `--uncertainty montecarlo` (saves sample arrays to `runs/<run_id>/samples_*.npy`)
+  - Post-hoc calibration:
+    - `cv-pipeline calibrate` (conformal interval expansion)
+    - `cv-pipeline report-eval` (coverage/width metrics, optional calibration)
 - “Download once, reuse” caching onto `CVP_VOLUME`:
   - `TORCH_HOME`, `HF_HOME`, `TRANSFORMERS_CACHE`, `HUGGINGFACE_HUB_CACHE` are redirected to `"$CVP_VOLUME/models/..."`
+  - `XDG_CACHE_HOME`, `MPLCONFIGDIR` redirected to `"$CVP_VOLUME/.cache/..."`
 - RunPod tooling:
   - `cv-pipeline/scripts/runpod_setup_system.sh` installs COLMAP and common libs
   - `cv-pipeline/scripts/runpod_bootstrap.sh` sets up the pod (system + python + Codex/Claude CLIs)
   - `cv-pipeline/scripts/estimate_storage.py` estimates weight footprint without downloading
   - `cv-pipeline/scripts/profile_vram.py` profiles peak CUDA VRAM for heavy research-plan models (after download)
+- Fallbacks (when COLMAP fails):
+  - `--fallback depth-only` (depth-only + heuristic layout prior + clustering)
+  - `--fallback dust3r` / `--fallback mast3r` (DUSt3R/MASt3R recon + metric scale via depth alignment)
 
 ## What’s not implemented yet (planned in PROJECT-PLAN)
 
-- Retrieval + learned matching (hloc / LightGlue) feeding COLMAP instead of exhaustive matching
-- DUSt3R/MASt3R as an actual reconstruction backend (currently: downloadable + VRAM-profileable only)
-- TSDF fusion / meshing (e.g., Open3D integration) and more robust floor/room segmentation
-- Better uncertainty calibration (current interval is heuristic; needs calibration on labeled data)
-- Stronger “single-view fallback” beyond depth-only point cloud
+- Domain-specific training / fine-tuning (explicitly deferred)
+- Object-anchor scale constraints (doors/counters/beds) as an additional scale likelihood
+- Multi-floor unit handling beyond “dominant floor plane”
 
 ## RunPod: fastest “clone → run” workflow
 
 Recommended settings for a 1× RTX 4090 (24GB):
 
 - **Volume disk (persistent, mounted at `/workspace`)**: `>=100GB` (20GB is too small for the full plan)
-- **Container disk (ephemeral)**: `>=50GB`
+- **Container disk (ephemeral)**: `>=50GB` (COLMAP DBs + intermediates can be large)
 
 Why `>=100GB` volume?
 
@@ -60,6 +76,12 @@ source /workspace/cv_pipeline_env.sh
 ```bash
 cd cv-pipeline
 uv run python scripts/download_models.py depth-anything-metric --encoder vitl --dataset hypersim
+```
+
+If you plan to use LightGlue / UniDepth / MoGe / Metric3D / DUSt3R / MASt3R:
+
+```bash
+uv run python scripts/download_models.py all
 ```
 
 ### 3) Run on the included sample photos
@@ -100,6 +122,10 @@ uv run python scripts/profile_vram.py all --amp --n-images 4 --size 512 --print-
 
 Paste this into Codex/Claude Code after you `cd` into `.../sqft-from-photos` on the pod:
 
-> Goal: get `cv-pipeline eval-streeteasy` running end-to-end on 3 sample listings, saving outputs under `$CVP_VOLUME/runs/`.
-> Constraints: no GUI; use `uv`; don’t download models to container disk (keep them on `/workspace`).
-> Steps: run `bash cv-pipeline/scripts/runpod_bootstrap.sh`, download the default depth model, run eval, and fix any missing system deps / path issues.
+> Goal: run `cv-pipeline eval-streeteasy` end-to-end on 3 sample listings and then run a small sweep.
+> Constraints: no GUI; use `uv`; keep caches/models on `/workspace` (network volume); don’t commit secrets.
+> Steps:
+> 1) `bash cv-pipeline/scripts/runpod_bootstrap.sh && source /workspace/cv_pipeline_env.sh`
+> 2) `cd cv-pipeline && uv run python scripts/download_models.py all`
+> 3) `uv run cv-pipeline eval-streeteasy --dataset ../sample-collection/data/streeteasy_examples_20.json --downloads ../sample-collection/data/downloads --limit 3`
+> 4) `uv run cv-pipeline sweep-streeteasy --dataset ../sample-collection/data/streeteasy_examples_20.json --downloads ../sample-collection/data/downloads --limit 3`

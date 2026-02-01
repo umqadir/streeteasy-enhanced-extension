@@ -6,6 +6,7 @@ from pathlib import Path
 
 import numpy as np
 
+from cv_pipeline.depth.base import DepthPrediction, PinholeIntrinsics
 from cv_pipeline.paths import VolumePaths, ensure_dirs
 
 
@@ -94,12 +95,10 @@ class DepthAnythingV2Metric:
         self._model = model
         self._device = device
 
-    def infer_to_npy(self, image_path: Path, out_path: Path) -> Path:
+    def infer(self, image_path: Path, *, intrinsics: PinholeIntrinsics | None = None) -> DepthPrediction:
         """
-        Saves raw depth (meters) as .npy compatible with upstream run.py naming.
+        Returns metric depth (meters). Ignores intrinsics (this model does not need them).
         """
-        if out_path.exists():
-            return out_path
         if self._model is None:
             self._load()
 
@@ -111,7 +110,17 @@ class DepthAnythingV2Metric:
 
         depth = self._model.infer_image(raw, self._cfg.input_size)  # HxW meters (numpy)
         depth = np.asarray(depth, dtype=np.float32)
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        np.save(out_path, depth)
-        return out_path
+        return DepthPrediction(depth_m=depth, intrinsics=None, diagnostics={"input_size": self._cfg.input_size})
 
+    def infer_to_npy(
+        self, image_path: Path, out_path: Path, *, intrinsics: PinholeIntrinsics | None = None
+    ) -> Path:
+        """
+        Saves raw depth (meters) as .npy.
+        """
+        if out_path.exists():
+            return out_path
+        pred = self.infer(image_path, intrinsics=intrinsics)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        np.save(out_path, pred.depth_m.astype(np.float32))
+        return out_path

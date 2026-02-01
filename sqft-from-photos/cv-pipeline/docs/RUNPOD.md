@@ -32,6 +32,19 @@ This will:
 
 It does **not** download model weights (run `download_models.py` after).
 
+## Do I need a custom container image?
+
+Not required.
+
+The repo is set up so you can use a stock CUDA/PyTorch RunPod image and run `runpod_bootstrap.sh`.
+If you want faster cold-starts, a custom image can pre-install:
+
+- `colmap` + system libs
+- `uv` + project deps
+- Node.js + `codex` / `claude`
+
+Even with a custom image, keep **model weights and caches** on the **network volume** (`CVP_VOLUME`) so you don’t re-download.
+
 ## Can I run without a network volume?
 
 Yes, but you lose persistence.
@@ -65,7 +78,7 @@ From the repo root:
 
 ```bash
 cd cv-pipeline
-uv sync --extra gpu
+uv sync --extra gpu --extra sfm --extra depth --extra open3d
 ```
 
 Notes:
@@ -76,7 +89,7 @@ Notes:
 For the full research plan (DUSt3R/MASt3R VRAM profiling), also install:
 
 ```bash
-uv sync --extra gpu --extra research
+uv sync --extra gpu --extra sfm --extra depth --extra open3d --extra research
 ```
 
 ## 3) Model downloads to the network volume
@@ -136,6 +149,60 @@ uv run cv-pipeline eval-streeteasy \
 ```
 
 Outputs land in `"$CVP_VOLUME/runs/<run_id>/"`.
+
+## Sweeps + reports
+
+Run a small built-in sweep:
+
+```bash
+uv run cv-pipeline sweep-streeteasy \
+  --dataset /path/to/streeteasy_examples_20.json \
+  --downloads /path/to/downloads \
+  --limit 3
+```
+
+Summarize an eval JSON (and optionally apply a saved conformal calibrator):
+
+```bash
+uv run cv-pipeline report-eval --eval-json /path/to/eval.json
+uv run cv-pipeline report-eval --eval-json /path/to/eval.json --calibration-json /path/to/calibration_conformal.json
+```
+
+### Useful “full plan” flags (examples)
+
+Learned matching + TSDF + Monte Carlo:
+
+```bash
+uv run cv-pipeline run \
+  --images /path/to/listing_images \
+  --colmap \
+  --sfm-matching lightglue \
+  --depth-model metric3d-v2 \
+  --fusion tsdf \
+  --uncertainty montecarlo
+```
+
+Depth ensemble:
+
+```bash
+uv run cv-pipeline run \
+  --images /path/to/listing_images \
+  --colmap \
+  --sfm-matching lightglue \
+  --depth-model ensemble \
+  --depth-ensemble "metric3d-v2,unidepth-v1,depth-anything-metric" \
+  --fusion tsdf \
+  --uncertainty montecarlo
+```
+
+Conservative multi-component aggregation:
+
+```bash
+uv run cv-pipeline run \
+  --images /path/to/listing_images \
+  --colmap \
+  --multi-component sum
+```
 
 ## Recommended pod sizing (to run the full research plan)
 

@@ -14,6 +14,7 @@ class ColmapRunResult:
     sparse_model_dir: Path
     sparse_model_txt_dir: Path
     diagnostics: dict[str, object]
+    models: dict[str, ColmapModel] | None = None
 
 
 def _select_best_model_dir(sparse_dir: Path) -> Path:
@@ -117,28 +118,40 @@ def run_colmap_sfm(
         stderr_path=logs_dir / "mapper.stderr.log",
     )
 
-    best_model_dir = _select_best_model_dir(sparse_dir)
-    sparse_txt_dir = colmap_dir / "sparse_txt"
-    sparse_txt_dir.mkdir(parents=True, exist_ok=True)
+    candidates = sorted([p for p in sparse_dir.iterdir() if p.is_dir() and p.name.isdigit()])
+    if not candidates:
+        raise FileNotFoundError(f"No COLMAP models found under: {sparse_dir}")
 
-    run(
-        [
-            "colmap",
-            "model_converter",
-            "--input_path",
-            str(best_model_dir),
-            "--output_path",
-            str(sparse_txt_dir),
-            "--output_type",
-            "TXT",
-        ],
-        cwd=colmap_dir,
-        env=env,
-        stdout_path=logs_dir / "model_converter.stdout.log",
-        stderr_path=logs_dir / "model_converter.stderr.log",
-    )
+    models: dict[str, ColmapModel] = {}
+    sparse_txt_root = colmap_dir / "sparse_txt"
+    sparse_txt_root.mkdir(parents=True, exist_ok=True)
 
-    model = load_colmap_model_txt(sparse_txt_dir)
+    for c in candidates:
+        out_txt = sparse_txt_root / c.name
+        out_txt.mkdir(parents=True, exist_ok=True)
+        run(
+            [
+                "colmap",
+                "model_converter",
+                "--input_path",
+                str(c),
+                "--output_path",
+                str(out_txt),
+                "--output_type",
+                "TXT",
+            ],
+            cwd=colmap_dir,
+            env=env,
+            stdout_path=logs_dir / f"model_converter.{c.name}.stdout.log",
+            stderr_path=logs_dir / f"model_converter.{c.name}.stderr.log",
+        )
+        models[c.name] = load_colmap_model_txt(out_txt)
+
+    # Choose best by number of registered images.
+    best_id = max(models.keys(), key=lambda k: len(models[k].images))
+    best_model_dir = sparse_dir / best_id
+    sparse_txt_dir = sparse_txt_root / best_id
+    model = models[best_id]
     diagnostics = {
         "camera_model": camera_model,
         "default_focal_length_factor": default_focal_length_factor,
@@ -148,11 +161,13 @@ def run_colmap_sfm(
         "registered_images": len(model.images),
         "points3d": len(model.points3d),
         "logs_dir": str(logs_dir),
+        "n_models": len(models),
+        "models": {mid: {"registered_images": len(m.images), "points3d": len(m.points3d)} for mid, m in models.items()},
     }
     return ColmapRunResult(
         model=model,
         sparse_model_dir=best_model_dir,
         sparse_model_txt_dir=sparse_txt_dir,
         diagnostics=diagnostics,
+        models=models,
     )
-

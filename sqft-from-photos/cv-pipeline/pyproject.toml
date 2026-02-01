@@ -21,11 +21,24 @@ gpu = [
   "torch>=2.1",
   "torchvision>=0.16",
 ]
+sfm = [
+  # Learned matching (LightGlue) and image-pair retrieval helpers.
+  # Note: LightGlue code is vendored via `download_models.py vendor-all` (no pip dep here).
+  "kornia>=0.7",
+]
+depth = [
+  # Extra deps for alternative metric depth / intrinsics models (Metric3D, UniDepth, MoGe).
+  "mmengine>=0.10",
+  "timm>=0.9",
+  # MoGe dependency (pinned to upstream recommendation).
+  "utils3d @ git+https://github.com/EasternJournalist/utils3d.git@3fab839f0be9931dac7c8488eb0e1600c236e183",
+]
 research = [
   # Dependencies required to run the research-plan profilers (DUSt3R/MASt3R).
   # (We intentionally do not pin torch/torchvision here; use the `gpu` extra and a CUDA-matched torch.)
   "einops>=0.7",
   "roma>=1.5",
+  "matplotlib>=3.8",
   "tensorboard>=2.16",
   "trimesh>=4.0",
   "pyglet<2",
@@ -41,6 +54,7 @@ cv-pipeline = "cv_pipeline.cli:main"
 [tool.pytest.ini_options]
 addopts = "-q"
 testpaths = ["tests"]
+pythonpath = ["src"]
 
 [tool.ruff]
 line-length = 110
