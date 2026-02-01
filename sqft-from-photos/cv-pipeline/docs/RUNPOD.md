@@ -51,6 +51,12 @@ Notes:
 - In most RunPod PyTorch images, `torch` is already installed. If so, `uv sync --extra gpu` may skip installing torch.
 - If you hit CUDA / torch version issues, prefer the base image’s torch and remove torch from the extras.
 
+For the full research plan (DUSt3R/MASt3R VRAM profiling), also install:
+
+```bash
+uv sync --extra gpu --extra research
+```
+
 ## 3) Model downloads to the network volume
 
 This project stores caches/weights under `"$CVP_VOLUME/models"`.
