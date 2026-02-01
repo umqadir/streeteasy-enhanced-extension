@@ -167,7 +167,6 @@ INDEX_HTML = """<!doctype html>
         <button id="invert">Invert</button>
         <span style="flex:1"></span>
         <label>Sqft <input id="sqft" placeholder="e.g. 850" style="width:110px" /></label>
-        <button id="queueOne">Add to batch</button>
         <button class="primary" id="exportBatch">Export batch (<span id="batchCount">0</span>)</button>
         <button class="warn" id="clearBatch">Clear batch</button>
       </div>
@@ -223,6 +222,20 @@ function removeBatchItem(listingId){
 function clearBatch(){
   saveBatch({});
 }
+
+function syncBatchFromCurrentListing(){
+  const id = state.activeId;
+  if(!id) return;
+  const total = state.photos.length;
+  const excluded = state.excluded.size;
+  const included = total - excluded;
+  const sqft = (state.sqftById.get(id) || '').trim();
+  if(included > 0){
+    setBatchItem(id, Array.from(state.excluded), sqft ? Number(sqft) : null);
+  }else{
+    removeBatchItem(id);
+  }
+}
 function qs(id){ return document.getElementById(id); }
 function setStatus(msg){ qs('status').textContent = msg; }
 async function apiGet(url){ const r=await fetch(url); if(!r.ok) throw new Error(`GET ${url} => ${r.status}`); return await r.json(); }
@@ -260,7 +273,13 @@ function renderGrid(){
     tile.className='tile'+(state.excluded.has(rel)?' excluded':'');
     const thumb=`/thumb?path=${encodeURIComponent(rel)}&w=320`;
     tile.innerHTML=`<img src="${thumb}" loading="lazy" /><div class="cap"><span>#${String(i).padStart(3,'0')}</span><span class="pill">${state.excluded.has(rel)?'excluded':'included'}</span></div>`;
-    tile.onclick=()=>{ if(state.excluded.has(rel)) state.excluded.delete(rel); else state.excluded.add(rel); renderGrid(); updateMeta(); };
+    tile.onclick=()=>{
+      if(state.excluded.has(rel)) state.excluded.delete(rel); else state.excluded.add(rel);
+      syncBatchFromCurrentListing();
+      renderGrid();
+      updateMeta();
+      renderListings();
+    };
     grid.appendChild(tile);
   }
 }
@@ -274,7 +293,9 @@ function updateMeta(){
 async function loadListing(id){
   state.activeId=id; setStatus('Loading photos…');
   const data=await apiGet(`/api/listing?id=${encodeURIComponent(id)}`);
-  state.photos=data.photo_paths; state.excluded=new Set(data.excluded||[]);
+  state.photos=data.photo_paths;
+  // Default: everything excluded unless the listing is already in the batch.
+  state.excluded=new Set(state.photos);
   if(data.sqft!=null) state.sqftById.set(id,String(data.sqft));
   // Restore from batch (if queued)
   const batch = getBatch();
@@ -287,17 +308,10 @@ async function loadListing(id){
 }
 qs('onlyHasSqft').addEventListener('change', renderListings);
 qs('filterText').addEventListener('input', renderListings);
-qs('includeAll').onclick=()=>{ state.excluded=new Set(); renderGrid(); updateMeta(); };
-qs('excludeAll').onclick=()=>{ state.excluded=new Set(state.photos); renderGrid(); updateMeta(); };
-qs('invert').onclick=()=>{ const next=new Set(); for(const rel of state.photos){ if(!state.excluded.has(rel)) next.add(rel); } state.excluded=next; renderGrid(); updateMeta(); };
-qs('sqft').addEventListener('input',()=>{ const id=state.activeId; if(!id) return; const v=qs('sqft').value.trim(); if(v) state.sqftById.set(id,v); else state.sqftById.delete(id); renderListings(); });
-qs('queueOne').onclick=()=>{
-  const id=state.activeId; if(!id) return;
-  const sqft=(state.sqftById.get(id)||'').trim();
-  setBatchItem(id, Array.from(state.excluded), sqft?Number(sqft):null);
-  setStatus(`Queued ${id}`);
-  renderListings();
-};
+qs('includeAll').onclick=()=>{ state.excluded=new Set(); syncBatchFromCurrentListing(); renderGrid(); updateMeta(); renderListings(); };
+qs('excludeAll').onclick=()=>{ state.excluded=new Set(state.photos); syncBatchFromCurrentListing(); renderGrid(); updateMeta(); renderListings(); };
+qs('invert').onclick=()=>{ const next=new Set(); for(const rel of state.photos){ if(!state.excluded.has(rel)) next.add(rel); } state.excluded=next; syncBatchFromCurrentListing(); renderGrid(); updateMeta(); renderListings(); };
+qs('sqft').addEventListener('input',()=>{ const id=state.activeId; if(!id) return; const v=qs('sqft').value.trim(); if(v) state.sqftById.set(id,v); else state.sqftById.delete(id); syncBatchFromCurrentListing(); renderListings(); });
 
 qs('exportBatch').onclick=async()=>{
   const batch=getBatch();
