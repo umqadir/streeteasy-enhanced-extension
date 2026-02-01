@@ -3,3 +3,6 @@ sample-collection/data/downloads/
 sample-collection/data/photos/
 sample-collection/streeteasy_eval_dataset/photos/
 clean_set_export/
+sample-collection/.curate_web.pid
+sample-collection/.curate_web.log
+sample-collection/curate_web.log

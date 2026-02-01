@@ -128,7 +128,7 @@ Run the local web UI against the evaluation dataset:
 python sample-collection/scripts/curate_web.py --dataset sample-collection/streeteasy_eval_dataset/listings.json
 ```
 
-Open the printed URL, exclude bad photos, optionally type the listing sqft, and click “Export listing”.
+Open the printed URL, exclude bad photos, click “Add to batch”, repeat for multiple listings, then click “Export batch”.
 
 This creates an export folder like:
 

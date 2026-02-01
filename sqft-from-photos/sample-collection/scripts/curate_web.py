@@ -134,6 +134,7 @@ INDEX_HTML = """<!doctype html>
     .controls { display:flex; gap:8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
     button { border: 1px solid #bbb; background: #fff; border-radius: 10px; padding: 8px 10px; cursor: pointer; }
     button.primary { background:#000; color:#fff; border-color:#000; }
+    button.warn { background:#ff4d4d; color:#fff; border-color:#ff4d4d; }
     input { border:1px solid #bbb; border-radius: 10px; padding: 8px 10px; }
     .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
     .tile { border: 2px solid #ddd; border-radius: 12px; padding: 6px; }
@@ -166,7 +167,9 @@ INDEX_HTML = """<!doctype html>
         <button id="invert">Invert</button>
         <span style="flex:1"></span>
         <label>Sqft <input id="sqft" placeholder="e.g. 850" style="width:110px" /></label>
-        <button class="primary" id="exportOne">Export listing</button>
+        <button id="queueOne">Add to batch</button>
+        <button class="primary" id="exportBatch">Export batch (<span id="batchCount">0</span>)</button>
+        <button class="warn" id="clearBatch">Clear batch</button>
       </div>
       <div class="controls">
         <span id="listingMeta" class="status"></span>
@@ -184,6 +187,42 @@ const state = {
   hasSqftById: new Map(),
   sqftById: new Map(),
 };
+
+const STORAGE_KEY = 'sqft_from_photos_curate_batch_v1';
+
+function loadBatch(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return {};
+    const obj = JSON.parse(raw);
+    return (obj && typeof obj === 'object') ? obj : {};
+  }catch(_){ return {}; }
+}
+
+function saveBatch(batch){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(batch));
+  qs('batchCount').textContent = String(Object.keys(batch).length);
+}
+
+function getBatch(){
+  return loadBatch();
+}
+
+function setBatchItem(listingId, excludedArr, sqft){
+  const batch = getBatch();
+  batch[listingId] = { excluded: excludedArr, sqft: sqft };
+  saveBatch(batch);
+}
+
+function removeBatchItem(listingId){
+  const batch = getBatch();
+  delete batch[listingId];
+  saveBatch(batch);
+}
+
+function clearBatch(){
+  saveBatch({});
+}
 function qs(id){ return document.getElementById(id); }
 function setStatus(msg){ qs('status').textContent = msg; }
 async function apiGet(url){ const r=await fetch(url); if(!r.ok) throw new Error(`GET ${url} => ${r.status}`); return await r.json(); }
@@ -196,6 +235,7 @@ function renderListings(){
   const list = qs('listingList'); list.innerHTML='';
   const onlyHasSqft = qs('onlyHasSqft').checked;
   const q = qs('filterText').value.trim().toLowerCase();
+  const batch = getBatch();
   let shown=0;
   for(const l of state.listings){
     const id=l.id;
@@ -205,7 +245,8 @@ function renderListings(){
     const div=document.createElement('div');
     div.className='row'+(id===state.activeId?' active':'');
     const sqft=state.sqftById.get(id)||'';
-    div.innerHTML=`<b>${id}</b> ${sqft?`<span class="pill">${sqft} sqft</span>`:''}<small>${(l.photo_count||0)} photos</small>`;
+    const queued = (batch[id] != null);
+    div.innerHTML=`<b>${id}</b> ${sqft?`<span class="pill">${sqft} sqft</span>`:''} ${queued?`<span class="pill">queued</span>`:''}<small>${(l.photo_count||0)} photos</small>`;
     div.onclick=()=>loadListing(id);
     list.appendChild(div);
   }
@@ -235,6 +276,13 @@ async function loadListing(id){
   const data=await apiGet(`/api/listing?id=${encodeURIComponent(id)}`);
   state.photos=data.photo_paths; state.excluded=new Set(data.excluded||[]);
   if(data.sqft!=null) state.sqftById.set(id,String(data.sqft));
+  // Restore from batch (if queued)
+  const batch = getBatch();
+  if(batch[id]){
+    const b = batch[id];
+    if(Array.isArray(b.excluded)) state.excluded = new Set(b.excluded);
+    if(b.sqft != null) state.sqftById.set(id, String(b.sqft));
+  }
   renderListings(); renderGrid(); updateMeta(); setStatus('');
 }
 qs('onlyHasSqft').addEventListener('change', renderListings);
@@ -243,16 +291,33 @@ qs('includeAll').onclick=()=>{ state.excluded=new Set(); renderGrid(); updateMet
 qs('excludeAll').onclick=()=>{ state.excluded=new Set(state.photos); renderGrid(); updateMeta(); };
 qs('invert').onclick=()=>{ const next=new Set(); for(const rel of state.photos){ if(!state.excluded.has(rel)) next.add(rel); } state.excluded=next; renderGrid(); updateMeta(); };
 qs('sqft').addEventListener('input',()=>{ const id=state.activeId; if(!id) return; const v=qs('sqft').value.trim(); if(v) state.sqftById.set(id,v); else state.sqftById.delete(id); renderListings(); });
-qs('exportOne').onclick=async()=>{
+qs('queueOne').onclick=()=>{
   const id=state.activeId; if(!id) return;
   const sqft=(state.sqftById.get(id)||'').trim();
-  setStatus('Exporting…');
-  const res=await apiPost('/api/export',{ listing_id:id, excluded:Array.from(state.excluded), sqft: sqft?Number(sqft):null });
-  setStatus(`Exported ${id} → ${res.out_dir}`);
+  setBatchItem(id, Array.from(state.excluded), sqft?Number(sqft):null);
+  setStatus(`Queued ${id}`);
+  renderListings();
+};
+
+qs('exportBatch').onclick=async()=>{
+  const batch=getBatch();
+  const ids=Object.keys(batch);
+  if(ids.length===0){ setStatus('Batch is empty'); return; }
+  setStatus(`Exporting ${ids.length} listings…`);
+  const items = ids.map(id => ({ listing_id:id, excluded: batch[id].excluded || [], sqft: batch[id].sqft ?? null }));
+  const res = await apiPost('/api/export_many', { items });
+  setStatus(`Exported ${res.ok_count}/${res.n} listings → ${res.out_dir}`);
+  renderListings();
+};
+
+qs('clearBatch').onclick=()=>{
+  clearBatch();
+  setStatus('Cleared batch');
   renderListings();
 };
 async function init(){
   const meta=await apiGet('/api/meta'); qs('outDir').textContent=meta.out_dir;
+  qs('batchCount').textContent = String(Object.keys(getBatch()).length);
   const data=await apiGet('/api/listings'); state.listings=data.listings;
   for(const l of state.listings){ state.urlById.set(l.id,l.url||''); state.hasSqftById.set(l.id,!!l.has_sqft_data); }
   renderListings(); if(state.listings.length) await loadListing(state.listings[0].id);
@@ -319,13 +384,16 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:  # noqa: N802
         parsed = urllib.parse.urlparse(self.path)
-        if parsed.path != "/api/export":
+        if parsed.path not in {"/api/export", "/api/export_many"}:
             return self._send_json(HTTPStatus.NOT_FOUND, {"error": "not found"})
         try:
             n = int(self.headers.get("Content-Length", "0"))
             raw = self.rfile.read(n)
             payload = json.loads(raw.decode("utf-8"))
-            out = self.app.export_listing(payload)
+            if parsed.path == "/api/export":
+                out = self.app.export_listing(payload)
+            else:
+                out = self.app.export_many(payload)
             return self._send_json(HTTPStatus.OK, out)
         except Exception as e:
             return self._send_json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(e)})
@@ -415,6 +483,8 @@ class App:
             raise ValueError("No photos selected (everything excluded).")
 
         out_photos_dir = self.cfg.out_dir / "photos" / listing_id
+        if out_photos_dir.exists():
+            shutil.rmtree(out_photos_dir)
         out_photos_dir.mkdir(parents=True, exist_ok=True)
         for i, rel in enumerate(kept):
             src = self.cfg.dataset_root / rel
@@ -444,6 +514,24 @@ class App:
         self._write_export_dataset(export_obj)
 
         return {"ok": True, "listing_id": listing_id, "n_selected": len(kept_rel), "out_dir": str(self.cfg.out_dir)}
+
+    def export_many(self, payload: dict[str, object]) -> dict[str, object]:
+        items = payload.get("items", [])
+        if not isinstance(items, list) or not items:
+            raise ValueError("items must be a non-empty list")
+        results = []
+        ok = 0
+        for it in items:
+            if not isinstance(it, dict):
+                results.append({"ok": False, "error": "bad_item"})
+                continue
+            try:
+                res = self.export_listing(it)
+                results.append(res)
+                ok += 1
+            except Exception as e:
+                results.append({"ok": False, "listing_id": it.get("listing_id"), "error": str(e)})
+        return {"ok": True, "n": len(items), "ok_count": ok, "out_dir": str(self.cfg.out_dir), "results": results}
 
 
 def main() -> None:
@@ -493,4 +581,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
