@@ -65,7 +65,9 @@ def load_streeteasy_dataset(dataset_path: Path, downloads_dir: Path | None = Non
             if not listing_id:
                 continue
             listing_url = str(ex.get("url", "")).strip()
-            sqft = ex.get("sqft", None) if ex.get("has_sqft_data", None) is not False else None
+            sqft = ex.get("sqft", None)
+            if not isinstance(sqft, (int, float)):
+                sqft = None
             # Photos are organized as: <dataset_root>/photos/<listing_id>/...
             images_dir = dataset_root / "photos" / listing_id
             examples.append(

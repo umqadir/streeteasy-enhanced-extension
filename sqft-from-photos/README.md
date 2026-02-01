@@ -118,6 +118,42 @@ uv run cv-pipeline run \
 
 `run_id` outputs include `selected_images.txt` so you can see exactly what was used.
 
+## Local photo curation GUI (recommended)
+
+To avoid doing any selection/exclusion on RunPod, curate a “clean set” locally and upload it as-is.
+
+Run the local web UI against the evaluation dataset:
+
+```bash
+cd cv-pipeline
+uv run python scripts/curate_web.py --dataset ../sample-collection/streeteasy_eval_dataset/listings.json
+```
+
+Open the printed URL, exclude bad photos, optionally type the listing sqft, and click “Export listing”.
+
+This creates an export folder like:
+
+```
+<repo>/sqft-from-photos/clean_set_export/
+  listings.json
+  photos/<listing_id>/photo_00.jpg ...
+```
+
+### RunPod “drag & drop” location (VS Code)
+
+Copy the entire `clean_set_export/` folder to:
+
+```
+/workspace/data/streeteasy_clean_set/
+```
+
+Then run:
+
+```bash
+cd /workspace/streeteasy-enhanced-extension/sqft-from-photos/cv-pipeline
+uv run cv-pipeline eval-streeteasy --dataset /workspace/data/streeteasy_clean_set/listings.json --has-sqft
+```
+
 ## Run Streeteasy eval dataset (optional)
 
 This repo includes metadata at `sample-collection/streeteasy_eval_dataset/listings.json`, but the photos are **gitignored** and must be uploaded to your pod at the matching path:

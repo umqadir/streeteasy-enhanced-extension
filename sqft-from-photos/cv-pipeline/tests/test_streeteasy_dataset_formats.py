@@ -28,7 +28,8 @@ def test_load_dataset_eval_listings_uses_photos_dir(tmp_path):
             {
                 "id": "listing_001",
                 "url": "https://streeteasy.com/building/1-ocean-drive/w20c",
-                "has_sqft_data": False,
+                "has_sqft_data": True,
+                "sqft": 888,
                 "photo_count": 2,
                 "photo_paths": ["photos/listing_001/photo_00.jpg", "photos/listing_001/photo_01.jpg"],
             }
@@ -40,5 +41,5 @@ def test_load_dataset_eval_listings_uses_photos_dir(tmp_path):
     out = load_streeteasy_dataset(tmp_path / "listings.json")
     assert len(out) == 1
     assert out[0].listing_id == "listing_001"
+    assert out[0].sqft == 888
     assert out[0].images_dir == tmp_path / "photos" / "listing_001"
-
