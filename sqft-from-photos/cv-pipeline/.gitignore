@@ -1,0 +1,10 @@
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.pyc
+
+# Local runs (recommended to keep on CVP_VOLUME, not in-repo)
+.cv_pipeline/
+.cvp/
+
