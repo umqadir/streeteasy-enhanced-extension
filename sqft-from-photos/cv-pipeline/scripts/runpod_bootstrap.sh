@@ -24,7 +24,7 @@ do_system=1
 do_python=1
 do_node=1
 
-for arg in "${@:-}"; do
+for arg in "$@"; do
   case "$arg" in
     --help|-h)
       usage
@@ -38,6 +38,9 @@ for arg in "${@:-}"; do
       ;;
     --no-node)
       do_node=0
+      ;;
+    "")
+      # No-op: protects against callers that accidentally pass an empty arg.
       ;;
     *)
       echo "Unknown arg: $arg" >&2
