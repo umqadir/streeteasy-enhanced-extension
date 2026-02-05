@@ -101,22 +101,44 @@ def run_colmap_sfm(
         stderr_path=logs_dir / "exhaustive_matcher.stderr.log",
     )
 
-    run(
-        [
-            "colmap",
-            "mapper",
-            "--database_path",
-            str(db_path),
-            "--image_path",
-            str(images_dir),
-            "--output_path",
-            str(sparse_dir),
-        ],
-        cwd=colmap_dir,
-        env=env,
-        stdout_path=logs_dir / "mapper.stdout.log",
-        stderr_path=logs_dir / "mapper.stderr.log",
-    )
+    mapper_cmd = [
+        "colmap",
+        "mapper",
+        "--database_path",
+        str(db_path),
+        "--image_path",
+        str(images_dir),
+        "--output_path",
+        str(sparse_dir),
+    ]
+    try:
+        run(
+            mapper_cmd,
+            cwd=colmap_dir,
+            env=env,
+            stdout_path=logs_dir / "mapper.stdout.log",
+            stderr_path=logs_dir / "mapper.stderr.log",
+        )
+    except RuntimeError:
+        # Indoor real-estate photos often have weak overlap / low texture; COLMAP defaults can fail to
+        # find an initial pair. Retry once with relaxed initialization constraints.
+        relaxed = mapper_cmd + [
+            "--Mapper.init_min_num_inliers",
+            "30",
+            "--Mapper.abs_pose_min_num_inliers",
+            "15",
+            "--Mapper.min_num_matches",
+            "15",
+            "--Mapper.init_min_tri_angle",
+            "1",
+        ]
+        run(
+            relaxed,
+            cwd=colmap_dir,
+            env=env,
+            stdout_path=logs_dir / "mapper_relaxed.stdout.log",
+            stderr_path=logs_dir / "mapper_relaxed.stderr.log",
+        )
 
     candidates = sorted([p for p in sparse_dir.iterdir() if p.is_dir() and p.name.isdigit()])
     if not candidates:

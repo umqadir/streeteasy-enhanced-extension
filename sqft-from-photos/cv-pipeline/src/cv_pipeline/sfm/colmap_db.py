@@ -142,9 +142,20 @@ class ColmapDatabase:
         return int(cur.lastrowid)
 
     def add_keypoints_xy(self, image_id: int, keypoints_xy: np.ndarray) -> None:
+        """
+        Insert keypoints for an image.
+
+        COLMAP commonly stores keypoints as 6 floats: (x, y, a11, a12, a21, a22),
+        where the last 4 encode the affine shape. Learned detectors often only
+        provide (x, y), so we pad with an identity affine shape.
+        """
         kps = np.asarray(keypoints_xy, dtype=np.float32)
-        if kps.ndim != 2 or kps.shape[1] != 2:
-            raise ValueError("keypoints_xy must be (N,2)")
+        if kps.ndim != 2 or kps.shape[1] not in {2, 6}:
+            raise ValueError("keypoints_xy must be (N,2) or (N,6)")
+        if kps.shape[1] == 2:
+            # a11,a12,a21,a22 = identity
+            pad = np.tile(np.asarray([1.0, 0.0, 0.0, 1.0], dtype=np.float32)[None, :], (kps.shape[0], 1))
+            kps = np.concatenate([kps, pad], axis=1)
         cur = self._conn.cursor()
         cur.execute(
             "INSERT INTO keypoints(image_id,rows,cols,data) VALUES(?,?,?,?)",
@@ -161,4 +172,3 @@ class ColmapDatabase:
             "INSERT OR REPLACE INTO matches(pair_id,rows,cols,data) VALUES(?,?,?,?)",
             (int(pid), int(m.shape[0]), int(m.shape[1]), m.tobytes()),
         )
-

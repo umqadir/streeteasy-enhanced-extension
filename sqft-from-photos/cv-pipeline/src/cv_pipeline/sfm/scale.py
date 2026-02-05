@@ -48,7 +48,7 @@ def estimate_scale_from_depth_alignment(
     depth_dir: Path,
     *,
     max_depth_m: float = 20.0,
-    min_pairs_per_image: int = 200,
+    min_pairs_per_image: int = 50,
 ) -> ScaleEstimate:
     """
     Fit a global scale s (meters per SfM unit) s.t. z_pred_m ≈ s * z_sfm.

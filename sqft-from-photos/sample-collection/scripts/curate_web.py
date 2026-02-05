@@ -523,12 +523,23 @@ class App:
         if out_photos_dir.exists():
             shutil.rmtree(out_photos_dir)
         out_photos_dir.mkdir(parents=True, exist_ok=True)
+        missing: list[str] = []
         for i, rel in enumerate(kept):
             src = self.cfg.dataset_root / rel
             if not src.exists():
+                missing.append(rel)
                 continue
             dst = out_photos_dir / f"photo_{i:02d}{src.suffix.lower()}"
             shutil.copy2(src, dst)
+
+        if missing:
+            # Fail fast instead of silently exporting empty/partial listings.
+            # This usually means the underlying dataset references photos that were never downloaded.
+            raise ValueError(
+                f"Missing {len(missing)}/{len(kept)} selected photos on disk. "
+                f"Example missing paths: {missing[:5]}. "
+                "Make sure the source dataset's photos are downloaded before exporting."
+            )
 
         export_obj = self._load_export_dataset()
         listings = export_obj.get("listings", [])

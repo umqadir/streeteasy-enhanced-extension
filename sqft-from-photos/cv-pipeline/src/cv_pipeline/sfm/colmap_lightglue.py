@@ -8,7 +8,6 @@ from pathlib import Path
 import numpy as np
 
 from cv_pipeline.paths import VolumePaths
-from cv_pipeline.sfm.colmap_db import CameraSpec, ColmapDatabase
 from cv_pipeline.sfm.colmap_model import ColmapModel, load_colmap_model_txt
 from cv_pipeline.utils.subprocess import require_binary, run
 
@@ -66,6 +65,15 @@ def _ensure_lightglue_vendor(volume: VolumePaths) -> Path:
     return repo
 
 
+def _pair_id(image_id1: int, image_id2: int) -> int:
+    """
+    Pair ID used by COLMAP: min(id1,id2) * 2147483647 + max(id1,id2)
+    """
+    if image_id1 > image_id2:
+        image_id1, image_id2 = image_id2, image_id1
+    return int(image_id1) * 2147483647 + int(image_id2)
+
+
 def run_colmap_sfm_lightglue(
     images_dir: Path,
     work_dir: Path,
@@ -107,49 +115,64 @@ def run_colmap_sfm_lightglue(
     sparse_dir = colmap_dir / "sparse"
     sparse_dir.mkdir(parents=True, exist_ok=True)
 
-    # Build database.
-    db = ColmapDatabase(db_path)
+    # Create a COLMAP DB with the *current* COLMAP schema by running feature_extractor.
+    # Then overwrite keypoints/matches with learned ones, run geometric verification, and map.
+    env = dict(os.environ)
+    run(
+        [
+            "colmap",
+            "feature_extractor",
+            "--database_path",
+            str(db_path),
+            "--image_path",
+            str(images_dir),
+            "--ImageReader.camera_model",
+            camera_model,
+            "--ImageReader.default_focal_length_factor",
+            str(default_focal_length_factor),
+            "--ImageReader.single_camera",
+            "1" if single_camera else "0",
+        ],
+        cwd=colmap_dir,
+        env=env,
+        stdout_path=logs_dir / "feature_extractor.stdout.log",
+        stderr_path=logs_dir / "feature_extractor.stderr.log",
+    )
 
-    # Camera(s): create 1 shared camera by default (single_camera=True).
     imgs = sorted([p for p in images_dir.iterdir() if p.is_file()])
     if not imgs:
         raise FileNotFoundError(f"No images found in: {images_dir}")
 
-    # Use the first image size as representative (preprocessed images share max_side but may differ).
-    from PIL import Image
+    import sqlite3
 
-    w0, h0 = Image.open(imgs[0]).size
-    f = float(default_focal_length_factor) * float(max(w0, h0))
-    cx, cy = float(w0) / 2.0, float(h0) / 2.0
-    k1 = 0.0
-    cam_spec = CameraSpec(
-        model=camera_model,
-        width=int(w0),
-        height=int(h0),
-        params=np.array([f, cx, cy, k1], dtype=np.float64),
-        prior_focal_length=True,
-    )
-    shared_cam_id = db.add_camera(cam_spec)
-
-    image_ids: dict[str, int] = {}
-    for p in imgs:
-        cam_id = shared_cam_id
-        if not single_camera:
-            w, h = Image.open(p).size
-            f_i = float(default_focal_length_factor) * float(max(w, h))
-            cam_id = db.add_camera(
-                CameraSpec(
-                    model=camera_model,
-                    width=int(w),
-                    height=int(h),
-                    params=np.array([f_i, float(w) / 2.0, float(h) / 2.0, 0.0], dtype=np.float64),
-                    prior_focal_length=True,
-                )
-            )
-        image_ids[p.name] = db.add_image(p.name, cam_id)
+    con = sqlite3.connect(str(db_path))
+    try:
+        cur = con.cursor()
+        rows = [(int(iid), str(name)) for iid, name in cur.execute("SELECT image_id, name FROM images")]
+        if not rows:
+            raise RuntimeError("COLMAP feature_extractor created no images in the database.")
+        # COLMAP may store image names as paths (e.g. resolving symlinks). We primarily address images by basename.
+        image_ids: dict[str, int] = {name: iid for iid, name in rows}
+        image_ids_by_base: dict[str, int] = {}
+        for iid, name in rows:
+            base = Path(name).name
+            image_ids_by_base.setdefault(base, iid)
+        # Clear SIFT keypoints/descriptors/matches; we'll insert learned ones.
+        cur.execute("DELETE FROM keypoints")
+        cur.execute("DELETE FROM descriptors")
+        cur.execute("DELETE FROM matches")
+        cur.execute("DELETE FROM two_view_geometries")
+        con.commit()
+    finally:
+        con.close()
 
     # Learned extractor/matcher.
-    device = matching.device if torch.cuda.is_available() and matching.device.startswith("cuda") else "cpu"
+    if torch.cuda.is_available() and matching.device.startswith("cuda"):
+        device = "cuda"
+    elif torch.backends.mps.is_available():
+        device = "mps"
+    else:
+        device = "cpu"
     if matching.extractor == "superpoint":
         extractor = SuperPoint(max_num_keypoints=int(matching.max_num_keypoints)).eval().to(device)
         matcher = LightGlue(features="superpoint", filter_threshold=float(matching.filter_threshold)).eval().to(device)
@@ -167,34 +190,74 @@ def run_colmap_sfm_lightglue(
 
     # Extract features once per image.
     feats_cache: dict[str, dict[str, object]] = {}
-    for p in imgs:
-        image_t = load_image(p).to(device)
-        feats = extractor.extract(image_t, resize=None)
-        feats = rbd(feats)
-        kps = np.asarray(feats["keypoints"].detach().cpu().numpy(), dtype=np.float32)
-        kps = kps + 0.5  # COLMAP origin convention
-        db.add_keypoints_xy(image_ids[p.name], kps)
-        feats_cache[p.name] = feats
+    con = sqlite3.connect(str(db_path))
+    try:
+        cur = con.cursor()
+        for p in imgs:
+            image_t = load_image(p).to(device)
+            feats = extractor.extract(image_t, resize=None)
+            feats_cache[p.name] = feats
+
+            image_id = image_ids_by_base.get(p.name)
+            if image_id is None:
+                continue
+            feats_nb = rbd(feats)
+            kps = np.asarray(feats_nb["keypoints"].detach().cpu().numpy(), dtype=np.float32)
+            kps = kps + 0.5  # COLMAP origin convention
+            # COLMAP keypoint layout: (x, y, a11, a12, a21, a22). Pad with identity affine.
+            pad = np.tile(np.asarray([1.0, 0.0, 0.0, 1.0], dtype=np.float32)[None, :], (kps.shape[0], 1))
+            kps6 = np.concatenate([kps, pad], axis=1)
+            cur.execute(
+                "INSERT INTO keypoints(image_id,rows,cols,data) VALUES(?,?,?,?)",
+                (int(image_id), int(kps6.shape[0]), int(kps6.shape[1]), kps6.tobytes()),
+            )
+        con.commit()
+    finally:
+        con.close()
 
     # Match pairs.
     matched_pairs = 0
     total_matches = 0
-    for name0, name1 in pairs:
-        if name0 not in feats_cache or name1 not in feats_cache:
-            continue
-        feats0 = feats_cache[name0]
-        feats1 = feats_cache[name1]
-        out = matcher({"image0": feats0, "image1": feats1})
-        out = rbd(out)
-        matches = np.asarray(out["matches"].detach().cpu().numpy(), dtype=np.int32)
-        db.add_matches(image_ids[name0], image_ids[name1], matches)
-        matched_pairs += 1
-        total_matches += int(matches.shape[0])
+    con = sqlite3.connect(str(db_path))
+    try:
+        cur = con.cursor()
+        for name0, name1 in pairs:
+            if name0 not in feats_cache or name1 not in feats_cache:
+                continue
+            id0 = image_ids_by_base.get(name0)
+            id1 = image_ids_by_base.get(name1)
+            if id0 is None or id1 is None:
+                continue
+            feats0 = feats_cache[name0]
+            feats1 = feats_cache[name1]
+            out = matcher({"image0": feats0, "image1": feats1})
+            out_nb = rbd(out)
+            matches = np.asarray(out_nb["matches"].detach().cpu().numpy(), dtype=np.int32)
+            if matches.ndim != 2 or matches.shape[1] != 2:
+                continue
+            pid = _pair_id(int(id0), int(id1))
+            cur.execute(
+                "INSERT OR REPLACE INTO matches(pair_id,rows,cols,data) VALUES(?,?,?,?)",
+                (int(pid), int(matches.shape[0]), int(matches.shape[1]), matches.tobytes()),
+            )
+            matched_pairs += 1
+            total_matches += int(matches.shape[0])
+        con.commit()
+    finally:
+        con.close()
 
-    db.commit()
-    db.close()
-
-    env = dict(os.environ)
+    run(
+        [
+            "colmap",
+            "geometric_verifier",
+            "--database_path",
+            str(db_path),
+        ],
+        cwd=colmap_dir,
+        env=env,
+        stdout_path=logs_dir / "geometric_verifier.stdout.log",
+        stderr_path=logs_dir / "geometric_verifier.stderr.log",
+    )
     run(
         [
             "colmap",

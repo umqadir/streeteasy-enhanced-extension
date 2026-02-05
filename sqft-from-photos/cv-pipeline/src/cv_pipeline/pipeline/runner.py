@@ -657,8 +657,11 @@ def run_listing(
                 model = colmap.model
                 diagnostics["sfm"] = colmap.diagnostics
             elif sfm_matching == "lightglue":
+                import torch
+
+                device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
                 backend = EmbeddingBackend(pair_embed)
-                emb = compute_image_embeddings(pre.kept_images, backend=backend, device="cuda", batch_size=8)
+                emb = compute_image_embeddings(pre.kept_images, backend=backend, device=device, batch_size=8)
                 sel = build_topk_pairs(emb.embeddings, k=pair_topk, min_cosine_sim=pair_min_sim, mutual=True)
                 pairs = [(emb.image_names[i], emb.image_names[j]) for i, j in sel.pairs]
                 diagnostics["retrieval_pairs"] = {
@@ -670,7 +673,7 @@ def run_listing(
                     artifacts.colmap_dir,
                     volume=volume,
                     pairs=pairs,
-                    matching=LearnedMatchingConfig(extractor="superpoint"),
+                    matching=LearnedMatchingConfig(extractor="superpoint", device=device),
                 )
                 model = colmap.model
                 diagnostics["sfm"] = colmap.diagnostics
@@ -710,8 +713,11 @@ def run_listing(
 
         if multi_component == "sum" and len(comp_ids) > 1:
             try:
+                import torch
+
+                device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
                 backend = EmbeddingBackend(pair_embed)
-                emb_all = compute_image_embeddings(pre.kept_images, backend=backend, device="cuda", batch_size=8)
+                emb_all = compute_image_embeddings(pre.kept_images, backend=backend, device=device, batch_size=8)
                 name_to_vec = {n: emb_all.embeddings[i] for i, n in enumerate(emb_all.image_names)}
 
                 comp_vecs = []
