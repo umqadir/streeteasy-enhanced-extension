@@ -4,7 +4,17 @@
     "total_listings": 138,
     "total_photos": 3116,
     "collection_date": "2026-02-01T08:12:50.063593+00:00",
-    "purpose": "Computer vision model evaluation for square footage extraction from real estate photos"
+    "purpose": "Computer vision model evaluation for square footage extraction from real estate photos",
+    "sqft_reconciled_at": "2026-02-07T01:47:21-0500",
+    "sqft_reconciled_from": "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/sample-collection/data/streeteasy_examples_20.json",
+    "sqft_reconciled_matches": 23,
+    "sqft_reconciled_conflicts": 0,
+    "consolidated_at": "2026-02-11T03:18:28Z",
+    "consolidated_from": [
+      "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/sample-collection/streeteasy_eval_dataset/listings.json",
+      "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/sample-collection/clean_set_export/listings.json"
+    ],
+    "dedupe_rule": "url (preferred) else id"
   },
   "listings": [
     {
@@ -12,7 +22,7 @@
       "listing_number": 1,
       "title": "85 East End Avenue #10G in Yorkville, Manhattan | StreetEasy",
       "url": "https://streeteasy.com/building/85-east-end-avenue-new_york/10g",
-      "has_sqft_data": false,
+      "has_sqft_data": true,
       "photo_count": 26,
       "photo_paths": [
         "photos/listing_001/photo_00.jpg",
@@ -41,14 +51,15 @@
         "photos/listing_001/photo_23.jpg",
         "photos/listing_001/photo_24.jpg",
         "photos/listing_001/photo_25.jpg"
-      ]
+      ],
+      "sqft": 770.0
     },
     {
       "id": "listing_002",
       "listing_number": 2,
       "title": "2385 3rd Avenue #A823 in Mott Haven, Bronx | StreetEasy",
       "url": "https://streeteasy.com/building/third-at-bankside/a0823",
-      "has_sqft_data": false,
+      "has_sqft_data": true,
       "photo_count": 24,
       "photo_paths": [
         "photos/listing_002/photo_00.jpg",
@@ -75,14 +86,15 @@
         "photos/listing_002/photo_21.jpg",
         "photos/listing_002/photo_22.jpg",
         "photos/listing_002/photo_23.jpg"
-      ]
+      ],
+      "sqft": 680.0
     },
     {
       "id": "listing_003",
       "listing_number": 3,
       "title": "45 Hoyt Street #6D in Downtown Brooklyn, Brooklyn | StreetEasy",
       "url": "https://streeteasy.com/building/hoyt-and-horn/06d",
-      "has_sqft_data": false,
+      "has_sqft_data": true,
       "photo_count": 11,
       "photo_paths": [
         "photos/listing_003/photo_00.jpg",
@@ -96,14 +108,15 @@
         "photos/listing_003/photo_08.jpg",
         "photos/listing_003/photo_09.jpg",
         "photos/listing_003/photo_10.jpg"
-      ]
+      ],
+      "sqft": 982.0
     },
     {
       "id": "listing_004",
       "listing_number": 4,
       "title": "196 Willoughby Street #19M in Downtown Brooklyn, Brooklyn | StreetEasy",
       "url": "https://streeteasy.com/building/willoughby-196-willoughby-street-brooklyn___/19m",
-      "has_sqft_data": false,
+      "has_sqft_data": true,
       "photo_count": 30,
       "photo_paths": [
         "photos/listing_004/photo_00.jpg",
@@ -136,14 +149,15 @@
         "photos/listing_004/photo_27.jpg",
         "photos/listing_004/photo_28.jpg",
         "photos/listing_004/photo_29.jpg"
-      ]
+      ],
+      "sqft": 574.0
     },
     {
       "id": "listing_005",
       "listing_number": 5,
       "title": "355 South End Avenue #27F in Battery Park City, Manhattan | StreetEasy",
       "url": "https://streeteasy.com/building/355-south-end-avenue-new_york/27f",
-      "has_sqft_data": false,
+      "has_sqft_data": true,
       "photo_count": 15,
       "photo_paths": [
         "photos/listing_005/photo_00.jpg",
@@ -161,14 +175,15 @@
         "photos/listing_005/photo_12.jpg",
         "photos/listing_005/photo_13.jpg",
         "photos/listing_005/photo_14.jpg"
-      ]
+      ],
+      "sqft": 1157.0
     },
     {
       "id": "listing_006",
       "listing_number": 6,
       "title": "1065 Second Avenue #5K in Sutton Place, Manhattan | StreetEasy",
       "url": "https://streeteasy.com/building/aalto57-1065-second-avenue-manhattan/05k",
-      "has_sqft_data": false,
+      "has_sqft_data": true,
       "photo_count": 23,
       "photo_paths": [
         "photos/listing_006/photo_00.jpg",
@@ -194,14 +209,15 @@
         "photos/listing_006/photo_20.jpg",
         "photos/listing_006/photo_21.jpg",
         "photos/listing_006/photo_22.jpg"
-      ]
+      ],
+      "sqft": 461.0
     },
     {
       "id": "listing_007",
       "listing_number": 7,
       "title": "555 West 43rd Street #4J in Hell's Kitchen, Manhattan | StreetEasy",
       "url": "https://streeteasy.com/building/the-oskar-luxury-apartments/4j",
-      "has_sqft_data": false,
+      "has_sqft_data": true,
       "photo_count": 6,
       "photo_paths": [
         "photos/listing_007/photo_00.jpg",
@@ -210,14 +226,15 @@
         "photos/listing_007/photo_03.jpg",
         "photos/listing_007/photo_04.jpg",
         "photos/listing_007/photo_05.jpg"
-      ]
+      ],
+      "sqft": 465.0
     },
     {
       "id": "listing_008",
       "listing_number": 8,
       "title": "1 Ocean Drive #W4G in Coney Island, Brooklyn | StreetEasy",
       "url": "https://streeteasy.com/building/1-ocean-drive/w04g",
-      "has_sqft_data": false,
+      "has_sqft_data": true,
       "photo_count": 18,
       "photo_paths": [
         "photos/listing_008/photo_00.jpg",
@@ -238,14 +255,15 @@
         "photos/listing_008/photo_15.jpg",
         "photos/listing_008/photo_16.jpg",
         "photos/listing_008/photo_17.jpg"
-      ]
+      ],
+      "sqft": 1242.0
     },
     {
       "id": "listing_009",
       "listing_number": 9,
       "title": "1 Bell Slip #27A in Greenpoint, Brooklyn | StreetEasy",
       "url": "https://streeteasy.com/building/the-bellslip/027a",
-      "has_sqft_data": false,
+      "has_sqft_data": true,
       "photo_count": 30,
       "photo_paths": [
         "photos/listing_009/photo_00.jpg",
@@ -278,14 +296,15 @@
         "photos/listing_009/photo_27.jpg",
         "photos/listing_009/photo_28.jpg",
         "photos/listing_009/photo_29.jpg"
-      ]
+      ],
+      "sqft": 568.0
     },
     {
       "id": "listing_010",
       "listing_number": 10,
       "title": "4650 Broadway #1209 in Fort George, Manhattan | StreetEasy",
       "url": "https://streeteasy.com/building/forty-six-fifty/1209",
-      "has_sqft_data": false,
+      "has_sqft_data": true,
       "photo_count": 25,
       "photo_paths": [
         "photos/listing_010/photo_00.jpg",
@@ -313,14 +332,15 @@
         "photos/listing_010/photo_22.jpg",
         "photos/listing_010/photo_23.jpg",
         "photos/listing_010/photo_24.jpg"
-      ]
+      ],
+      "sqft": 647.0
     },
     {
       "id": "listing_011",
       "listing_number": 11,
       "title": "19 Dutch Street #50H in Fulton/Seaport, Manhattan | StreetEasy",
       "url": "https://streeteasy.com/building/19-dutch/50h",
-      "has_sqft_data": false,
+      "has_sqft_data": true,
       "photo_count": 30,
       "photo_paths": [
         "photos/listing_011/photo_00.jpg",
@@ -353,14 +373,15 @@
         "photos/listing_011/photo_27.jpg",
         "photos/listing_011/photo_28.jpg",
         "photos/listing_011/photo_29.jpg"
-      ]
+      ],
+      "sqft": 675.0
     },
     {
       "id": "listing_012",
       "listing_number": 12,
       "title": "240 East 86th Street #10F in Yorkville, Manhattan | StreetEasy",
       "url": "https://streeteasy.com/building/the-ventura/010f",
-      "has_sqft_data": false,
+      "has_sqft_data": true,
       "photo_count": 13,
       "photo_paths": [
         "photos/listing_012/photo_00.jpg",
@@ -376,14 +397,15 @@
         "photos/listing_012/photo_10.jpg",
         "photos/listing_012/photo_11.jpg",
         "photos/listing_012/photo_12.jpg"
-      ]
+      ],
+      "sqft": 531.0
     },
     {
       "id": "listing_013",
       "listing_number": 13,
       "title": "888 Main Street #123 in Roosevelt Island, Manhattan | StreetEasy",
       "url": "https://streeteasy.com/building/the-octagon/123",
-      "has_sqft_data": false,
+      "has_sqft_data": true,
       "photo_count": 19,
       "photo_paths": [
         "photos/listing_013/photo_00.jpg",
@@ -405,14 +427,15 @@
         "photos/listing_013/photo_16.jpg",
         "photos/listing_013/photo_17.jpg",
         "photos/listing_013/photo_18.jpg"
-      ]
+      ],
+      "sqft": 758.0
     },
     {
       "id": "listing_014",
       "listing_number": 14,
       "title": "225 East 63rd Street #9D in Lenox Hill, Manhattan | StreetEasy",
       "url": "https://streeteasy.com/building/225-east-63rd-street-new_york/9d",
-      "has_sqft_data": false,
+      "has_sqft_data": true,
       "photo_count": 16,
       "photo_paths": [
         "photos/listing_014/photo_00.jpg",
@@ -431,14 +454,15 @@
         "photos/listing_014/photo_13.jpg",
         "photos/listing_014/photo_14.jpg",
         "photos/listing_014/photo_15.jpg"
-      ]
+      ],
+      "sqft": 750.0
     },
     {
       "id": "listing_015",
       "listing_number": 15,
       "title": "245 East 124th Street #11T in East Harlem, Manhattan | StreetEasy",
       "url": "https://streeteasy.com/building/tapestry-245-east-124th-street-new_york/11t",
-      "has_sqft_data": false,
+      "has_sqft_data": true,
       "photo_count": 8,
       "photo_paths": [
         "photos/listing_015/photo_00.jpg",
@@ -449,14 +473,15 @@
         "photos/listing_015/photo_05.jpg",
         "photos/listing_015/photo_06.jpg",
         "photos/listing_015/photo_07.jpg"
-      ]
+      ],
+      "sqft": 721.0
     },
     {
       "id": "listing_016",
       "listing_number": 16,
       "title": "252 South Street #63E in Two Bridges, Manhattan | StreetEasy",
       "url": "https://streeteasy.com/building/one-manhattan-square/63e",
-      "has_sqft_data": false,
+      "has_sqft_data": true,
       "photo_count": 30,
       "photo_paths": [
         "photos/listing_016/photo_00.jpg",
@@ -489,14 +514,15 @@
         "photos/listing_016/photo_27.jpg",
         "photos/listing_016/photo_28.jpg",
         "photos/listing_016/photo_29.jpg"
-      ]
+      ],
+      "sqft": 1400.0
     },
     {
       "id": "listing_017",
       "listing_number": 17,
       "title": "43-25 52nd Street #1F in Woodside, Queens | StreetEasy",
       "url": "https://streeteasy.com/building/j-tower-52/1f",
-      "has_sqft_data": false,
+      "has_sqft_data": true,
       "photo_count": 30,
       "photo_paths": [
         "photos/listing_017/photo_00.jpg",
@@ -529,14 +555,15 @@
         "photos/listing_017/photo_27.jpg",
         "photos/listing_017/photo_28.jpg",
         "photos/listing_017/photo_29.jpg"
-      ]
+      ],
+      "sqft": 1800.0
     },
     {
       "id": "listing_018",
       "listing_number": 18,
       "title": "475 Clermont Avenue #604 in Fort Greene, Brooklyn | StreetEasy",
       "url": "https://streeteasy.com/building/475-clermont/0604",
-      "has_sqft_data": false,
+      "has_sqft_data": true,
       "photo_count": 23,
       "photo_paths": [
         "photos/listing_018/photo_00.jpg",
@@ -562,14 +589,15 @@
         "photos/listing_018/photo_20.jpg",
         "photos/listing_018/photo_21.jpg",
         "photos/listing_018/photo_22.jpg"
-      ]
+      ],
+      "sqft": 547.0
     },
     {
       "id": "listing_019",
       "listing_number": 19,
       "title": "311 West 50th Street #2G in Hell's Kitchen, Manhattan | StreetEasy",
       "url": "https://streeteasy.com/building/the-cameo/2g",
-      "has_sqft_data": false,
+      "has_sqft_data": true,
       "photo_count": 21,
       "photo_paths": [
         "photos/listing_019/photo_00.jpg",
@@ -593,7 +621,8 @@
         "photos/listing_019/photo_18.jpg",
         "photos/listing_019/photo_19.jpg",
         "photos/listing_019/photo_20.jpg"
-      ]
+      ],
+      "sqft": 700.0
     },
     {
       "id": "listing_020",
@@ -633,7 +662,8 @@
         "photos/listing_020/photo_27.jpg",
         "photos/listing_020/photo_28.jpg",
         "photos/listing_020/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_021",
@@ -673,7 +703,8 @@
         "photos/listing_021/photo_27.jpg",
         "photos/listing_021/photo_28.jpg",
         "photos/listing_021/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_022",
@@ -713,7 +744,8 @@
         "photos/listing_022/photo_27.jpg",
         "photos/listing_022/photo_28.jpg",
         "photos/listing_022/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_023",
@@ -753,7 +785,8 @@
         "photos/listing_023/photo_27.jpg",
         "photos/listing_023/photo_28.jpg",
         "photos/listing_023/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_024",
@@ -793,7 +826,8 @@
         "photos/listing_024/photo_27.jpg",
         "photos/listing_024/photo_28.jpg",
         "photos/listing_024/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_025",
@@ -833,7 +867,8 @@
         "photos/listing_025/photo_27.jpg",
         "photos/listing_025/photo_28.jpg",
         "photos/listing_025/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_026",
@@ -873,7 +908,8 @@
         "photos/listing_026/photo_27.jpg",
         "photos/listing_026/photo_28.jpg",
         "photos/listing_026/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_027",
@@ -913,7 +949,8 @@
         "photos/listing_027/photo_27.jpg",
         "photos/listing_027/photo_28.jpg",
         "photos/listing_027/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_028",
@@ -953,7 +990,8 @@
         "photos/listing_028/photo_27.jpg",
         "photos/listing_028/photo_28.jpg",
         "photos/listing_028/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_029",
@@ -993,7 +1031,8 @@
         "photos/listing_029/photo_27.jpg",
         "photos/listing_029/photo_28.jpg",
         "photos/listing_029/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_030",
@@ -1033,7 +1072,8 @@
         "photos/listing_030/photo_27.jpg",
         "photos/listing_030/photo_28.jpg",
         "photos/listing_030/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_031",
@@ -1073,7 +1113,8 @@
         "photos/listing_031/photo_27.jpg",
         "photos/listing_031/photo_28.jpg",
         "photos/listing_031/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_032",
@@ -1113,14 +1154,15 @@
         "photos/listing_032/photo_27.jpg",
         "photos/listing_032/photo_28.jpg",
         "photos/listing_032/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_033",
       "listing_number": 33,
       "title": "45 Hoyt Street #10C in Downtown Brooklyn, Brooklyn | StreetEasy",
       "url": "https://streeteasy.com/building/hoyt-and-horn/10c",
-      "has_sqft_data": false,
+      "has_sqft_data": true,
       "photo_count": 30,
       "photo_paths": [
         "photos/listing_033/photo_00.jpg",
@@ -1153,7 +1195,8 @@
         "photos/listing_033/photo_27.jpg",
         "photos/listing_033/photo_28.jpg",
         "photos/listing_033/photo_29.jpg"
-      ]
+      ],
+      "sqft": 629.0
     },
     {
       "id": "listing_034",
@@ -1193,7 +1236,8 @@
         "photos/listing_034/photo_27.jpg",
         "photos/listing_034/photo_28.jpg",
         "photos/listing_034/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_035",
@@ -1233,7 +1277,8 @@
         "photos/listing_035/photo_27.jpg",
         "photos/listing_035/photo_28.jpg",
         "photos/listing_035/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_036",
@@ -1266,14 +1311,15 @@
         "photos/listing_036/photo_20.jpg",
         "photos/listing_036/photo_21.jpg",
         "photos/listing_036/photo_22.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_037",
       "listing_number": 37,
       "title": "150 East 44th Street #46E in Turtle Bay, Manhattan | StreetEasy",
       "url": "https://streeteasy.com/building/the-metropolis/46e",
-      "has_sqft_data": false,
+      "has_sqft_data": true,
       "photo_count": 21,
       "photo_paths": [
         "photos/listing_037/photo_00.jpg",
@@ -1297,7 +1343,8 @@
         "photos/listing_037/photo_18.jpg",
         "photos/listing_037/photo_19.jpg",
         "photos/listing_037/photo_20.jpg"
-      ]
+      ],
+      "sqft": 730.0
     },
     {
       "id": "listing_038",
@@ -1330,7 +1377,8 @@
         "photos/listing_038/photo_20.jpg",
         "photos/listing_038/photo_21.jpg",
         "photos/listing_038/photo_22.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_039",
@@ -1348,7 +1396,8 @@
         "photos/listing_039/photo_05.jpg",
         "photos/listing_039/photo_06.jpg",
         "photos/listing_039/photo_07.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_040",
@@ -1381,7 +1430,8 @@
         "photos/listing_040/photo_20.jpg",
         "photos/listing_040/photo_21.jpg",
         "photos/listing_040/photo_22.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_041",
@@ -1413,7 +1463,8 @@
         "photos/listing_041/photo_19.jpg",
         "photos/listing_041/photo_20.jpg",
         "photos/listing_041/photo_21.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_042",
@@ -1445,7 +1496,8 @@
         "photos/listing_042/photo_19.jpg",
         "photos/listing_042/photo_20.jpg",
         "photos/listing_042/photo_21.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_043",
@@ -1478,7 +1530,8 @@
         "photos/listing_043/photo_20.jpg",
         "photos/listing_043/photo_21.jpg",
         "photos/listing_043/photo_22.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_044",
@@ -1495,7 +1548,8 @@
         "photos/listing_044/photo_04.jpg",
         "photos/listing_044/photo_05.jpg",
         "photos/listing_044/photo_06.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_045",
@@ -1527,7 +1581,8 @@
         "photos/listing_045/photo_19.jpg",
         "photos/listing_045/photo_20.jpg",
         "photos/listing_045/photo_21.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_046",
@@ -1560,7 +1615,8 @@
         "photos/listing_046/photo_20.jpg",
         "photos/listing_046/photo_21.jpg",
         "photos/listing_046/photo_22.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_047",
@@ -1593,7 +1649,8 @@
         "photos/listing_047/photo_20.jpg",
         "photos/listing_047/photo_21.jpg",
         "photos/listing_047/photo_22.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_048",
@@ -1625,7 +1682,8 @@
         "photos/listing_048/photo_19.jpg",
         "photos/listing_048/photo_20.jpg",
         "photos/listing_048/photo_21.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_049",
@@ -1652,14 +1710,15 @@
         "photos/listing_049/photo_14.jpg",
         "photos/listing_049/photo_15.jpg",
         "photos/listing_049/photo_16.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_050",
       "listing_number": 50,
       "title": "70 Pine Street #3001 in Financial District, Manhattan | StreetEasy",
       "url": "https://streeteasy.com/building/70-pine-street/3001",
-      "has_sqft_data": false,
+      "has_sqft_data": true,
       "photo_count": 11,
       "photo_paths": [
         "photos/listing_050/photo_00.jpg",
@@ -1673,7 +1732,8 @@
         "photos/listing_050/photo_08.jpg",
         "photos/listing_050/photo_09.jpg",
         "photos/listing_050/photo_10.jpg"
-      ]
+      ],
+      "sqft": 1137.0
     },
     {
       "id": "listing_051",
@@ -1706,7 +1766,8 @@
         "photos/listing_051/photo_20.jpg",
         "photos/listing_051/photo_21.jpg",
         "photos/listing_051/photo_22.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_052",
@@ -1729,7 +1790,8 @@
         "photos/listing_052/photo_10.jpg",
         "photos/listing_052/photo_11.jpg",
         "photos/listing_052/photo_12.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_053",
@@ -1769,7 +1831,8 @@
         "photos/listing_053/photo_27.jpg",
         "photos/listing_053/photo_28.jpg",
         "photos/listing_053/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_054",
@@ -1784,7 +1847,8 @@
         "photos/listing_054/photo_02.jpg",
         "photos/listing_054/photo_03.jpg",
         "photos/listing_054/photo_04.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_055",
@@ -1824,7 +1888,8 @@
         "photos/listing_055/photo_27.jpg",
         "photos/listing_055/photo_28.jpg",
         "photos/listing_055/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_056",
@@ -1854,7 +1919,8 @@
         "photos/listing_056/photo_17.jpg",
         "photos/listing_056/photo_18.jpg",
         "photos/listing_056/photo_19.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_057",
@@ -1888,14 +1954,15 @@
         "photos/listing_057/photo_21.jpg",
         "photos/listing_057/photo_22.jpg",
         "photos/listing_057/photo_23.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_058",
       "listing_number": 58,
       "title": "8 Court Square #20B in Hunters Point, Queens | StreetEasy",
       "url": "https://streeteasy.com/building/8-court-square-long_island_city/20b",
-      "has_sqft_data": false,
+      "has_sqft_data": true,
       "photo_count": 26,
       "photo_paths": [
         "photos/listing_058/photo_00.jpg",
@@ -1924,7 +1991,8 @@
         "photos/listing_058/photo_23.jpg",
         "photos/listing_058/photo_24.jpg",
         "photos/listing_058/photo_25.jpg"
-      ]
+      ],
+      "sqft": 929.0
     },
     {
       "id": "listing_059",
@@ -1959,7 +2027,8 @@
         "photos/listing_059/photo_22.jpg",
         "photos/listing_059/photo_23.jpg",
         "photos/listing_059/photo_24.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_060",
@@ -1983,7 +2052,8 @@
         "photos/listing_060/photo_11.jpg",
         "photos/listing_060/photo_12.jpg",
         "photos/listing_060/photo_13.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_061",
@@ -2019,7 +2089,8 @@
         "photos/listing_061/photo_23.jpg",
         "photos/listing_061/photo_24.jpg",
         "photos/listing_061/photo_25.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_062",
@@ -2057,7 +2128,8 @@
         "photos/listing_062/photo_25.jpg",
         "photos/listing_062/photo_26.jpg",
         "photos/listing_062/photo_27.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_063",
@@ -2090,7 +2162,8 @@
         "photos/listing_063/photo_20.jpg",
         "photos/listing_063/photo_21.jpg",
         "photos/listing_063/photo_22.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_064",
@@ -2130,7 +2203,8 @@
         "photos/listing_064/photo_27.jpg",
         "photos/listing_064/photo_28.jpg",
         "photos/listing_064/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_065",
@@ -2164,7 +2238,8 @@
         "photos/listing_065/photo_21.jpg",
         "photos/listing_065/photo_22.jpg",
         "photos/listing_065/photo_23.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_066",
@@ -2185,7 +2260,8 @@
         "photos/listing_066/photo_08.jpg",
         "photos/listing_066/photo_09.jpg",
         "photos/listing_066/photo_10.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_067",
@@ -2215,7 +2291,8 @@
         "photos/listing_067/photo_17.jpg",
         "photos/listing_067/photo_18.jpg",
         "photos/listing_067/photo_19.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_068",
@@ -2255,7 +2332,8 @@
         "photos/listing_068/photo_27.jpg",
         "photos/listing_068/photo_28.jpg",
         "photos/listing_068/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_069",
@@ -2295,7 +2373,8 @@
         "photos/listing_069/photo_27.jpg",
         "photos/listing_069/photo_28.jpg",
         "photos/listing_069/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_070",
@@ -2323,14 +2402,15 @@
         "photos/listing_070/photo_15.jpg",
         "photos/listing_070/photo_16.jpg",
         "photos/listing_070/photo_17.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_071",
       "listing_number": 71,
       "title": "1 Ocean Dr #W20C in Coney Island, Brooklyn | StreetEasy",
       "url": "https://streeteasy.com/building/1-ocean-drive/w20c",
-      "has_sqft_data": true,
+      "has_sqft_data": false,
       "photo_count": 17,
       "photo_paths": [
         "photos/listing_071/photo_00.jpg",
@@ -2350,7 +2430,8 @@
         "photos/listing_071/photo_14.jpg",
         "photos/listing_071/photo_15.jpg",
         "photos/listing_071/photo_16.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_072",
@@ -2390,14 +2471,15 @@
         "photos/listing_072/photo_27.jpg",
         "photos/listing_072/photo_28.jpg",
         "photos/listing_072/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_073",
       "listing_number": 73,
       "title": "252 South Street #73J in Two Bridges, Manhattan | StreetEasy",
       "url": "https://streeteasy.com/building/one-manhattan-square/73j",
-      "has_sqft_data": true,
+      "has_sqft_data": false,
       "photo_count": 30,
       "photo_paths": [
         "photos/listing_073/photo_00.jpg",
@@ -2430,14 +2512,15 @@
         "photos/listing_073/photo_27.jpg",
         "photos/listing_073/photo_28.jpg",
         "photos/listing_073/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_074",
       "listing_number": 74,
       "title": "475 Clermont Avenue #1237 in Fort Greene, Brooklyn | StreetEasy",
       "url": "https://streeteasy.com/building/475-clermont/1237",
-      "has_sqft_data": true,
+      "has_sqft_data": false,
       "photo_count": 24,
       "photo_paths": [
         "photos/listing_074/photo_00.jpg",
@@ -2464,41 +2547,8 @@
         "photos/listing_074/photo_21.jpg",
         "photos/listing_074/photo_22.jpg",
         "photos/listing_074/photo_23.jpg"
-      ]
-    },
-    {
-      "id": "listing_075",
-      "listing_number": 75,
-      "title": "475 Clermont Avenue #1237 in Fort Greene, Brooklyn | StreetEasy",
-      "url": "https://streeteasy.com/building/475-clermont/1237",
-      "has_sqft_data": true,
-      "photo_count": 24,
-      "photo_paths": [
-        "photos/listing_075/photo_00.jpg",
-        "photos/listing_075/photo_01.jpg",
-        "photos/listing_075/photo_02.jpg",
-        "photos/listing_075/photo_03.jpg",
-        "photos/listing_075/photo_04.jpg",
-        "photos/listing_075/photo_05.jpg",
-        "photos/listing_075/photo_06.jpg",
-        "photos/listing_075/photo_07.jpg",
-        "photos/listing_075/photo_08.jpg",
-        "photos/listing_075/photo_09.jpg",
-        "photos/listing_075/photo_10.jpg",
-        "photos/listing_075/photo_11.jpg",
-        "photos/listing_075/photo_12.jpg",
-        "photos/listing_075/photo_13.jpg",
-        "photos/listing_075/photo_14.jpg",
-        "photos/listing_075/photo_15.jpg",
-        "photos/listing_075/photo_16.jpg",
-        "photos/listing_075/photo_17.jpg",
-        "photos/listing_075/photo_18.jpg",
-        "photos/listing_075/photo_19.jpg",
-        "photos/listing_075/photo_20.jpg",
-        "photos/listing_075/photo_21.jpg",
-        "photos/listing_075/photo_22.jpg",
-        "photos/listing_075/photo_23.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_076",
@@ -2535,7 +2585,8 @@
         "photos/listing_076/photo_24.jpg",
         "photos/listing_076/photo_25.jpg",
         "photos/listing_076/photo_26.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_077",
@@ -2567,14 +2618,15 @@
         "photos/listing_077/photo_19.jpg",
         "photos/listing_077/photo_20.jpg",
         "photos/listing_077/photo_21.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_078",
       "listing_number": 78,
       "title": "415 West 120th Street #9D in Morningside Heights, Manhattan | StreetEasy",
       "url": "https://streeteasy.com/building/monarch-heights/9d",
-      "has_sqft_data": true,
+      "has_sqft_data": false,
       "photo_count": 24,
       "photo_paths": [
         "photos/listing_078/photo_00.jpg",
@@ -2601,7 +2653,8 @@
         "photos/listing_078/photo_21.jpg",
         "photos/listing_078/photo_22.jpg",
         "photos/listing_078/photo_23.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_079",
@@ -2628,7 +2681,8 @@
         "photos/listing_079/photo_14.jpg",
         "photos/listing_079/photo_15.jpg",
         "photos/listing_079/photo_16.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_080",
@@ -2668,7 +2722,8 @@
         "photos/listing_080/photo_27.jpg",
         "photos/listing_080/photo_28.jpg",
         "photos/listing_080/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_081",
@@ -2707,14 +2762,15 @@
         "photos/listing_081/photo_26.jpg",
         "photos/listing_081/photo_27.jpg",
         "photos/listing_081/photo_28.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_082",
       "listing_number": 82,
       "title": "429 East 52nd Street #7F in Beekman, Manhattan | StreetEasy",
       "url": "https://streeteasy.com/building/rivercourt-429-east-52nd-street-new_york/07f",
-      "has_sqft_data": true,
+      "has_sqft_data": false,
       "photo_count": 14,
       "photo_paths": [
         "photos/listing_082/photo_00.jpg",
@@ -2731,14 +2787,15 @@
         "photos/listing_082/photo_11.jpg",
         "photos/listing_082/photo_12.jpg",
         "photos/listing_082/photo_13.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_083",
       "listing_number": 83,
       "title": "1065 Second Avenue #6K in Sutton Place, Manhattan | StreetEasy",
       "url": "https://streeteasy.com/building/aalto57-1065-second-avenue-manhattan/6k",
-      "has_sqft_data": true,
+      "has_sqft_data": false,
       "photo_count": 20,
       "photo_paths": [
         "photos/listing_083/photo_00.jpg",
@@ -2761,7 +2818,8 @@
         "photos/listing_083/photo_17.jpg",
         "photos/listing_083/photo_18.jpg",
         "photos/listing_083/photo_19.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_084",
@@ -2786,7 +2844,8 @@
         "photos/listing_084/photo_12.jpg",
         "photos/listing_084/photo_13.jpg",
         "photos/listing_084/photo_14.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_085",
@@ -2809,7 +2868,8 @@
         "photos/listing_085/photo_10.jpg",
         "photos/listing_085/photo_11.jpg",
         "photos/listing_085/photo_12.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_086",
@@ -2849,7 +2909,8 @@
         "photos/listing_086/photo_27.jpg",
         "photos/listing_086/photo_28.jpg",
         "photos/listing_086/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_087",
@@ -2880,7 +2941,8 @@
         "photos/listing_087/photo_18.jpg",
         "photos/listing_087/photo_19.jpg",
         "photos/listing_087/photo_20.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_088",
@@ -2917,7 +2979,8 @@
         "photos/listing_088/photo_24.jpg",
         "photos/listing_088/photo_25.jpg",
         "photos/listing_088/photo_26.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_089",
@@ -2956,7 +3019,8 @@
         "photos/listing_089/photo_26.jpg",
         "photos/listing_089/photo_27.jpg",
         "photos/listing_089/photo_28.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_090",
@@ -2995,7 +3059,8 @@
         "photos/listing_090/photo_26.jpg",
         "photos/listing_090/photo_27.jpg",
         "photos/listing_090/photo_28.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_091",
@@ -3035,7 +3100,8 @@
         "photos/listing_091/photo_27.jpg",
         "photos/listing_091/photo_28.jpg",
         "photos/listing_091/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_092",
@@ -3072,14 +3138,15 @@
         "photos/listing_092/photo_24.jpg",
         "photos/listing_092/photo_25.jpg",
         "photos/listing_092/photo_26.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_093",
       "listing_number": 93,
       "title": "12 Halsey Street #301 in Bedford-Stuyvesant, Brooklyn | StreetEasy",
       "url": "https://streeteasy.com/building/12-halsey-street-brooklyn/301",
-      "has_sqft_data": true,
+      "has_sqft_data": false,
       "photo_count": 12,
       "photo_paths": [
         "photos/listing_093/photo_00.jpg",
@@ -3094,7 +3161,8 @@
         "photos/listing_093/photo_09.jpg",
         "photos/listing_093/photo_10.jpg",
         "photos/listing_093/photo_11.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_094",
@@ -3126,14 +3194,15 @@
         "photos/listing_094/photo_19.jpg",
         "photos/listing_094/photo_20.jpg",
         "photos/listing_094/photo_21.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_095",
       "listing_number": 95,
       "title": "335 Bond Street #2B in Gowanus, Brooklyn | StreetEasy",
       "url": "https://streeteasy.com/building/maison-bond/2b",
-      "has_sqft_data": true,
+      "has_sqft_data": false,
       "photo_count": 15,
       "photo_paths": [
         "photos/listing_095/photo_00.jpg",
@@ -3151,7 +3220,8 @@
         "photos/listing_095/photo_12.jpg",
         "photos/listing_095/photo_13.jpg",
         "photos/listing_095/photo_14.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_096",
@@ -3191,7 +3261,8 @@
         "photos/listing_096/photo_27.jpg",
         "photos/listing_096/photo_28.jpg",
         "photos/listing_096/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_097",
@@ -3210,7 +3281,8 @@
         "photos/listing_097/photo_06.jpg",
         "photos/listing_097/photo_07.jpg",
         "photos/listing_097/photo_08.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_098",
@@ -3250,14 +3322,15 @@
         "photos/listing_098/photo_27.jpg",
         "photos/listing_098/photo_28.jpg",
         "photos/listing_098/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_099",
       "listing_number": 99,
       "title": "70 Pine Street #2511 in Financial District, Manhattan | StreetEasy",
       "url": "https://streeteasy.com/building/70-pine-street/2511",
-      "has_sqft_data": true,
+      "has_sqft_data": false,
       "photo_count": 20,
       "photo_paths": [
         "photos/listing_099/photo_00.jpg",
@@ -3280,7 +3353,8 @@
         "photos/listing_099/photo_17.jpg",
         "photos/listing_099/photo_18.jpg",
         "photos/listing_099/photo_19.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_100",
@@ -3314,7 +3388,8 @@
         "photos/listing_100/photo_21.jpg",
         "photos/listing_100/photo_22.jpg",
         "photos/listing_100/photo_23.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_101",
@@ -3346,14 +3421,15 @@
         "photos/listing_101/photo_19.jpg",
         "photos/listing_101/photo_20.jpg",
         "photos/listing_101/photo_21.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_102",
       "listing_number": 102,
       "title": "240 East 86th Street #16M in Yorkville, Manhattan | StreetEasy",
       "url": "https://streeteasy.com/building/the-ventura/016m",
-      "has_sqft_data": true,
+      "has_sqft_data": false,
       "photo_count": 19,
       "photo_paths": [
         "photos/listing_102/photo_00.jpg",
@@ -3375,7 +3451,8 @@
         "photos/listing_102/photo_16.jpg",
         "photos/listing_102/photo_17.jpg",
         "photos/listing_102/photo_18.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_103",
@@ -3410,7 +3487,8 @@
         "photos/listing_103/photo_22.jpg",
         "photos/listing_103/photo_23.jpg",
         "photos/listing_103/photo_24.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_104",
@@ -3432,7 +3510,8 @@
         "photos/listing_104/photo_09.jpg",
         "photos/listing_104/photo_10.jpg",
         "photos/listing_104/photo_11.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_105",
@@ -3472,14 +3551,15 @@
         "photos/listing_105/photo_27.jpg",
         "photos/listing_105/photo_28.jpg",
         "photos/listing_105/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_106",
       "listing_number": 106,
       "title": "70 Pine Street #716 in Financial District, Manhattan | StreetEasy",
       "url": "https://streeteasy.com/building/70-pine-street/0716",
-      "has_sqft_data": true,
+      "has_sqft_data": false,
       "photo_count": 23,
       "photo_paths": [
         "photos/listing_106/photo_00.jpg",
@@ -3505,7 +3585,8 @@
         "photos/listing_106/photo_20.jpg",
         "photos/listing_106/photo_21.jpg",
         "photos/listing_106/photo_22.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_107",
@@ -3539,7 +3620,8 @@
         "photos/listing_107/photo_21.jpg",
         "photos/listing_107/photo_22.jpg",
         "photos/listing_107/photo_23.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_108",
@@ -3571,14 +3653,15 @@
         "photos/listing_108/photo_19.jpg",
         "photos/listing_108/photo_20.jpg",
         "photos/listing_108/photo_21.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_109",
       "listing_number": 109,
       "title": "429 East 52nd Street #27A in Beekman, Manhattan | StreetEasy",
       "url": "https://streeteasy.com/building/rivercourt-429-east-52nd-street-new_york/27a",
-      "has_sqft_data": true,
+      "has_sqft_data": false,
       "photo_count": 6,
       "photo_paths": [
         "photos/listing_109/photo_00.jpg",
@@ -3587,7 +3670,8 @@
         "photos/listing_109/photo_03.jpg",
         "photos/listing_109/photo_04.jpg",
         "photos/listing_109/photo_05.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_110",
@@ -3604,7 +3688,8 @@
         "photos/listing_110/photo_04.jpg",
         "photos/listing_110/photo_05.jpg",
         "photos/listing_110/photo_06.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_111",
@@ -3623,7 +3708,8 @@
         "photos/listing_111/photo_06.jpg",
         "photos/listing_111/photo_07.jpg",
         "photos/listing_111/photo_08.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_112",
@@ -3663,14 +3749,15 @@
         "photos/listing_112/photo_27.jpg",
         "photos/listing_112/photo_28.jpg",
         "photos/listing_112/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_113",
       "listing_number": 113,
       "title": "196 Willoughby Street #32F in Downtown Brooklyn, Brooklyn | StreetEasy",
       "url": "https://streeteasy.com/building/willoughby-196-willoughby-street-brooklyn___/32f",
-      "has_sqft_data": true,
+      "has_sqft_data": false,
       "photo_count": 30,
       "photo_paths": [
         "photos/listing_113/photo_00.jpg",
@@ -3703,14 +3790,15 @@
         "photos/listing_113/photo_27.jpg",
         "photos/listing_113/photo_28.jpg",
         "photos/listing_113/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_114",
       "listing_number": 114,
       "title": "161 Lenox Road #210 in Flatbush, Brooklyn | StreetEasy",
       "url": "https://streeteasy.com/building/161-lenox/210",
-      "has_sqft_data": true,
+      "has_sqft_data": false,
       "photo_count": 9,
       "photo_paths": [
         "photos/listing_114/photo_00.jpg",
@@ -3722,7 +3810,8 @@
         "photos/listing_114/photo_06.jpg",
         "photos/listing_114/photo_07.jpg",
         "photos/listing_114/photo_08.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_115",
@@ -3753,7 +3842,8 @@
         "photos/listing_115/photo_18.jpg",
         "photos/listing_115/photo_19.jpg",
         "photos/listing_115/photo_20.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_116",
@@ -3787,7 +3877,8 @@
         "photos/listing_116/photo_21.jpg",
         "photos/listing_116/photo_22.jpg",
         "photos/listing_116/photo_23.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_117",
@@ -3826,7 +3917,8 @@
         "photos/listing_117/photo_26.jpg",
         "photos/listing_117/photo_27.jpg",
         "photos/listing_117/photo_28.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_118",
@@ -3865,7 +3957,8 @@
         "photos/listing_118/photo_26.jpg",
         "photos/listing_118/photo_27.jpg",
         "photos/listing_118/photo_28.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_119",
@@ -3905,7 +3998,8 @@
         "photos/listing_119/photo_27.jpg",
         "photos/listing_119/photo_28.jpg",
         "photos/listing_119/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_120",
@@ -3945,14 +4039,15 @@
         "photos/listing_120/photo_27.jpg",
         "photos/listing_120/photo_28.jpg",
         "photos/listing_120/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_121",
       "listing_number": 121,
       "title": "101 West End Avenue #PHE in Lincoln Square, Manhattan | StreetEasy",
       "url": "https://streeteasy.com/building/101-west-end-avenue-new_york/phe",
-      "has_sqft_data": true,
+      "has_sqft_data": false,
       "photo_count": 22,
       "photo_paths": [
         "photos/listing_121/photo_00.jpg",
@@ -3977,7 +4072,8 @@
         "photos/listing_121/photo_19.jpg",
         "photos/listing_121/photo_20.jpg",
         "photos/listing_121/photo_21.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_122",
@@ -4009,7 +4105,8 @@
         "photos/listing_122/photo_19.jpg",
         "photos/listing_122/photo_20.jpg",
         "photos/listing_122/photo_21.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_123",
@@ -4039,14 +4136,15 @@
         "photos/listing_123/photo_17.jpg",
         "photos/listing_123/photo_18.jpg",
         "photos/listing_123/photo_19.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_124",
       "listing_number": 124,
       "title": "45 Hoyt Street #21C in Downtown Brooklyn, Brooklyn | StreetEasy",
       "url": "https://streeteasy.com/building/hoyt-and-horn/21c",
-      "has_sqft_data": true,
+      "has_sqft_data": false,
       "photo_count": 9,
       "photo_paths": [
         "photos/listing_124/photo_00.jpg",
@@ -4058,7 +4156,8 @@
         "photos/listing_124/photo_06.jpg",
         "photos/listing_124/photo_07.jpg",
         "photos/listing_124/photo_08.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_125",
@@ -4076,7 +4175,8 @@
         "photos/listing_125/photo_05.jpg",
         "photos/listing_125/photo_06.jpg",
         "photos/listing_125/photo_07.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_126",
@@ -4116,7 +4216,8 @@
         "photos/listing_126/photo_27.jpg",
         "photos/listing_126/photo_28.jpg",
         "photos/listing_126/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_127",
@@ -4143,7 +4244,8 @@
         "photos/listing_127/photo_14.jpg",
         "photos/listing_127/photo_15.jpg",
         "photos/listing_127/photo_16.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_128",
@@ -4179,7 +4281,8 @@
         "photos/listing_128/photo_23.jpg",
         "photos/listing_128/photo_24.jpg",
         "photos/listing_128/photo_25.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_129",
@@ -4215,7 +4318,8 @@
         "photos/listing_129/photo_23.jpg",
         "photos/listing_129/photo_24.jpg",
         "photos/listing_129/photo_25.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_130",
@@ -4245,7 +4349,8 @@
         "photos/listing_130/photo_17.jpg",
         "photos/listing_130/photo_18.jpg",
         "photos/listing_130/photo_19.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_131",
@@ -4285,14 +4390,15 @@
         "photos/listing_131/photo_27.jpg",
         "photos/listing_131/photo_28.jpg",
         "photos/listing_131/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_132",
       "listing_number": 132,
       "title": "475 Clermont Avenue #1008 in Fort Greene, Brooklyn | StreetEasy",
       "url": "https://streeteasy.com/building/475-clermont/1008",
-      "has_sqft_data": true,
+      "has_sqft_data": false,
       "photo_count": 24,
       "photo_paths": [
         "photos/listing_132/photo_00.jpg",
@@ -4319,14 +4425,15 @@
         "photos/listing_132/photo_21.jpg",
         "photos/listing_132/photo_22.jpg",
         "photos/listing_132/photo_23.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_133",
       "listing_number": 133,
       "title": "1 Bell Slip #22C in Greenpoint, Brooklyn | StreetEasy",
       "url": "https://streeteasy.com/building/the-bellslip/022c",
-      "has_sqft_data": true,
+      "has_sqft_data": false,
       "photo_count": 30,
       "photo_paths": [
         "photos/listing_133/photo_00.jpg",
@@ -4359,7 +4466,8 @@
         "photos/listing_133/photo_27.jpg",
         "photos/listing_133/photo_28.jpg",
         "photos/listing_133/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_134",
@@ -4393,7 +4501,8 @@
         "photos/listing_134/photo_21.jpg",
         "photos/listing_134/photo_22.jpg",
         "photos/listing_134/photo_23.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_135",
@@ -4431,14 +4540,15 @@
         "photos/listing_135/photo_25.jpg",
         "photos/listing_135/photo_26.jpg",
         "photos/listing_135/photo_27.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_136",
       "listing_number": 136,
       "title": "188 Ludlow Street #24E in Lower East Side, Manhattan | StreetEasy",
       "url": "https://streeteasy.com/building/the-ludlow/24e",
-      "has_sqft_data": true,
+      "has_sqft_data": false,
       "photo_count": 5,
       "photo_paths": [
         "photos/listing_136/photo_00.jpg",
@@ -4446,14 +4556,15 @@
         "photos/listing_136/photo_02.jpg",
         "photos/listing_136/photo_03.jpg",
         "photos/listing_136/photo_04.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_137",
       "listing_number": 137,
       "title": "45 Hoyt Street #15W in Downtown Brooklyn, Brooklyn | StreetEasy",
       "url": "https://streeteasy.com/building/hoyt-and-horn/15w",
-      "has_sqft_data": true,
+      "has_sqft_data": false,
       "photo_count": 5,
       "photo_paths": [
         "photos/listing_137/photo_00.jpg",
@@ -4461,7 +4572,8 @@
         "photos/listing_137/photo_02.jpg",
         "photos/listing_137/photo_03.jpg",
         "photos/listing_137/photo_04.jpg"
-      ]
+      ],
+      "sqft": null
     },
     {
       "id": "listing_138",
@@ -4501,7 +4613,8 @@
         "photos/listing_138/photo_27.jpg",
         "photos/listing_138/photo_28.jpg",
         "photos/listing_138/photo_29.jpg"
-      ]
+      ],
+      "sqft": null
     }
   ]
 }

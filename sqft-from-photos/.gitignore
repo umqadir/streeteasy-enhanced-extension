@@ -2,7 +2,15 @@
 sample-collection/data/downloads/
 sample-collection/data/photos/
 sample-collection/streeteasy_eval_dataset/photos/
+sample-collection/streeteasy_eval_dataset/listings.pre_reconcile_*.json
 clean_set_export/
+sample-collection/clean_set_export/
+sample-collection/clean_set_archive/
+sample-collection/subsets/
+sample-collection/DATASET_STATE.json
 sample-collection/.curate_web.pid
 sample-collection/.curate_web.log
 sample-collection/curate_web.log
+__pycache__/
+*.pyc
+v2-pipeline/runs/

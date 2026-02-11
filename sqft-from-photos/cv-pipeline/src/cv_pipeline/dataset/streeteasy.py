@@ -18,7 +18,7 @@ class StreetEasyExample:
 
 def safe_dirname(listing_url: str) -> str:
     """
-    Matches sample-collection/scripts/download_photos.py (_safe_dirname).
+    Matches sample-collection/scripts/legacy/download_photos_by_photo_ids.py (_safe_dirname).
     """
     path = urlparse(listing_url).path.strip("/")
     path = re.sub(r"[^a-zA-Z0-9._/-]+", "_", path)

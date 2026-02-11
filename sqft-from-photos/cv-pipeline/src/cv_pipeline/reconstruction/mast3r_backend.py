@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -82,6 +83,8 @@ def run_mast3r_reconstruction(
         images = images[: int(cfg.max_images)]
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    if hasattr(torch.serialization, "add_safe_globals"):
+        torch.serialization.add_safe_globals([argparse.Namespace])
     model = AsymmetricMASt3R.from_pretrained(str(ckpt)).to(device).eval()
 
     imgs = load_images([str(p) for p in images], size=int(cfg.image_size))
@@ -121,4 +124,3 @@ def run_mast3r_reconstruction(
         points_world=pts3d,
         diagnostics=diag,
     )
-

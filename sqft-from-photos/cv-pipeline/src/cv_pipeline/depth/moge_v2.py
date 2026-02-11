@@ -56,8 +56,12 @@ class MoGeV2Metric:
                 "MoGe requires extra dependencies. In the pod: `cd cv-pipeline && uv sync --extra gpu --extra depth`."
             ) from e
 
+        local_snapshot = self._volume.checkpoints_dir / "moge" / self._cfg.repo.replace("/", "__")
+        local_model = local_snapshot / "model.pt"
+        source = str(local_model) if local_model.exists() and local_model.stat().st_size > 1_000_000 else self._cfg.repo
+
         device = "cuda" if torch.cuda.is_available() else "cpu"
-        model = MoGeModel.from_pretrained(self._cfg.repo).to(device).eval()
+        model = MoGeModel.from_pretrained(source).to(device).eval()
         self._model = model
         self._device = device
 

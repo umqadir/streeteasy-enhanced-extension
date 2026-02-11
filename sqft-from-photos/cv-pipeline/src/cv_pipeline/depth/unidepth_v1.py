@@ -54,8 +54,15 @@ class UniDepthV1Metric:
                 "UniDepth requires extra dependencies. In the pod: `cd cv-pipeline && uv sync --extra gpu --extra depth`."
             ) from e
 
+        local_snapshot = self._volume.checkpoints_dir / "unidepth" / self._cfg.repo.replace("/", "__")
+        weight_suffixes = {".safetensors", ".bin", ".pt", ".pth"}
+        has_local_weights = local_snapshot.exists() and any(
+            p.suffix.lower() in weight_suffixes for p in local_snapshot.rglob("*") if p.is_file()
+        )
+        source = str(local_snapshot) if has_local_weights else self._cfg.repo
+
         device = "cuda" if torch.cuda.is_available() else "cpu"
-        model = UniDepthV1.from_pretrained(self._cfg.repo).to(device).eval()
+        model = UniDepthV1.from_pretrained(source).to(device).eval()
         self._model = model
         self._device = device
 
@@ -122,4 +129,3 @@ class UniDepthV1Metric:
         out_path.parent.mkdir(parents=True, exist_ok=True)
         np.save(out_path, pred.depth_m.astype(np.float32))
         return out_path
-

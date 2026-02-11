@@ -6,9 +6,11 @@ import argparse
 import json
 import os
 import subprocess
+import time
 from dataclasses import dataclass
 from pathlib import Path
-from urllib.request import urlopen
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 
 @dataclass(frozen=True)
@@ -73,16 +75,56 @@ def _git_clone_or_update(url: str, dest: Path, *, recursive: bool = False) -> di
     return {"url": url, "path": str(dest), "head": head}
 
 
-def _download(url: str, out_path: Path) -> None:
+def _head_content_length(url: str) -> int | None:
+    req = Request(url, method="HEAD")
+    try:
+        with urlopen(req, timeout=30) as r:
+            raw = r.headers.get("Content-Length")
+    except (HTTPError, URLError, TimeoutError, ValueError):
+        return None
+    if raw is None:
+        return None
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return None
+    return parsed if parsed >= 0 else None
+
+
+def _download(url: str, out_path: Path, *, retries: int, timeout_s: float) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
+    expected_size = _head_content_length(url)
+    max_tries = max(1, int(retries))
+    timeout = max(30.0, float(timeout_s))
     tmp = out_path.with_suffix(out_path.suffix + ".tmp")
-    with urlopen(url, timeout=60) as r, tmp.open("wb") as f:
-        while True:
-            chunk = r.read(1024 * 1024)
-            if not chunk:
-                break
-            f.write(chunk)
-    tmp.replace(out_path)
+    for attempt in range(1, max_tries + 1):
+        try:
+            if tmp.exists():
+                tmp.unlink()
+            written = 0
+            with urlopen(url, timeout=timeout) as r, tmp.open("wb") as f:
+                while True:
+                    chunk = r.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    written += len(chunk)
+                    f.write(chunk)
+            if written <= 0:
+                raise RuntimeError("download produced 0 bytes")
+            if expected_size is not None and written != expected_size:
+                raise RuntimeError(
+                    f"size mismatch: wrote {written} bytes, expected {expected_size} bytes (from Content-Length)"
+                )
+            tmp.replace(out_path)
+            return
+        except Exception as e:
+            if tmp.exists():
+                tmp.unlink()
+            if attempt >= max_tries:
+                raise RuntimeError(f"Failed download after {max_tries} attempts: {url} -> {out_path}: {e}") from e
+            wait_s = min(60, 2**attempt)
+            print(f"download retry {attempt}/{max_tries - 1} in {wait_s}s: {url} ({type(e).__name__}: {e})")
+            time.sleep(wait_s)
 
 
 def _manifest_path(volume: VolumeLayout) -> Path:
@@ -111,7 +153,9 @@ def _record_vendor(manifest: dict[str, object], name: str, entry: dict[str, str]
 
 def _record_download(manifest: dict[str, object], name: str, url: str, path: Path) -> None:
     downloads: list[dict[str, str]] = list(manifest.get("downloads", []))  # type: ignore[assignment]
-    downloads.append({"name": name, "url": url, "path": str(path)})
+    path_str = str(path)
+    downloads = [d for d in downloads if not (d.get("name") == name and d.get("path") == path_str and d.get("url") == url)]
+    downloads.append({"name": name, "url": url, "path": path_str})
     manifest["downloads"] = downloads
 
 
@@ -120,6 +164,59 @@ def _record_note(manifest: dict[str, object], note: str) -> None:
     if note not in notes:
         notes.append(note)
     manifest["notes"] = notes
+
+
+def _fetch_hf_expected_sizes(repo_id: str) -> dict[str, int]:
+    from huggingface_hub import HfApi
+
+    info = HfApi().model_info(repo_id=repo_id, files_metadata=True)
+    expected: dict[str, int] = {}
+    siblings = getattr(info, "siblings", None) or []
+    for sibling in siblings:
+        name = getattr(sibling, "rfilename", None)
+        size = getattr(sibling, "size", None)
+        if not isinstance(name, str) or not name:
+            continue
+        if isinstance(size, int) and size >= 0:
+            expected[name] = size
+    return expected
+
+
+def _validate_hf_snapshot(local_dir: Path, *, expected_sizes: dict[str, int]) -> list[str]:
+    issues: list[str] = []
+    if not local_dir.exists():
+        return [f"missing snapshot dir: {local_dir}"]
+
+    missing = [rel for rel in expected_sizes if not (local_dir / rel).exists()]
+    if missing:
+        show = ", ".join(sorted(missing)[:10])
+        suffix = "" if len(missing) <= 10 else f" ... (+{len(missing) - 10} more)"
+        issues.append(f"missing files: {show}{suffix}")
+
+    bad_size: list[str] = []
+    for rel, expected in expected_sizes.items():
+        p = local_dir / rel
+        if not p.exists() or not p.is_file():
+            continue
+        actual = p.stat().st_size
+        if actual != expected:
+            bad_size.append(f"{rel} ({actual} != {expected})")
+    if bad_size:
+        show = ", ".join(sorted(bad_size)[:10])
+        suffix = "" if len(bad_size) <= 10 else f" ... (+{len(bad_size) - 10} more)"
+        issues.append(f"size mismatches: {show}{suffix}")
+
+    incomplete = sorted(local_dir.rglob("*.incomplete"))
+    if incomplete:
+        show = ", ".join(str(p.relative_to(local_dir)) for p in incomplete[:10])
+        suffix = "" if len(incomplete) <= 10 else f" ... (+{len(incomplete) - 10} more)"
+        issues.append(f"incomplete files present: {show}{suffix}")
+
+    weight_suffixes = {".pt", ".pth", ".bin", ".safetensors"}
+    has_weights = any(p.suffix.lower() in weight_suffixes for p in local_dir.rglob("*") if p.is_file())
+    if not has_weights:
+        issues.append("no model weight file found (*.pt, *.pth, *.bin, *.safetensors)")
+    return issues
 
 
 def _cmd_vendor_all(args: argparse.Namespace) -> None:
@@ -181,7 +278,7 @@ def _cmd_depth_anything_metric(args: argparse.Namespace) -> None:
         print(f"skip (exists): {out_path}")
     else:
         print(f"download: {url} -> {out_path}")
-        _download(url, out_path)
+        _download(url, out_path, retries=args.retries, timeout_s=args.download_timeout_s)
     _record_download(manifest, "depth-anything-v2-metric", url, out_path)
 
     _write_manifest(volume, manifest)
@@ -211,7 +308,7 @@ def _cmd_metric3d(args: argparse.Namespace) -> None:
         print(f"skip (exists): {out_path}")
     else:
         print(f"download: {url} -> {out_path}")
-        _download(url, out_path)
+        _download(url, out_path, retries=args.retries, timeout_s=args.download_timeout_s)
     _record_download(manifest, f"metric3d:{name}", url, out_path)
     _record_note(
         manifest,
@@ -244,7 +341,7 @@ def _cmd_dust3r(args: argparse.Namespace) -> None:
         print(f"skip (exists): {out_path}")
     else:
         print(f"download: {url} -> {out_path}")
-        _download(url, out_path)
+        _download(url, out_path, retries=args.retries, timeout_s=args.download_timeout_s)
     _record_download(manifest, f"dust3r:{name}", url, out_path)
     _record_note(
         manifest,
@@ -271,7 +368,7 @@ def _cmd_mast3r(args: argparse.Namespace) -> None:
         print(f"skip (exists): {main_path}")
     else:
         print(f"download: {main_url} -> {main_path}")
-        _download(main_url, main_path)
+        _download(main_url, main_path, retries=args.retries, timeout_s=args.download_timeout_s)
     _record_download(manifest, "mast3r:main", main_url, main_path)
 
     if args.with_retrieval:
@@ -283,7 +380,7 @@ def _cmd_mast3r(args: argparse.Namespace) -> None:
                 print(f"skip (exists): {out_path}")
             else:
                 print(f"download: {url} -> {out_path}")
-                _download(url, out_path)
+                _download(url, out_path, retries=args.retries, timeout_s=args.download_timeout_s)
             _record_download(manifest, "mast3r:retrieval", url, out_path)
 
     _record_note(
@@ -307,16 +404,35 @@ def _cmd_hf_snapshot(args: argparse.Namespace, *, namespace: str) -> None:
         raise SystemExit("Missing dependency: huggingface_hub. Run `uv sync` (cv-pipeline).") from e
 
     local_dir = volume.checkpoints_dir / namespace / args.repo.replace("/", "__")
-    if local_dir.exists() and not args.force:
-        print(f"skip (exists): {local_dir}")
-    else:
-        print(f"snapshot_download: {args.repo} -> {local_dir}")
-        snapshot_download(
-            repo_id=args.repo,
-            local_dir=str(local_dir),
-            local_dir_use_symlinks=False,
-            resume_download=True,
-        )
+    expected_sizes = _fetch_hf_expected_sizes(args.repo)
+    max_tries = max(1, int(args.retries))
+    for attempt in range(1, max_tries + 1):
+        run_download = not local_dir.exists() or args.force
+        if run_download:
+            print(f"snapshot_download: {args.repo} -> {local_dir} (attempt {attempt}/{max_tries})")
+            snapshot_download(
+                repo_id=args.repo,
+                local_dir=str(local_dir),
+                local_dir_use_symlinks=False,
+                resume_download=True,
+                force_download=bool(args.force),
+                etag_timeout=float(args.etag_timeout_s),
+                max_workers=int(args.hf_max_workers),
+            )
+        else:
+            print(f"validate existing snapshot: {local_dir}")
+
+        issues = _validate_hf_snapshot(local_dir, expected_sizes=expected_sizes)
+        if not issues:
+            break
+        if attempt >= max_tries:
+            joined = "\n  - ".join(issues)
+            raise RuntimeError(f"Snapshot validation failed for {args.repo}:\n  - {joined}")
+        print(f"snapshot validation failed (attempt {attempt}/{max_tries}): {'; '.join(issues)}")
+        print("retrying with force_download=True")
+        args.force = True
+        time.sleep(min(60, 2**attempt))
+
     _record_download(manifest, f"{namespace}:{args.repo}", f"hf://{args.repo}", local_dir)
     _write_manifest(volume, manifest)
     print("OK: wrote", _manifest_path(volume))
@@ -368,6 +484,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Download/prepare model assets onto CVP_VOLUME.")
     parser.add_argument("--volume-root", type=Path, default=_default_volume_root())
     parser.add_argument("--force", action="store_true", help="Re-download even if files already exist.")
+    parser.add_argument("--retries", type=int, default=3, help="Retries for download/snapshot operations.")
+    parser.add_argument("--download-timeout-s", type=float, default=120.0, help="Socket timeout for direct URL downloads.")
+    parser.add_argument("--etag-timeout-s", type=float, default=30.0, help="HF metadata timeout in seconds.")
+    parser.add_argument("--hf-max-workers", type=int, default=8, help="HF snapshot concurrent workers.")
 
     sub = parser.add_subparsers(dest="cmd", required=True)
 

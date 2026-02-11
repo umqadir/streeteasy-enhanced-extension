@@ -1,18 +1,21 @@
 # sample-collection
 
-Quick curation UI (local):
+## What stays here
+
+- Full source dataset: `sample-collection/streeteasy_eval_dataset/listings.json`
+- Source photos: `sample-collection/streeteasy_eval_dataset/photos/...`
+- Current export (always same path): `sample-collection/clean_set_export/listings.json`
+- Export photos: `sample-collection/clean_set_export/photos/...`
+- Previous exports (auto-archived): `sample-collection/clean_set_archive/export_<timestamp>/...`
+- Collection/scraping scripts: `sample-collection/scripts/legacy/`
+
+## Export workflow
+
+Run the curation UI against the full source dataset:
 
 ```bash
-python sample-collection/scripts/curate_web.py --dataset sample-collection/streeteasy_eval_dataset/listings.json
+python sample-collection/scripts/curate_web.py
 ```
 
-Exports to `sample-collection/clean_set_export/` by default.
-
-If your `listings.json` contains a mix of labeled and unlabeled listings, create a labeled-only subset first:
-
-```bash
-python sample-collection/scripts/export_labeled_subset.py \
-  --dataset sample-collection/streeteasy_eval_dataset/listings.json
-```
-
-Then curate against `sample-collection/streeteasy_eval_dataset/listings_labeled_only.json`.
+On the first successful export in that run, previous `clean_set_export` contents are moved to `clean_set_archive`.
+New export output is then written back to `clean_set_export`, so downstream paths stay stable.

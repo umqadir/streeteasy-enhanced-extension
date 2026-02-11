@@ -34,7 +34,7 @@ uv run cv-pipeline run \
 uv run cv-pipeline run --images <path> --colmap
 
 # Eval on dataset
-uv run cv-pipeline eval-streeteasy --dataset <listings.json> --limit 10
+uv run cv-pipeline eval-streeteasy --limit 10
 
 # List available images
 uv run cv-pipeline list-images --images <path>
@@ -43,17 +43,16 @@ uv run cv-pipeline list-images --images <path>
 uv run python scripts/doctor.py
 ```
 
-## Make a labeled-only eval set (local)
+## Export Dataset (local)
 
-If your `sample-collection/streeteasy_eval_dataset/listings.json` contains numeric `sqft` for a subset of listings,
-export a labeled-only JSON:
+First, export from the full source dataset using the local curation UI:
 
 ```bash
-python sample-collection/scripts/export_labeled_subset.py \
-  --dataset sample-collection/streeteasy_eval_dataset/listings.json
+python sample-collection/scripts/curate_web.py
 ```
 
-This writes `sample-collection/streeteasy_eval_dataset/listings_labeled_only.json`.
+Use GUI filters in the curation app to export labeled-only, unlabeled-only, or mixed listings
+directly into `sample-collection/clean_set_export/listings.json`.
 
 ## Key Options
 

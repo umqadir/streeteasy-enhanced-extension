@@ -1,0 +1,24 @@
+[project]
+name = "v2-pipeline"
+version = "0.1.0"
+description = "Estimate room sqft from photos using DUSt3R + metric depth"
+requires-python = ">=3.11"
+dependencies = [
+    "torch>=2.1",
+    "torchvision>=0.16",
+    "numpy>=1.26",
+    "scipy>=1.10",
+    "shapely>=2.0",
+    "opencv-python>=4.8",
+    "pillow>=10",
+    "einops>=0.7",
+    "roma>=1.5",
+    "tqdm>=4.67.3",
+    "packaging>=26.0",
+    "huggingface-hub>=1.4.1",
+    "transformers>=5.1.0",
+    "utils3d",
+]
+
+[tool.uv.sources]
+utils3d = { git = "https://github.com/EasternJournalist/utils3d.git", rev = "3fab839f0be9931dac7c8488eb0e1600c236e183" }

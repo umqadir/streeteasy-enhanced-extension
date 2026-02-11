@@ -74,6 +74,9 @@ class Metric3DV2:
                 "In the pod: `cd cv-pipeline && uv sync --extra gpu --extra depth`."
             ) from e
 
+        if not torch.cuda.is_available():
+            raise RuntimeError("Metric3D v2 currently requires CUDA; torch.cuda.is_available() is False on this host.")
+
         fn_name = "metric3d_vit_small" if self._cfg.model == "vit_small" else "metric3d_vit_large"
         build_fn = getattr(metric3d_hub, fn_name, None)
         if build_fn is None:  # pragma: no cover
@@ -178,4 +181,3 @@ class Metric3DV2:
         out_path.parent.mkdir(parents=True, exist_ok=True)
         np.save(out_path, pred.depth_m.astype(np.float32))
         return out_path
-

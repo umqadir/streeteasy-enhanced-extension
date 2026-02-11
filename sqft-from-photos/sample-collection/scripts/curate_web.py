@@ -26,6 +26,7 @@ import sys
 import time
 import urllib.parse
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -59,6 +60,11 @@ def _load_dataset(dataset_path: Path) -> tuple[Path, list[dict[str, object]]]:
     if not isinstance(listings, list):
         raise SystemExit("dataset.listings must be a list")
     return dataset_path.parent, [x for x in listings if isinstance(x, dict)]
+
+
+def _default_dataset_path() -> Path:
+    root = Path(__file__).resolve().parents[1]
+    return root / "streeteasy_eval_dataset" / "listings.json"
 
 
 def _list_listing_photos(dataset_root: Path, listing: dict[str, object]) -> list[str]:
@@ -155,7 +161,13 @@ INDEX_HTML = """<!doctype html>
   <div class="wrap">
     <aside>
       <div class="controls">
-        <label><input type="checkbox" id="onlyHasSqft" /> has sqft</label>
+        <label>Status
+          <select id="labelFilter">
+            <option value="all">all</option>
+            <option value="labeled">labeled only</option>
+            <option value="unlabeled">unlabeled only</option>
+          </select>
+        </label>
         <input id="filterText" placeholder="filter listing id..." style="width: 100%;" />
       </div>
       <div class="list" id="listingList"></div>
@@ -183,8 +195,7 @@ const state = {
   photos: [],
   excluded: new Set(),
   urlById: new Map(),
-  hasSqftById: new Map(),  // labelable: flagged or has numeric sqft
-  flagById: new Map(),     // from source dataset's has_sqft_data field
+  flagById: new Map(),     // source dataset has_sqft_data flag (can be stale)
   sqftById: new Map(),
 };
 
@@ -247,7 +258,7 @@ async function apiPost(url, body){
 }
 function renderListings(){
   const list = qs('listingList'); list.innerHTML='';
-  const onlyHasSqft = qs('onlyHasSqft').checked;
+  const labelMode = (qs('labelFilter').value || 'all');
   const q = qs('filterText').value.trim().toLowerCase();
   const batch = getBatch();
   let shown=0;
@@ -256,16 +267,17 @@ function renderListings(){
     if(q && !id.toLowerCase().includes(q)) continue;
     const queued = (batch[id] != null);
     const flagged = !!state.flagById.get(id);
-    const sqft = state.sqftById.get(id)||'';
-    const labelable = flagged || !!sqft || queued || !!state.hasSqftById.get(id);
-    if(onlyHasSqft && !labelable) continue;
+    const sqft = (state.sqftById.get(id)||'').trim();
+    const hasNumericSqft = sqft !== '' && Number.isFinite(Number(sqft));
+    if(labelMode === 'labeled' && !hasNumericSqft) continue;
+    if(labelMode === 'unlabeled' && hasNumericSqft) continue;
     shown++;
     const div=document.createElement('div');
     div.className='row'+(id===state.activeId?' active':'');
-    const needsSqft = flagged && !sqft;
+    const needsSqft = flagged && !hasNumericSqft;
     div.innerHTML=`<b>${id}</b>
       ${sqft?`<span class="pill">${sqft} sqft</span>`:''}
-      ${flagged?`<span class="pill">flagged</span>`:''}
+      ${flagged?`<span class="pill">has_sqft_data flag</span>`:''}
       ${needsSqft?`<span class="pill">needs sqft</span>`:''}
       ${queued?`<span class="pill">queued</span>`:''}
       <small>${(l.photo_count||0)} photos</small>`;
@@ -315,7 +327,7 @@ async function loadListing(id){
   }
   renderListings(); renderGrid(); updateMeta(); setStatus('');
 }
-qs('onlyHasSqft').addEventListener('change', renderListings);
+qs('labelFilter').addEventListener('change', renderListings);
 qs('filterText').addEventListener('input', renderListings);
 qs('includeAll').onclick=()=>{ state.excluded=new Set(); syncBatchFromCurrentListing(); renderGrid(); updateMeta(); renderListings(); };
 qs('excludeAll').onclick=()=>{ state.excluded=new Set(state.photos); syncBatchFromCurrentListing(); renderGrid(); updateMeta(); renderListings(); };
@@ -348,9 +360,6 @@ async function init(){
     state.flagById.set(l.id, flagged);
     if(typeof l.sqft === 'number' && Number.isFinite(l.sqft)){
       state.sqftById.set(l.id, String(Math.round(l.sqft)));
-      state.hasSqftById.set(l.id, true);
-    }else{
-      state.hasSqftById.set(l.id, flagged);
     }
   }
   renderListings(); if(state.listings.length) await loadListing(state.listings[0].id);
@@ -441,6 +450,8 @@ class App:
         self.dataset_root, self._listings = _load_dataset(cfg.dataset_path)
         self._by_id = {str(l.get("id") or "").strip(): l for l in self._listings if str(l.get("id") or "").strip()}
         cfg.out_dir.mkdir(parents=True, exist_ok=True)
+        self._export_session_started = False
+        self._last_archive_dir: Path | None = None
 
     def listings_public(self) -> list[dict[str, object]]:
         out = []
@@ -495,7 +506,41 @@ class App:
         }
 
     def _write_export_dataset(self, obj: dict[str, object]) -> None:
-        self._export_dataset_path().write_text(json.dumps(obj, indent=2), encoding="utf-8")
+        self._export_dataset_path().write_text(json.dumps(obj, indent=2) + "\n", encoding="utf-8")
+
+    def _archive_existing_export_once(self) -> None:
+        if self._export_session_started:
+            return
+
+        export_json = self._export_dataset_path()
+        labeled_only_json = self.cfg.out_dir / "listings_labeled_only.json"
+        photos_dir = self.cfg.out_dir / "photos"
+        has_photos = photos_dir.exists() and any(photos_dir.iterdir())
+        has_existing = export_json.exists() or labeled_only_json.exists() or has_photos
+
+        if has_existing:
+            ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+            archive_root = self.cfg.out_dir.parent / "clean_set_archive"
+            archive_dir = archive_root / f"export_{ts}"
+            archive_dir.mkdir(parents=True, exist_ok=True)
+
+            if export_json.exists():
+                shutil.move(str(export_json), str(archive_dir / "listings.json"))
+            if labeled_only_json.exists():
+                shutil.move(str(labeled_only_json), str(archive_dir / "listings_labeled_only.json"))
+            if photos_dir.exists():
+                shutil.move(str(photos_dir), str(archive_dir / "photos"))
+
+            archive_meta = {
+                "archived_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "from_export_dir": str(self.cfg.out_dir.resolve()),
+                "source_dataset": str(self.cfg.dataset_path.resolve()),
+            }
+            (archive_dir / "archive_meta.json").write_text(json.dumps(archive_meta, indent=2) + "\n", encoding="utf-8")
+            self._last_archive_dir = archive_dir
+
+        self.cfg.out_dir.mkdir(parents=True, exist_ok=True)
+        self._export_session_started = True
 
     def export_listing(self, payload: dict[str, object]) -> dict[str, object]:
         listing_id = str(payload.get("listing_id") or "").strip()
@@ -519,27 +564,24 @@ class App:
         if not kept:
             raise ValueError("No photos selected (everything excluded).")
 
-        out_photos_dir = self.cfg.out_dir / "photos" / listing_id
-        if out_photos_dir.exists():
-            shutil.rmtree(out_photos_dir)
-        out_photos_dir.mkdir(parents=True, exist_ok=True)
-        missing: list[str] = []
-        for i, rel in enumerate(kept):
-            src = self.cfg.dataset_root / rel
-            if not src.exists():
-                missing.append(rel)
-                continue
-            dst = out_photos_dir / f"photo_{i:02d}{src.suffix.lower()}"
-            shutil.copy2(src, dst)
-
+        missing = [rel for rel in kept if not (self.cfg.dataset_root / rel).exists()]
         if missing:
-            # Fail fast instead of silently exporting empty/partial listings.
-            # This usually means the underlying dataset references photos that were never downloaded.
             raise ValueError(
                 f"Missing {len(missing)}/{len(kept)} selected photos on disk. "
                 f"Example missing paths: {missing[:5]}. "
                 "Make sure the source dataset's photos are downloaded before exporting."
             )
+
+        self._archive_existing_export_once()
+
+        out_photos_dir = self.cfg.out_dir / "photos" / listing_id
+        if out_photos_dir.exists():
+            shutil.rmtree(out_photos_dir)
+        out_photos_dir.mkdir(parents=True, exist_ok=True)
+        for i, rel in enumerate(kept):
+            src = self.cfg.dataset_root / rel
+            dst = out_photos_dir / f"photo_{i:02d}{src.suffix.lower()}"
+            shutil.copy2(src, dst)
 
         export_obj = self._load_export_dataset()
         listings = export_obj.get("listings", [])
@@ -561,7 +603,13 @@ class App:
         export_obj["listings"] = sorted(listings, key=lambda x: str(x.get("id", "")) if isinstance(x, dict) else "")
         self._write_export_dataset(export_obj)
 
-        return {"ok": True, "listing_id": listing_id, "n_selected": len(kept_rel), "out_dir": str(self.cfg.out_dir)}
+        return {
+            "ok": True,
+            "listing_id": listing_id,
+            "n_selected": len(kept_rel),
+            "out_dir": str(self.cfg.out_dir),
+            "archive_dir": str(self._last_archive_dir) if self._last_archive_dir else None,
+        }
 
     def export_many(self, payload: dict[str, object]) -> dict[str, object]:
         items = payload.get("items", [])
@@ -584,7 +632,13 @@ class App:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--dataset", type=Path, required=True, help="Path to listings.json (with listings + photos/*).")
+    ap.add_argument(
+        "--dataset",
+        type=Path,
+        default=_default_dataset_path(),
+        help="Path to listings.json (with listings + photos/*). "
+        "Default: sample-collection/streeteasy_eval_dataset/listings.json",
+    )
     ap.add_argument(
         "--out",
         type=Path,

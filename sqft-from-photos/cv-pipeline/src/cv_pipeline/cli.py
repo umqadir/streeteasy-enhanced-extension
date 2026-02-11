@@ -13,10 +13,23 @@ from cv_pipeline.experiments.report import load_conformal_calibrator, summarize_
 from cv_pipeline.experiments.sweep import run_streeteasy_sweep
 from cv_pipeline.image.selection import ImageSelectionSpec, parse_filter_file
 from cv_pipeline.image.preprocess import list_images
+from cv_pipeline.paths import default_streeteasy_dataset_path
 from cv_pipeline.pipeline.runner import run_listing, run_streeteasy_eval
 
 
 def _build_parser() -> argparse.ArgumentParser:
+    default_dataset = default_streeteasy_dataset_path()
+
+    def _add_dataset_arg(sp: argparse.ArgumentParser) -> None:
+        default_text = str(default_dataset) if default_dataset else "none found"
+        sp.add_argument(
+            "--dataset",
+            type=Path,
+            default=default_dataset,
+            help="Path to StreetEasy listings JSON. "
+            f"Default resolves to latest export/source dataset ({default_text}).",
+        )
+
     p = argparse.ArgumentParser(prog="cv-pipeline", description="sqft-from-photos CV pipeline")
     sub = p.add_subparsers(dest="cmd", required=True)
 
@@ -26,7 +39,7 @@ def _build_parser() -> argparse.ArgumentParser:
     ls.set_defaults(func=_cmd_list_images)
 
     lsd = sub.add_parser("list-streeteasy", help="List listings from a Streeteasy dataset (IDs, urls, sqft).")
-    lsd.add_argument("--dataset", type=Path, required=True)
+    _add_dataset_arg(lsd)
     lsd.add_argument(
         "--downloads",
         type=Path,
@@ -125,7 +138,7 @@ def _build_parser() -> argparse.ArgumentParser:
     run.set_defaults(func=_cmd_run)
 
     ev = sub.add_parser("eval-streeteasy", help="Run on sample-collection format and compute metrics.")
-    ev.add_argument("--dataset", type=Path, required=True)
+    _add_dataset_arg(ev)
     ev.add_argument(
         "--downloads",
         type=Path,
@@ -150,7 +163,7 @@ def _build_parser() -> argparse.ArgumentParser:
     ev.set_defaults(func=_cmd_eval)
 
     cur = sub.add_parser("curate-streeteasy", help="Create per-listing filter files + contact sheets (no GUI).")
-    cur.add_argument("--dataset", type=Path, required=True)
+    _add_dataset_arg(cur)
     cur.add_argument(
         "--downloads",
         type=Path,
@@ -173,7 +186,7 @@ def _build_parser() -> argparse.ArgumentParser:
     cur.set_defaults(func=_cmd_curate)
 
     sweep = sub.add_parser("sweep-streeteasy", help="Run a set/grid of configs over the Streeteasy dataset.")
-    sweep.add_argument("--dataset", type=Path, required=True)
+    _add_dataset_arg(sweep)
     sweep.add_argument(
         "--downloads",
         type=Path,
@@ -229,6 +242,8 @@ def _cmd_list_images(args: argparse.Namespace) -> None:
 
 
 def _cmd_list_streeteasy(args: argparse.Namespace) -> None:
+    if not args.dataset:
+        raise SystemExit("No dataset provided and no default dataset found.")
     # Also show the dataset's "flag" field (has_sqft_data), because some datasets
     # may have has_sqft_data=true but still be missing numeric sqft.
     raw = json.loads(args.dataset.read_text(encoding="utf-8"))
@@ -320,6 +335,8 @@ def _cmd_run(args: argparse.Namespace) -> None:
 
 
 def _cmd_eval(args: argparse.Namespace) -> None:
+    if not args.dataset:
+        raise SystemExit("No dataset provided and no default dataset found.")
     listing_ids = None
     if args.listing_ids:
         listing_ids = [s.strip() for s in str(args.listing_ids).split(",") if s.strip()]
@@ -336,6 +353,8 @@ def _cmd_eval(args: argparse.Namespace) -> None:
 
 
 def _cmd_sweep(args: argparse.Namespace) -> None:
+    if not args.dataset:
+        raise SystemExit("No dataset provided and no default dataset found.")
     listing_ids = None
     if args.listing_ids:
         listing_ids = [s.strip() for s in str(args.listing_ids).split(",") if s.strip()]
@@ -353,6 +372,8 @@ def _cmd_sweep(args: argparse.Namespace) -> None:
 
 
 def _cmd_curate(args: argparse.Namespace) -> None:
+    if not args.dataset:
+        raise SystemExit("No dataset provided and no default dataset found.")
     listing_ids = None
     if args.listing_ids:
         listing_ids = [s.strip() for s in str(args.listing_ids).split(",") if s.strip()]

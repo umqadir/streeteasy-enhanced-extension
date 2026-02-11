@@ -998,76 +998,125 @@ def run_listing(
         else:
             diagnostics["path"] = "depth-only"
 
-            # Infer depth for each preprocessed image and estimate visible floor patch area per image.
-            candidates: list[tuple[float, str, dict[str, object], str]] = []
-            for img_path in pre.kept_images:
-                out_path = artifacts.depth_dir / f"{img_path.stem}_raw_depth_meter.npy"
-                if out_path.exists():
-                    depth_m = np.load(out_path)
-                    pred_intr = None
-                else:
-                    # Depth-only uses the first depth estimator.
-                    depth_est = next(iter(depth_estimators.values()))
-                    pred = depth_est.infer(img_path)
-                    np.save(out_path, pred.depth_m.astype(np.float32))
-                    depth_m = pred.depth_m
-                    pred_intr = pred.intrinsics
-                try:
-                    area_sqft, poly_wkt, diag = _single_view_area_sqft(
-                        depth_m=depth_m,
-                        intrinsics=pred_intr,
-                        pc_stride=pc_stride,
-                        max_depth_m=max_depth_m,
-                        alpha=alpha,
-                    )
-                    room_sqft, prior_diag = _layout_prior_room_area_sqft(poly_wkt)
-                    candidates.append(
-                        (
-                            area_sqft,
-                            poly_wkt,
-                            {**diag, "layout_prior_room_sqft": room_sqft, "layout_prior": prior_diag},
-                            img_path.name,
-                        )
-                    )
-                except Exception as e:
-                    candidates.append((0.0, "", {"error": str(e)}, img_path.name))
+            # Cluster images by similarity once and reuse clusters for each depth model.
+            try:
+                import torch
 
-            # Cluster images by similarity and sum per-cluster max room estimate.
+                emb_device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+            except Exception:
+                emb_device = "cpu"
             backend = EmbeddingBackend(pair_embed)
-            emb = compute_image_embeddings(pre.kept_images, backend=backend, device="cuda", batch_size=8)
-            sel = build_topk_pairs(emb.embeddings, k=min(10, max(1, len(pre.kept_images) - 1)), min_cosine_sim=0.25, mutual=True)
+            emb = compute_image_embeddings(pre.kept_images, backend=backend, device=emb_device, batch_size=8)
+            sel = build_topk_pairs(
+                emb.embeddings,
+                k=min(10, max(1, len(pre.kept_images) - 1)),
+                min_cosine_sim=0.25,
+                mutual=True,
+            )
             comps = connected_components_from_pairs(len(pre.kept_images), sel.pairs)
 
-            name_to_candidate = {name: (a, wkt, diag) for a, wkt, diag, name in candidates}
-            cluster_rows = []
-            cluster_sum = 0.0
-            for comp in comps:
-                names = [emb.image_names[i] for i in comp]
-                room_sqfts = []
-                for n in names:
-                    diag = name_to_candidate.get(n, (0.0, "", {}))[2]
-                    room_sqfts.append(float(diag.get("layout_prior_room_sqft") or 0.0))
-                cluster_room = float(max(room_sqfts) if room_sqfts else 0.0)
-                cluster_rows.append({"images": names, "room_sqft": cluster_room})
-                cluster_sum += cluster_room
+            per_depth_rows: list[dict[str, object]] = []
+            best_visible_sqft = -1.0
+            multi_depth = len(depth_estimators) > 1
 
-            best = max(candidates, key=lambda t: t[0]) if candidates else (0.0, "", {}, "")
-            visible_sqft = float(best[0])
-            footprint_wkt = best[1]
-            diagnostics["depth_only"] = {
-                "best_image": best[3],
-                "visible_floor_sqft": visible_sqft,
-                "clusters": cluster_rows,
-                "pair_selection": sel.diagnostics,
-                "per_image": [{"image": name, "visible_floor_sqft": a, "diag": d} for a, _, d, name in candidates],
-            }
+            for depth_key, depth_est in depth_estimators.items():
+                candidates: list[tuple[float, str, dict[str, object], str]] = []
+                for img_path in pre.kept_images:
+                    depth_file = (
+                        f"{img_path.stem}_raw_depth_meter_{_slug(depth_key)}.npy"
+                        if multi_depth
+                        else f"{img_path.stem}_raw_depth_meter.npy"
+                    )
+                    out_path = artifacts.depth_dir / depth_file
+                    if out_path.exists():
+                        depth_m = np.load(out_path)
+                        pred_intr = None
+                    else:
+                        pred = depth_est.infer(img_path)
+                        np.save(out_path, pred.depth_m.astype(np.float32))
+                        depth_m = pred.depth_m
+                        pred_intr = pred.intrinsics
+                    try:
+                        area_sqft, poly_wkt, diag = _single_view_area_sqft(
+                            depth_m=depth_m,
+                            intrinsics=pred_intr,
+                            pc_stride=pc_stride,
+                            max_depth_m=max_depth_m,
+                            alpha=alpha,
+                        )
+                        room_sqft, prior_diag = _layout_prior_room_area_sqft(poly_wkt)
+                        candidates.append(
+                            (
+                                area_sqft,
+                                poly_wkt,
+                                {**diag, "layout_prior_room_sqft": room_sqft, "layout_prior": prior_diag},
+                                img_path.name,
+                            )
+                        )
+                    except Exception as e:
+                        candidates.append((0.0, "", {"error": str(e)}, img_path.name))
 
-            # Apartment overhead factor (hallways/closets not captured in a single room estimate).
-            overhead = 1.15 if cluster_sum > 0 else 3.5
-            sqft = float(cluster_sum * overhead) if cluster_sum > 0 else float(visible_sqft * overhead)
-            lo = max(0.0, visible_sqft)
-            hi = max(lo, sqft * 2.0)
-            conf = 0.08
+                name_to_candidate = {name: (a, wkt, diag) for a, wkt, diag, name in candidates}
+                cluster_rows: list[dict[str, object]] = []
+                cluster_sum = 0.0
+                for comp in comps:
+                    names = [emb.image_names[i] for i in comp]
+                    room_sqfts = []
+                    for n in names:
+                        diag = name_to_candidate.get(n, (0.0, "", {}))[2]
+                        room_sqfts.append(float(diag.get("layout_prior_room_sqft") or 0.0))
+                    cluster_room = float(max(room_sqfts) if room_sqfts else 0.0)
+                    cluster_rows.append({"images": names, "room_sqft": cluster_room})
+                    cluster_sum += cluster_room
+
+                best = max(candidates, key=lambda t: t[0]) if candidates else (0.0, "", {}, "")
+                visible_sqft = float(best[0])
+                if visible_sqft > best_visible_sqft:
+                    best_visible_sqft = visible_sqft
+                    footprint_wkt = str(best[1])
+
+                overhead = 1.15 if cluster_sum > 0 else 3.5
+                sqft_est = float(cluster_sum * overhead) if cluster_sum > 0 else float(visible_sqft * overhead)
+                lo_i = max(0.0, visible_sqft)
+                hi_i = max(lo_i, sqft_est * 2.0)
+
+                per_depth_rows.append(
+                    {
+                        "depth_key": depth_key,
+                        "best_image": best[3],
+                        "visible_floor_sqft": visible_sqft,
+                        "clusters": cluster_rows,
+                        "per_image": [{"image": name, "visible_floor_sqft": a, "diag": d} for a, _, d, name in candidates],
+                        "cluster_sum_room_sqft": float(cluster_sum),
+                        "overhead_factor": float(overhead),
+                        "sqft_estimate": sqft_est,
+                        "interval_90": [float(lo_i), float(hi_i)],
+                        "confidence": 0.08,
+                    }
+                )
+
+            diagnostics["depth_only"] = {"pair_selection": sel.diagnostics, "per_depth": per_depth_rows}
+
+            if len(per_depth_rows) == 1:
+                row = per_depth_rows[0]
+                diagnostics["depth_only"].update(
+                    {
+                        "best_image": row["best_image"],
+                        "visible_floor_sqft": row["visible_floor_sqft"],
+                        "clusters": row["clusters"],
+                        "per_image": row["per_image"],
+                    }
+                )
+                sqft = float(row["sqft_estimate"])
+                lo = float(row["interval_90"][0])
+                hi = float(row["interval_90"][1])
+                conf = float(row["confidence"])
+            else:
+                ests = np.array([float(row["sqft_estimate"]) for row in per_depth_rows], dtype=np.float64)
+                sqft = float(np.median(ests))
+                lo = float(min(float(row["interval_90"][0]) for row in per_depth_rows))
+                hi = float(max(float(row["interval_90"][1]) for row in per_depth_rows))
+                conf = float(min(float(row["confidence"]) for row in per_depth_rows))
             area_m2 = None
 
     if not footprint_wkt and primary_footprint_src is not None and primary_footprint_src.exists():
