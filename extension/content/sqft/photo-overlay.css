@@ -1,0 +1,156 @@
+/* SleepEasy Area Analysis - Photo Overlay Styles */
+
+/* ── Hover overlay container ── */
+
+.sleepsy-overlay {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 6px;
+  z-index: 9990;
+  pointer-events: auto;
+}
+
+/* ── Action buttons ── */
+
+.sleepsy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: background 0.15s;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.sleepsy-btn:hover {
+  background: rgba(0, 0, 0, 0.9);
+}
+
+.sleepsy-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sleepsy-btn-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* ── Spinner (loading state) ── */
+
+.sleepsy-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: sleepsy-spin 0.6s linear infinite;
+}
+
+@keyframes sleepsy-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Room dropdown ── */
+
+.sleepsy-dropdown {
+  position: absolute;
+  z-index: 9991;
+  min-width: 140px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  padding: 4px 0;
+  overflow: hidden;
+}
+
+.sleepsy-dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  text-align: left;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #111827;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.sleepsy-dropdown-item:hover {
+  background: #f3f4f6;
+}
+
+.sleepsy-dropdown-item.active {
+  color: #2563eb;
+}
+
+.sleepsy-dropdown-item.sleepsy-new-room {
+  border-top: 1px solid #e5e7eb;
+  color: #6b7280;
+}
+
+.sleepsy-dropdown-item.sleepsy-new-room:hover {
+  color: #111827;
+}
+
+/* ── Annotation badges (persistent) ── */
+
+.sleepsy-badge {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  border-radius: 6px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  z-index: 9989;
+  pointer-events: auto;
+  backdrop-filter: blur(4px);
+  line-height: 1.2;
+}
+
+.sleepsy-badge-text {
+  color: #e5e7eb;
+}
+
+.sleepsy-badge-sqft {
+  color: #fff;
+  font-weight: 900;
+}
+
+.sleepsy-badge-remove {
+  border: none;
+  background: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.sleepsy-badge-remove:hover {
+  color: #ef4444;
+}

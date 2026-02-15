@@ -1,8 +1,19 @@
 {
   "manifest_version": 3,
   "name": "SleepEasy",
-  "version": "1.0.0",
-  "description": "Adds inline NYC crime statistics to StreetEasy listing pages using precompiled NYC Open Data",
+  "version": "1.1.0",
+  "description": "Adds inline NYC crime statistics and area estimation tools to StreetEasy listing pages",
+  "permissions": [
+    "sidePanel",
+    "storage",
+    "activeTab"
+  ],
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "side_panel": {
+    "default_path": "sidepanel/sidepanel.html"
+  },
   "content_scripts": [
     {
       "matches": [
@@ -22,6 +33,26 @@
       ],
       "css": [
         "ui/inline-module.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://streeteasy.com/building/*",
+        "https://streeteasy.com/rental/*",
+        "https://streeteasy.com/sale/*",
+        "https://*.streeteasy.com/building/*",
+        "https://*.streeteasy.com/rental/*",
+        "https://*.streeteasy.com/sale/*"
+      ],
+      "js": [
+        "lib/shared-types.js",
+        "content/sqft/listing-context.js",
+        "content/sqft/content-bridge.js",
+        "content/sqft/photo-overlay.js"
+      ],
+      "css": [
+        "content/sqft/photo-overlay.css"
       ],
       "run_at": "document_idle"
     }

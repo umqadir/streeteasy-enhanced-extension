@@ -18,6 +18,13 @@ dependencies = [
     "huggingface-hub>=1.4.1",
     "transformers>=5.1.0",
     "utils3d",
+    "timm>=1.0.24",
+    "sentencepiece>=0.2.1",
+    "wandb>=0.25.0",
+    "mmengine>=0.10.7",
+    "mmcv-lite>=2.2.0",
+    "pycolmap>=3.13.0",
+    "kornia>=0.8.2",
 ]
 
 [tool.uv.sources]

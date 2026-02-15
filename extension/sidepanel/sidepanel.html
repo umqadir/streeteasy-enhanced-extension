@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SleepEasy - Area Analysis</title>
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>Area Analysis</h1>
+      <nav id="view-tabs">
+        <button data-view="current" class="tab active">Current</button>
+        <button data-view="history" class="tab">History</button>
+      </nav>
+    </header>
+
+    <!-- Current listing view -->
+    <main id="current-view">
+      <section id="listing-info"></section>
+      <section id="room-list"></section>
+      <div id="total-area"></div>
+    </main>
+
+    <!-- History view -->
+    <main id="history-view" hidden>
+      <div id="listing-history"></div>
+    </main>
+  </div>
+
+  <script src="../lib/shared-types.js"></script>
+  <script src="sidepanel.js"></script>
+</body>
+</html>
