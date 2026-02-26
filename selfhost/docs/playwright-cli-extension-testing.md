@@ -18,20 +18,20 @@ References:
 1. Start backend:
 
 ```bash
-cd selfhost-nc
+cd selfhost
 bash scripts/start_backend.sh
 ```
 
 2. Run extension smoke test:
 
 ```bash
-cd selfhost-nc
+cd selfhost
 bash scripts/smoke_playwright_no_cuda.sh
 ```
 
 ## What The Smoke Test Covers
 
-- Extension service worker is loaded from unpacked `selfhost-nc/extension`
+- Extension service worker is loaded from unpacked `selfhost/extension`
 - Sidepanel renders and talks to backend (`GET_BACKEND_HEALTH`)
 - No-CUDA auto mode prompts once and persists decline handling
 - Manual `single-image` mode sends `multiviewMethod=single-image` for multi-photo room

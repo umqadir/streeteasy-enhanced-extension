@@ -5,7 +5,7 @@ Compile NTA "exposure" inputs for the extension:
 - 2020 Decennial population by NTA (residents)
 - LODES WAC jobs by NTA (daytime workers)
 
-Writes: selfhost-nc/extension/data/nta-exposure.json
+Writes: selfhost/extension/data/nta-exposure.json
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ import pyarrow.parquet as pq
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-EXTENSION_DIR = REPO_ROOT / "selfhost-nc" / "extension"
+EXTENSION_DIR = REPO_ROOT / "selfhost" / "extension"
 OUT_PATH = EXTENSION_DIR / "data" / "nta-exposure.json"
 
 BOUNDARIES_PATH = EXTENSION_DIR / "data" / "nta-boundaries.json"

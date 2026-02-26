@@ -21,7 +21,7 @@ See `THIRD_PARTY_NOTICES.md` before use.
 1. Install backend env + models:
 
 ```bash
-cd selfhost-nc
+cd selfhost
 bash scripts/install.sh
 ```
 
@@ -36,7 +36,7 @@ bash scripts/start_backend.sh
 - Open `chrome://extensions`
 - Enable Developer mode
 - Click **Load unpacked**
-- Select `selfhost-nc/extension`
+- Select `selfhost/extension`
 
 4. Open a StreetEasy listing and use the side panel.
 
@@ -45,14 +45,14 @@ bash scripts/start_backend.sh
 Run this to validate extension UX <-> backend wiring on this machine class:
 
 ```bash
-cd selfhost-nc
+cd selfhost
 bash scripts/start_backend.sh
 ```
 
 In a second terminal:
 
 ```bash
-cd selfhost-nc
+cd selfhost
 bash scripts/smoke_playwright_no_cuda.sh
 ```
 
@@ -64,7 +64,7 @@ What it validates (real backend-only path):
 - Room result is stored with `pipeline=single`
 
 See implementation details in:
-- `selfhost-nc/docs/playwright-cli-extension-testing.md`
+- `selfhost/docs/playwright-cli-extension-testing.md`
 
 ## Backend Controls
 
