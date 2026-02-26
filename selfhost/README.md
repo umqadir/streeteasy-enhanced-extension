@@ -1,12 +1,6 @@
-# SleepEasy Self-Host (Non-Commercial)
+# SleepEasy Self-Host
 
 This directory is the canonical self-hosted release bundle for the extension + local CV backend.
-
-## Important Usage Notice
-
-This bundle is intended for personal, non-commercial self-hosting.
-Some third-party model/code dependencies used by the multi-view path are non-commercial.
-See `THIRD_PARTY_NOTICES.md` before use.
 
 ## What This Release Does
 
@@ -62,9 +56,6 @@ What it validates (real backend-only path):
 - Decline path persists `noCudaPromptHandled=true`
 - Manual `single-image` mode emits `multiviewMethod=single-image` for multi-photo rooms
 - Room result is stored with `pipeline=single`
-
-See implementation details in:
-- `selfhost/docs/playwright-cli-extension-testing.md`
 
 ## Backend Controls
 
