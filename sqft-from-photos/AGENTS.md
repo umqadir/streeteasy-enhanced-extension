@@ -28,3 +28,17 @@ Stop:
 ```bash
 screen -S curate_web -X quit || true
 ```
+
+## Playwright Bridge Mode Notes
+
+Use the extension bridge (`playwright-cli open --extension`) as the default for browser tasks so the user can follow along in their real browser context.
+
+- Dev/automation workflows (rapid local tab opens, scripted checks): token-based auto-attach is preferred.
+- Non-technical browsing tasks and flows that require user login: still prefer extension bridge with token-based auto-attach.
+- If the token is invalid/misconfigured, or if the request needs an already-running user tab/session, fall back to manual tab selection by unsetting the token for that run.
+
+Manual attach fallback:
+
+```bash
+env -u PLAYWRIGHT_MCP_EXTENSION_TOKEN playwright-cli open --extension --headed
+```

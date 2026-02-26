@@ -16,6 +16,12 @@ Adds a small, inline “Crime” module to StreetEasy NYC listings.
 
 After any code/data changes: `chrome://extensions` → **Reload** SleepEasy → refresh the listing tab.
 
+## Self-Host NC Bundle (Sqft + Extension)
+
+For a clean non-commercial self-hosted setup (extension + local DUSt3R backend), use:
+
+- `/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/selfhost-nc/README.md`
+
 ## Update data
 
 Rebuild the bundled NYC dataset (optional; the extension works with whatever is already in `extension/data/`):

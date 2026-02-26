@@ -1,0 +1,38 @@
+MIT License
+
+Copyright (c) 2026 SleepEasy Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+DISCLAIMER:
+
+This software and the crime statistics it displays are provided for informational
+purposes only. Crime statistics are based on publicly available NYPD complaint
+data and should be used as ONE factor among many when evaluating a neighborhood.
+
+The authors and contributors make no warranties about the accuracy, completeness,
+reliability, or timeliness of the crime data or statistics. Past crime data does
+not guarantee future safety conditions.
+
+This project is not affiliated with, endorsed by, or sponsored by StreetEasy,
+Zillow Group, the NYPD, NYC government, or any other organization.
+
+USE AT YOUR OWN RISK.

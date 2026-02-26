@@ -1,0 +1,701 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - link "Skip Navigation" [ref=e4] [cursor=pointer]:
+        - /url: "#site-content"
+      - banner [ref=e805]:
+        - generic [ref=e809]:
+          - button "Open menu" [ref=e810]:
+            - generic [ref=e812]: Open menu
+          - link "StreetEasy" [ref=e817] [cursor=pointer]:
+            - /url: /
+            - img "StreetEasy" [ref=e818]
+          - generic [ref=e820]:
+            - heading "Want to save this listing?" [level=6] [ref=e821]
+            - link "GET THE APP" [ref=e822] [cursor=pointer]:
+              - /url: https://app.us.adjust.com/yn3q0gb?deeplink=streeteasy-rental%3A%2F%2Frental%2F4925462
+    - generic [ref=e44]:
+      - navigation "breadcrumb" [ref=e46]:
+        - list [ref=e47]:
+          - listitem [ref=e48]:
+            - link "Rentals" [ref=e49] [cursor=pointer]:
+              - /url: https://streeteasy.com/for-rent/nyc
+          - listitem [ref=e50]:
+            - img [ref=e51]
+          - listitem [ref=e53]:
+            - link "Manhattan" [ref=e54] [cursor=pointer]:
+              - /url: https://streeteasy.com/for-rent/manhattan
+          - listitem [ref=e55]:
+            - img [ref=e56]
+          - listitem [ref=e58]:
+            - link "All Upper East Side" [ref=e59] [cursor=pointer]:
+              - /url: https://streeteasy.com/for-rent/ues
+          - listitem [ref=e60]:
+            - img [ref=e61]
+          - listitem [ref=e63]:
+            - link "Upper East Side" [ref=e64] [cursor=pointer]:
+              - /url: https://streeteasy.com/for-rent/upper-east-side
+          - listitem [ref=e65]:
+            - img [ref=e66]
+          - listitem [ref=e68]:
+            - link "Yorkville" [ref=e69] [cursor=pointer]:
+              - /url: https://streeteasy.com/for-rent/yorkville
+          - listitem [ref=e70]:
+            - img [ref=e71]
+          - listitem [ref=e73]:
+            - generic [ref=e74]: "85 East End Avenue #10G"
+      - main [ref=e75]:
+        - generic [ref=e76]:
+          - generic [ref=e77]:
+            - generic [ref=e79]:
+              - generic [ref=e80]:
+                - generic [ref=e82]:
+                  - group "1 / 29" [ref=e83]:
+                    - 'button "photo 1 285 sqft Room: Living Room ▾" [ref=e873] [cursor=pointer]':
+                      - img "photo 1" [ref=e87]
+                      - generic [ref=e875]:
+                        - button "285 sqft" [ref=e876]:
+                          - text: "285"
+                          - generic [ref=e877]: sqft
+                        - 'button "Room: Living Room ▾" [ref=e878]':
+                          - generic [ref=e879]: "Room:"
+                          - text: Living Room ▾
+                  - group:
+                    - generic:
+                      - button:
+                        - generic:
+                          - img
+                  - group:
+                    - generic:
+                      - button:
+                        - generic:
+                          - img
+                  - group:
+                    - generic:
+                      - button:
+                        - generic:
+                          - img
+                  - group:
+                    - generic:
+                      - button:
+                        - generic:
+                          - img
+                  - group:
+                    - generic:
+                      - button:
+                        - generic:
+                          - img
+                  - group:
+                    - generic:
+                      - button:
+                        - generic:
+                          - img
+                  - group:
+                    - generic:
+                      - button:
+                        - generic:
+                          - img
+                  - group:
+                    - generic:
+                      - button:
+                        - generic:
+                          - img
+                  - group:
+                    - generic:
+                      - button:
+                        - generic:
+                          - img
+                  - group:
+                    - generic:
+                      - button:
+                        - generic:
+                          - img
+                  - group:
+                    - generic:
+                      - button:
+                        - generic:
+                          - img
+                  - group:
+                    - generic:
+                      - button:
+                        - generic:
+                          - img
+                  - group:
+                    - generic:
+                      - button:
+                        - generic:
+                          - img
+                  - group:
+                    - generic:
+                      - button:
+                        - generic:
+                          - img
+                  - group:
+                    - generic:
+                      - button:
+                        - generic:
+                          - img
+                  - group:
+                    - generic:
+                      - button:
+                        - generic:
+                          - img
+                  - group:
+                    - generic:
+                      - button:
+                        - generic:
+                          - img
+                  - group:
+                    - generic:
+                      - button:
+                        - generic:
+                          - img
+                  - group:
+                    - generic:
+                      - button:
+                        - generic:
+                          - img
+                  - group:
+                    - generic:
+                      - button:
+                        - generic:
+                          - img
+                  - group:
+                    - generic:
+                      - button:
+                        - generic:
+                          - img
+                  - group:
+                    - generic:
+                      - button:
+                        - generic:
+                          - img
+                  - group:
+                    - generic:
+                      - button:
+                        - generic:
+                          - img
+                  - group:
+                    - generic:
+                      - button:
+                        - generic:
+                          - img
+                  - group:
+                    - generic:
+                      - button:
+                        - generic:
+                          - img
+                  - group:
+                    - generic:
+                      - button:
+                        - generic:
+                          - img
+                  - group:
+                    - generic:
+                      - button:
+                        - generic:
+                          - img
+                  - group:
+                    - generic:
+                      - button:
+                        - generic:
+                          - img
+                - generic [ref=e88]: 1 of 29
+                - button "previous, 29 of 29" [ref=e89] [cursor=pointer]:
+                  - generic [ref=e90]: previous, 29 of 29
+                  - img [ref=e92]
+                - button "next, 2 of 29" [ref=e94] [cursor=pointer]:
+                  - generic [ref=e95]: next, 2 of 29
+                  - img [ref=e97]
+              - generic [ref=e225]:
+                - button "Floor Plan" [ref=e226]:
+                  - img [ref=e228]
+                  - text: Floor Plan
+                - button "Map" [ref=e230]:
+                  - img [ref=e232]
+                  - text: Map
+            - generic [ref=e234]:
+              - generic [ref=e236]:
+                - 'link "85 East End Avenue #10G" [ref=e238] [cursor=pointer]':
+                  - /url: /building/85-east-end-avenue-new_york
+                  - 'heading "85 East End Avenue #10G" [level=1] [ref=e239]'
+                - generic [ref=e240]:
+                  - heading "$5,900" [level=4] [ref=e241]
+                  - paragraph [ref=e242]: For Rent
+                - paragraph [ref=e243]:
+                  - text: Base rent only. For total monthly price and additional fees, see
+                  - button "full breakdown" [ref=e244] [cursor=pointer]
+                  - text: .
+                - generic [ref=e245]:
+                  - generic [ref=e246]:
+                    - generic [ref=e247]:
+                      - paragraph [ref=e248]: $5,057 net effective base rent
+                      - button "Tooltip" [ref=e250]:
+                        - img [ref=e251]
+                    - paragraph [ref=e255]: 2 months free
+                    - paragraph [ref=e258]: 14-month lease
+                  - generic [ref=e259]:
+                    - paragraph [ref=e261]: 770 ft²
+                    - paragraph [ref=e264]: $91 per ft²
+                    - paragraph [ref=e267]: 2 rooms
+                    - paragraph [ref=e270]: 1 bed
+                    - paragraph [ref=e273]: 1 bath
+                - list [ref=e274]:
+                  - listitem [ref=e275]:
+                    - paragraph [ref=e276]: Rental unit
+                    - text: •
+                  - listitem [ref=e277]:
+                    - link "Yorkville" [ref=e278] [cursor=pointer]:
+                      - /url: https://streeteasy.com/for-rent/yorkville
+                - generic [ref=e280]:
+                  - generic [ref=e281]:
+                    - generic [ref=e282]: Crime
+                    - generic [ref=e283]:
+                      - combobox "Measure" [ref=e284] [cursor=pointer]:
+                        - option "Ambient risk index" [selected]
+                        - option "Per 100k residents"
+                        - option "Per sq mi"
+                        - option "Raw incidents"
+                      - button "About Ambient risk index" [ref=e285]:
+                        - text: i
+                        - 'tooltip "Ambient risk index: incidents per 100k average people present (residents + daytime workers). Uses NYPD complaint counts mapped to the NYC NTA containing the listing (may differ from StreetEasy neighborhood labels). Last 24 months (through 2025-09-30). NYC rank: 1 is lowest risk."'
+                  - generic "Crime metrics (Ambient risk index)" [ref=e286]:
+                    - generic [ref=e287]:
+                      - generic [ref=e288]: Felony Assault
+                      - generic [ref=e289]:
+                        - generic [ref=e290]: "234.8"
+                        - generic [ref=e291]: / 100k
+                      - generic [ref=e292]: NYC rank 21/197
+                    - generic [ref=e293]:
+                      - generic [ref=e294]: Property Crime
+                      - generic [ref=e295]:
+                        - generic [ref=e296]: "1414.8"
+                        - generic [ref=e297]: / 100k
+                      - generic [ref=e298]: NYC rank 53/197
+                    - generic [ref=e299]:
+                      - generic [ref=e300]: Murder
+                      - generic [ref=e301]:
+                        - generic [ref=e302]: "1.6"
+                        - generic [ref=e303]: / 100k
+                      - generic [ref=e304]: NYC rank 52/197
+              - generic [ref=e306]:
+                - generic [ref=e307]:
+                  - img [ref=e308]
+                  - paragraph [ref=e310]: Under NYC law, you can't be charged a broker fee if you didn't hire a broker.
+                - link "Learn more" [ref=e311] [cursor=pointer]:
+                  - /url: https://streeteasy.com/blog/fare-act-nyc-broker-fees-renters/
+              - generic [ref=e317]:
+                - button "Request a tour" [ref=e318]
+                - button "Ask a question" [ref=e319]
+              - generic [ref=e332]:
+                - button "Save" [ref=e829]:
+                  - img [ref=e831]
+                  - text: Save
+                - button "SHARE" [ref=e833]:
+                  - img [ref=e835]
+                  - text: SHARE
+              - paragraph [ref=e347]: This home has been saved by 95 users.
+              - button "Add notes" [ref=e350]:
+                - img [ref=e351]
+                - text: Add notes
+              - generic [ref=e353]:
+                - button "Hide listing from search results" [ref=e838]:
+                  - img [ref=e839]
+                  - text: Hide listing from search results
+                - link "Report listing" [ref=e354] [cursor=pointer]:
+                  - /url: https://support.streeteasy.com/hc/en-us/requests/new?address=85+East+End+Avenue&pageURL=https%3A%2F%2Fstreeteasy.com%2Fbuilding%2F85-east-end-avenue-new_york%2F10g&ticket_form_id=360000019886
+                  - img [ref=e355]
+                  - text: Report listing
+              - paragraph [ref=e357]: "Listing by Fetner Properties | Brokerage Listing ID: 6513502950"
+            - generic [ref=e358]:
+              - generic [ref=e360]:
+                - generic [ref=e361]:
+                  - paragraph [ref=e362]: Available
+                  - paragraph [ref=e363]: Available now
+                - generic [ref=e364]:
+                  - paragraph [ref=e365]: Days on market
+                  - paragraph [ref=e366]: 68 days
+                - generic [ref=e367]:
+                  - paragraph [ref=e368]: Last price change
+                  - paragraph [ref=e369]: No changes
+              - generic [ref=e370]:
+                - heading "About" [level=2] [ref=e371]
+                - generic [ref=e372]:
+                  - generic [ref=e373]:
+                    - paragraph [ref=e374]: Now offering a $1,000 AMEX gift card for completed application within 24 hours of touring!
+                    - paragraph [ref=e375]:
+                      - text: Applicable Community Fees
+                      - text: As a prospective resident, the Prospect is responsible for the following fees, should you decide to proceed with your application, lease, and associated agreements. These fees are subject to the terms and conditions described in the lease agreement or service agreement.
+                  - button "show full description" [ref=e377]
+              - generic [ref=e378]:
+                - generic [ref=e379]:
+                  - heading "Policies" [level=2] [ref=e380]
+                  - list [ref=e382]:
+                    - listitem [ref=e383]:
+                      - paragraph [ref=e384]: Pets allowed
+                - generic [ref=e386]:
+                  - heading "Home features" [level=2] [ref=e387]
+                  - list [ref=e389]:
+                    - listitem [ref=e390]:
+                      - paragraph [ref=e391]: Dishwasher
+                    - listitem [ref=e392]:
+                      - paragraph [ref=e393]: Hardwood floors
+                    - listitem [ref=e394]:
+                      - paragraph [ref=e395]: Washer/dryer
+                - generic [ref=e397]:
+                  - heading "Building amenities" [level=2] [ref=e398]
+                  - generic [ref=e399]:
+                    - paragraph [ref=e401]: Services and facilities
+                    - list [ref=e402]:
+                      - listitem [ref=e403]:
+                        - paragraph [ref=e404]: Concierge
+                      - listitem [ref=e405]:
+                        - paragraph [ref=e406]: Doorman
+                      - listitem [ref=e407]:
+                        - paragraph [ref=e408]: Elevator
+                      - listitem [ref=e409]:
+                        - paragraph [ref=e410]: Laundry in building
+                      - listitem [ref=e411]:
+                        - paragraph [ref=e412]: Parking
+                        - paragraph [ref=e413]: Garage
+                  - generic [ref=e414]:
+                    - paragraph [ref=e416]: Wellness and recreation
+                    - list [ref=e417]:
+                      - listitem [ref=e418]:
+                        - paragraph [ref=e419]: Gym
+                  - generic [ref=e420]:
+                    - paragraph [ref=e422]: Shared outdoor space
+                    - list [ref=e423]:
+                      - listitem [ref=e424]:
+                        - paragraph [ref=e425]: Deck
+              - generic [ref=e426]:
+                - heading "About the building" [level=2] [ref=e427]
+                - heading "85 East End Avenue" [level=6] [ref=e428]
+                - paragraph [ref=e429]: 85 East End Avenue, New York, NY 10028
+                - generic [ref=e431]:
+                  - generic [ref=e432]: Rental building in
+                  - link "Yorkville" [ref=e433] [cursor=pointer]:
+                    - /url: https://streeteasy.com/neighborhoods/yorkville
+                - generic [ref=e435]:
+                  - paragraph [ref=e438]: 174 units
+                  - paragraph [ref=e442]: 15 stories
+                  - paragraph [ref=e446]: 1951 built
+                - generic [ref=e447]:
+                  - paragraph [ref=e448]: For rent
+                  - link "5 available units for rent" [ref=e449] [cursor=pointer]:
+                    - /url: https://streeteasy.com/building/85-east-end-avenue-new_york?unit_type=rentals
+                  - paragraph [ref=e450]: Documents and permits
+                  - link "View documents and permits" [ref=e451] [cursor=pointer]:
+                    - /url: https://streeteasy.com/building/85-east-end-avenue-new_york/documents
+                - link "Learn more about 85 East End Avenue" [ref=e453] [cursor=pointer]:
+                  - /url: https://streeteasy.com/building/85-east-end-avenue-new_york
+          - generic [ref=e454]:
+            - generic [ref=e455]:
+              - heading "Property history" [level=2] [ref=e456]
+              - paragraph [ref=e458]:
+                - text: Prices shown are base rent only. For total monthly price and additional fees, see
+                - button "full breakdown" [ref=e459] [cursor=pointer]
+                - text: .
+              - generic [ref=e462]:
+                - tablist "Property history" [ref=e466]:
+                  - tab "Price history" [selected] [ref=e467] [cursor=pointer]
+                  - tab "Recent rentals" [ref=e468] [cursor=pointer]
+                - tabpanel "Date Base rent/Event 12/9/2025 $5,900 Listed by Fetner Properties 6/18/2021 $3,500 No longer available 5/12/2021 $3,500 Price decreased by 4% 11/18/2020 $3,650 Price decreased by 1% Show more" [ref=e842]:
+                  - generic [ref=e472]:
+                    - table [ref=e473]:
+                      - rowgroup [ref=e474]:
+                        - row "Date Base rent/Event" [ref=e843]:
+                          - columnheader "Date" [ref=e476]
+                          - columnheader "Base rent/Event" [ref=e844]:
+                            - generic [ref=e845]: Base rent/Event
+                      - rowgroup [ref=e479]:
+                        - row "12/9/2025 $5,900 Listed by Fetner Properties" [ref=e480]:
+                          - cell "12/9/2025" [ref=e481]:
+                            - paragraph [ref=e482]: 12/9/2025
+                          - cell "$5,900 Listed by Fetner Properties" [ref=e846]:
+                            - generic [ref=e484]:
+                              - paragraph [ref=e485]: $5,900
+                              - paragraph [ref=e847]: Listed by Fetner Properties
+                        - row "6/18/2021 $3,500 No longer available" [ref=e488]:
+                          - cell "6/18/2021" [ref=e489]:
+                            - paragraph [ref=e490]: 6/18/2021
+                          - cell "$3,500 No longer available" [ref=e848]:
+                            - generic [ref=e492]:
+                              - paragraph [ref=e493]: $3,500
+                              - paragraph [ref=e849]:
+                                - link "No longer available" [ref=e850] [cursor=pointer]:
+                                  - /url: https://streeteasy.com/rental/2938557
+                        - row "5/12/2021 $3,500 Price decreased by 4%" [ref=e497]:
+                          - cell "5/12/2021" [ref=e498]:
+                            - paragraph [ref=e499]: 5/12/2021
+                          - cell "$3,500 Price decreased by 4%" [ref=e851]:
+                            - generic [ref=e501]:
+                              - paragraph [ref=e502]:
+                                - generic [ref=e503]: $3,500 ↓
+                              - paragraph [ref=e852]: Price decreased by 4%
+                        - row "11/18/2020 $3,650 Price decreased by 1%" [ref=e506]:
+                          - cell "11/18/2020" [ref=e507]:
+                            - paragraph [ref=e508]: 11/18/2020
+                          - cell "$3,650 Price decreased by 1%" [ref=e853]:
+                            - generic [ref=e510]:
+                              - paragraph [ref=e511]:
+                                - generic [ref=e512]: $3,650 ↓
+                              - paragraph [ref=e854]: Price decreased by 1%
+                    - button "Show more" [ref=e524]
+                - tabpanel
+              - generic [ref=e526]:
+                - paragraph [ref=e527]: Sign in to take a closer look at how this home compares to similar homes.
+                - button "Log in" [ref=e528]
+            - generic [ref=e529]:
+              - heading "Explore Yorkville" [level=2] [ref=e530]
+              - generic [ref=e531]:
+                - generic [ref=e533]:
+                  - tablist "Explore Neighborhoods" [ref=e537]:
+                    - tab "Transit" [selected] [ref=e538] [cursor=pointer]
+                    - tab "Schools" [ref=e539] [cursor=pointer]
+                    - tab "Colleges" [ref=e540] [cursor=pointer]
+                    - tab "Parks" [ref=e541] [cursor=pointer]
+                    - tab "Museums" [ref=e542] [cursor=pointer]
+                  - tabpanel "Transit Location Distance Q at 86th St 0.44 miles 4 5 6 at 86th St 0.67 miles Q at 96th St 0.7 miles Q at 72nd St 0.73 miles 6 at 77th St 0.73 miles View transit on Google Maps" [ref=e544]:
+                    - generic [ref=e546]:
+                      - heading "Transit" [level=3] [ref=e547]
+                      - table [ref=e548]:
+                        - rowgroup [ref=e549]:
+                          - row "Location Distance":
+                            - columnheader "Location":
+                              - generic [ref=e550]: Location
+                            - columnheader "Distance":
+                              - generic [ref=e551]: Distance
+                          - row "Q at 86th St 0.44 miles" [ref=e552]:
+                            - cell "Q at 86th St" [ref=e553]:
+                              - paragraph [ref=e554]:
+                                - generic [ref=e555]:
+                                  - generic [ref=e556]: Q
+                                  - text: at 86th St
+                            - cell "0.44 miles" [ref=e557]:
+                              - paragraph [ref=e558]: 0.44 miles
+                          - row "4 5 6 at 86th St 0.67 miles" [ref=e559]:
+                            - cell "4 5 6 at 86th St" [ref=e560]:
+                              - paragraph [ref=e561]:
+                                - generic [ref=e562]:
+                                  - generic [ref=e563]: "4"
+                                  - generic [ref=e564]: "5"
+                                  - generic [ref=e565]: "6"
+                                  - text: at 86th St
+                            - cell "0.67 miles" [ref=e566]:
+                              - paragraph [ref=e567]: 0.67 miles
+                          - row "Q at 96th St 0.7 miles" [ref=e568]:
+                            - cell "Q at 96th St" [ref=e569]:
+                              - paragraph [ref=e570]:
+                                - generic [ref=e571]:
+                                  - generic [ref=e572]: Q
+                                  - text: at 96th St
+                            - cell "0.7 miles" [ref=e573]:
+                              - paragraph [ref=e574]: 0.7 miles
+                          - row "Q at 72nd St 0.73 miles" [ref=e575]:
+                            - cell "Q at 72nd St" [ref=e576]:
+                              - paragraph [ref=e577]:
+                                - generic [ref=e578]:
+                                  - generic [ref=e579]: Q
+                                  - text: at 72nd St
+                            - cell "0.73 miles" [ref=e580]:
+                              - paragraph [ref=e581]: 0.73 miles
+                          - row "6 at 77th St 0.73 miles" [ref=e582]:
+                            - cell "6 at 77th St" [ref=e583]:
+                              - paragraph [ref=e584]:
+                                - generic [ref=e585]:
+                                  - generic [ref=e586]: "6"
+                                  - text: at 77th St
+                            - cell "0.73 miles" [ref=e587]:
+                              - paragraph [ref=e588]: 0.73 miles
+                      - link "View transit on Google Maps" [ref=e590] [cursor=pointer]:
+                        - /url: https://www.google.com/maps/place/85+East+End+Avenue+NEW YORK+NY/40.773,-73.9456,17z/data=!5m1!1e
+                  - tabpanel
+                  - tabpanel
+                  - tabpanel
+                  - tabpanel
+                - generic [ref=e592]:
+                  - generic [ref=e595]:
+                    - generic:
+                      - button "Keyboard shortcuts"
+                    - region "Map" [ref=e596]
+                    - generic [ref=e597]:
+                      - iframe [ref=e627]:
+                        
+                      - generic [ref=e629] [cursor=pointer]:
+                        - button "Zoom in" [ref=e630]
+                        - button "Zoom out" [ref=e632]
+                      - link "Open this area in Google Maps (opens a new window)" [ref=e634] [cursor=pointer]:
+                        - /url: https://maps.google.com/maps?ll=40.773,-73.9456&z=15&t=m&hl=en-US&gl=US&mapclient=apiv3
+                        - img "Google" [ref=e636]
+                      - generic [ref=e637]:
+                        - button "Keyboard shortcuts" [ref=e643] [cursor=pointer]
+                        - generic [ref=e648]: Map data ©2026 Google
+                        - link "Terms (opens in new tab)" [ref=e653] [cursor=pointer]:
+                          - /url: https://www.google.com/intl/en-US_US/help/terms_maps.html
+                          - text: Terms
+                        - link "Report a map error" [ref=e658] [cursor=pointer]:
+                          - /url: https://www.google.com/maps/@40.773,-73.9456,15z/data=!10m1!1e1!12b1?source=apiv3&rapsrc=apiv3
+                  - link "View on Google Maps" [ref=e659] [cursor=pointer]:
+                    - /url: http://www.google.com/maps/place/40.773,-73.9456
+              - generic [ref=e660]:
+                - heading "About Yorkville" [level=3] [ref=e661]
+                - paragraph [ref=e662]: Rental prices shown are base rent before any fees. Visit listings for cost and fees breakdown.
+                - generic [ref=e663]:
+                  - generic [ref=e664]:
+                    - paragraph [ref=e665]:
+                      - text: Sales
+                      - generic [ref=e666]: Median asking price
+                    - paragraph [ref=e667]: 1 bed
+                    - paragraph [ref=e668]: $698K
+                  - generic [ref=e669]:
+                    - paragraph [ref=e670]:
+                      - text: Rentals
+                      - generic [ref=e671]: Median asking base rent
+                    - paragraph [ref=e672]: 1 bed
+                    - paragraph [ref=e673]: $3,925
+                - paragraph [ref=e674]:
+                  - generic [ref=e675]:
+                    - text: When George Washington commandeered the building site that would eventually become Gracie Mansion, he probably didn't imagine that this peaceful, riverside enclave would become the lively residential neighborhood it is today. Between then and now, Yorkville has seen a lot of change. Tony mansions and elevated trains went up at the turn of the century and then came down in the postwar years as a middle-class population moved in.
+                    - text: Now, the neighborhood is a haven of high-rise co-ops and condos interspersed with quiet rows of townhouses. The mixed housing stock makes Yorkville a practical choice for anyone seeking a slowed-down Manhattan vibe. Several avenues over from the throngs of Lexington and Third Avenues, Yorkville maintains a low-key, no-frills feel — it's a place where you'll find more diners and donut shops than upscale lounges and boutiques. This homey attitude is writ in its storefronts, where the food is kept simple and the owners are often from around the block.
+                - link "Learn more about Yorkville" [ref=e676] [cursor=pointer]:
+                  - /url: https://streeteasy.com/neighborhoods/yorkville
+            - paragraph [ref=e678]: Similar Homes looks at ad spend and other factors like location, price, and number of beds and baths.
+      - generic [ref=e681]:
+        - generic [ref=e682]:
+          - heading "Yorkville rentals" [level=2] [ref=e683]
+          - list [ref=e684]:
+            - listitem [ref=e685]:
+              - link "Studios in Yorkville" [ref=e686] [cursor=pointer]:
+                - /url: https://streeteasy.com/studios-for-rent/yorkville
+            - listitem [ref=e687]:
+              - link "1 bedrooms in Yorkville" [ref=e688] [cursor=pointer]:
+                - /url: https://streeteasy.com/1-bedroom-apartments-for-rent/yorkville
+            - listitem [ref=e689]:
+              - link "2 bedrooms in Yorkville" [ref=e690] [cursor=pointer]:
+                - /url: https://streeteasy.com/2-bedroom-apartments-for-rent/yorkville
+            - listitem [ref=e691]:
+              - link "3 bedrooms in Yorkville" [ref=e692] [cursor=pointer]:
+                - /url: https://streeteasy.com/3-bedroom-apartments-for-rent/yorkville
+            - listitem [ref=e693]:
+              - link "Rental listings in Yorkville" [ref=e694] [cursor=pointer]:
+                - /url: https://streeteasy.com/for-rent/yorkville
+        - generic [ref=e695]:
+          - heading "Nearby Yorkville" [level=2] [ref=e696]
+          - list [ref=e697]:
+            - listitem [ref=e698]:
+              - link "Lenox Hill apartments for rent" [ref=e699] [cursor=pointer]:
+                - /url: https://streeteasy.com/for-rent/lenox-hill
+            - listitem [ref=e700]:
+              - link "Carnegie Hill apartments for rent" [ref=e701] [cursor=pointer]:
+                - /url: https://streeteasy.com/for-rent/carnegie-hill
+            - listitem [ref=e702]:
+              - link "Upper East Side apartments for rent" [ref=e703] [cursor=pointer]:
+                - /url: https://streeteasy.com/for-rent/upper-east-side
+            - listitem [ref=e704]:
+              - link "Roosevelt Island apartments for rent" [ref=e705] [cursor=pointer]:
+                - /url: https://streeteasy.com/for-rent/roosevelt-island
+        - generic [ref=e706]:
+          - heading "More homes" [level=2] [ref=e707]
+          - list [ref=e708]:
+            - listitem [ref=e709]:
+              - link "Pet friendly for rent" [ref=e710] [cursor=pointer]:
+                - /url: https://streeteasy.com/pet-friendly-rentals/yorkville
+    - contentinfo [ref=e714]:
+      - generic [ref=e715]:
+        - generic [ref=e716]:
+          - list [ref=e717]:
+            - listitem [ref=e718]:
+              - link "Blog" [ref=e719] [cursor=pointer]:
+                - /url: /blog/
+            - listitem [ref=e720]:
+              - link "We're hiring!" [ref=e721] [cursor=pointer]:
+                - /url: https://www.zillow.com/careers/
+          - list [ref=e722]:
+            - listitem [ref=e725]:
+              - link "Work with us" [ref=e726] [cursor=pointer]:
+                - /url: https://streeteasy.com/business/
+            - listitem [ref=e727]:
+              - link "NYC rental network" [ref=e728] [cursor=pointer]:
+                - /url: /nycrentalnetwork
+          - list [ref=e731]:
+            - listitem [ref=e732]:
+              - link "Browse all homes" [ref=e733] [cursor=pointer]:
+                - /url: /browse/
+            - listitem [ref=e734]:
+              - link "Near Me" [ref=e735] [cursor=pointer]:
+                - /url: /apartments-for-rental-near-me/
+          - list [ref=e736]:
+            - listitem [ref=e737]:
+              - link "Help" [ref=e738] [cursor=pointer]:
+                - /url: https://support.streeteasy.com
+            - listitem [ref=e739]:
+              - link "Terms of Use" [ref=e740] [cursor=pointer]:
+                - /url: https://www.zillow.com/z/corp/terms/
+            - listitem [ref=e741]:
+              - link "Do Not Sell or Share My Personal Information" [ref=e742] [cursor=pointer]:
+                - /url: https://privacy.zillowgroup.com/cookie
+            - listitem [ref=e743]:
+              - button "Cookie Preferences" [ref=e744]
+            - listitem [ref=e745]:
+              - link "Privacy Notice" [ref=e746] [cursor=pointer]:
+                - /url: https://www.zillowgroup.com/zg-privacy-policy/
+            - listitem [ref=e747]:
+              - link "Ad Choices" [ref=e748] [cursor=pointer]:
+                - /url: https://www.zillowgroup.com/zg-privacy-policy/#third-party
+            - listitem [ref=e749]:
+              - link "Listing Access Standards" [ref=e750] [cursor=pointer]:
+                - /url: https://streeteasy.com/business/listing-access-standards/
+        - generic [ref=e752]:
+          - link "Download on the App Store" [ref=e753] [cursor=pointer]:
+            - /url: https://app.us.adjust.com/twslzb
+            - img [ref=e754]
+          - link "Get it on Google Play" [ref=e755] [cursor=pointer]:
+            - /url: https://app.us.adjust.com/p2p50p
+            - img [ref=e756]
+        - button "show nyc neighborhoods" [ref=e758]: + show nyc neighborhoods
+      - generic [ref=e760]:
+        - list [ref=e761]:
+          - listitem [ref=e762]:
+            - link "StreetEasy Twitter" [ref=e763] [cursor=pointer]:
+              - /url: https://twitter.com/streeteasy
+              - img "StreetEasy Twitter" [ref=e764]
+          - listitem [ref=e765]:
+            - link "StreetEasy Facebook" [ref=e766] [cursor=pointer]:
+              - /url: https://www.facebook.com/streeteasy/
+              - img "StreetEasy Facebook" [ref=e767]
+          - listitem [ref=e768]:
+            - link "StreetEasy Instagram" [ref=e769] [cursor=pointer]:
+              - /url: https://www.instagram.com/streeteasy/
+              - img "StreetEasy Instagram" [ref=e770]
+        - paragraph [ref=e771]:
+          - text: StreetEasy is a brand of Zillow, Inc. and registered trademark of MFTB Hold Co Inc. Zillow, Inc. has a real estate brokerage license in multiple states.
+          - link "See a list of these real estate licenses" [ref=e772] [cursor=pointer]:
+            - /url: https://www.zillow.com/c/info/real-estate-licenses/
+          - text: .
+          - link "§ 442-H New York Standard Operating Procedures" [ref=e773] [cursor=pointer]:
+            - /url: https://s.zillow.net/pfs/static/SOP_NYS.pdf
+          - text: .
+        - list [ref=e774]:
+          - listitem [ref=e775]:
+            - link "Zillow" [ref=e776] [cursor=pointer]:
+              - /url: https://www.zillow.com/
+          - listitem [ref=e777]:
+            - link "Trulia" [ref=e778] [cursor=pointer]:
+              - /url: https://www.trulia.com/
+          - listitem [ref=e779]:
+            - link "Hotpads" [ref=e780] [cursor=pointer]:
+              - /url: https://hotpads.com/
+          - listitem [ref=e781]:
+            - link "Out East" [ref=e782] [cursor=pointer]:
+              - /url: https://outeast.com
+        - paragraph [ref=e783]:
+          - generic [ref=e784]: Zillow Inc. Sites © 2006-2026 Zillow
+    - generic [ref=e864]:
+      - generic [ref=e867]:
+        - button "Request a tour" [ref=e868]
+        - button "Ask a question" [ref=e869]
+      - generic [ref=e870]:
+        - generic [ref=e871]: "85 East End Avenue #10G"
+        - generic [ref=e872]: • $5,900 (base rent)
+  - alert [ref=e786]
