@@ -10,8 +10,8 @@
  *   node scripts/compile-data.js
  *
  * Output:
- *   extension/data/nta-boundaries.json - NTA polygon boundaries for point-in-polygon lookup
- *   extension/data/crime-stats.json - Precomputed crime statistics per NTA
+ *   selfhost-nc/extension/data/nta-boundaries.json - NTA polygon boundaries for point-in-polygon lookup
+ *   selfhost-nc/extension/data/crime-stats.json - Precomputed crime statistics per NTA
  */
 
 const { execSync } = require('child_process');
@@ -86,7 +86,7 @@ const CONFIG = {
   CRIME_DATA_CURRENT_URL: 'https://data.cityofnewyork.us/resource/5uac-w243.json',
 
   // Output paths
-  OUTPUT_DIR: path.join(__dirname, '..', 'extension', 'data'),
+  OUTPUT_DIR: path.join(__dirname, '..', 'selfhost-nc', 'extension', 'data'),
 
   // Crime categories to track
   CRIME_CATEGORIES: {

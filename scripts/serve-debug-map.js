@@ -75,7 +75,7 @@ const server = http.createServer((req, res) => {
     }
 
     if (pathname.startsWith('/data/')) {
-      const filePath = safeJoin(path.join(ROOT, 'extension', 'data'), pathname.replace(/^\/data\//, ''));
+      const filePath = safeJoin(path.join(ROOT, 'selfhost-nc', 'extension', 'data'), pathname.replace(/^\/data\//, ''));
       if (!filePath) return send(res, 400, 'Bad request');
       return serveFile(res, filePath);
     }

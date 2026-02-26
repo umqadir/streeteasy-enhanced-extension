@@ -1,6 +1,5 @@
 # Release Checklist (Selfhost NC)
 
-- [ ] `uv run selfhost-nc/scripts/sync_release.py`
 - [ ] `cd selfhost-nc && bash scripts/install.sh`
 - [ ] `bash scripts/start_backend.sh`
 - [ ] `curl http://127.0.0.1:8787/health`

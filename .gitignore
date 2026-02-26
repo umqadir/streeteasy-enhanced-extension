@@ -42,6 +42,8 @@ build/
 .playwright-cli-artifacts/
 sqft-from-photos/.artifacts/
 sqft-from-photos/.playwright-cli/
+selfhost-nc/backend-local/
+selfhost-nc/backend/.runtime/
 
 # Extension packaging
 extension.crx

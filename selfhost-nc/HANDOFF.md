@@ -1,18 +1,6 @@
 # Handoff Notes (Selfhost NC)
 
-## Source-of-Truth Inputs
-
-This bundle is generated from:
-
-- `extension/`
-- `sqft-from-photos/backend-local/local_backend.py`
-- `sqft-from-photos/v2-pipeline/estimate_v2b.py`
-
-Refresh with:
-
-```bash
-uv run selfhost-nc/scripts/sync_release.py
-```
+This folder is the canonical self-host bundle.
 
 ## New Behavior
 

@@ -36,8 +36,10 @@ from urllib.request import Request, urlopen
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+BACKEND_ROOT = Path(__file__).resolve().parent
 V2_PIPELINE_DIR = REPO_ROOT / "v2-pipeline"
-RUNS_ROOT = REPO_ROOT / "backend-local" / "runs"
+# Keep runtime artifacts under backend-local/ to avoid creating sibling folders.
+RUNS_ROOT = BACKEND_ROOT / ".runtime" / "runs"
 RUNS_ROOT.mkdir(parents=True, exist_ok=True)
 
 # Ensure v2 pipeline module can be imported when this script is run from repo root.

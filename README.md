@@ -1,82 +1,34 @@
 # SleepEasy
 
-Adds a small, inline “Crime” module to StreetEasy NYC listings.
+This repository contains both:
+- a canonical self-hosted distributable bundle
+- retained research/experiment work
 
-- Metrics: **Felony Assault**, **Property Crime**, **Murder** (last **24 months**)
-- Measures: **Ambient risk index** (default), **Per 100k residents**, **Per sq mi**, **Raw incidents**
-- Location: uses the listing’s own Google Maps coordinate link (no geocoding)
-- Geography: NYC **NTA** (Neighborhood Tabulation Area) containing the listing
+## Canonical Distribution Folder
 
-## Install
+Use `selfhost-nc/` for install, run, and release packaging.
 
-1. Open `chrome://extensions`
-2. Enable **Developer mode**
-3. Click **Load unpacked** and select the `extension/` folder
-4. Visit a StreetEasy listing page (e.g. `/building/...`, `/rental/...`, `/sale/...`)
-
-After any code/data changes: `chrome://extensions` → **Reload** SleepEasy → refresh the listing tab.
-
-## Self-Host NC Bundle (Sqft + Extension)
-
-For a clean non-commercial self-hosted setup (extension + local DUSt3R backend), use:
-
-- `/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/selfhost-nc/README.md`
-
-## Update data
-
-Rebuild the bundled NYC dataset (optional; the extension works with whatever is already in `extension/data/`):
+Quick start:
 
 ```bash
-node scripts/compile-data.js
+cd selfhost-nc
+bash scripts/install.sh
+bash scripts/start_backend.sh
 ```
 
-Then reload the extension.
+Then load unpacked extension from `selfhost-nc/extension` in `chrome://extensions`.
 
-## Data sources
+Full instructions:
+- `selfhost-nc/README.md`
 
-- NYPD Complaint Data (merged): `qgea-i56i` (historic) + `5uac-w243` (current)
-- NTA boundaries: `https://data.cityofnewyork.us/resource/9nt8-h7nd.json`
+## Repository Layout
 
-## Disclaimer
+- `selfhost-nc/`: canonical non-commercial self-host bundle (extension + backend + v2 pipeline + scripts)
+- `sqft-from-photos/`: research/experiments and data collection work
+- `backend-archived/`: legacy backend code kept for reference
+- `docs/`, `scripts/`: project utilities and reference docs
 
-Independent project; not affiliated with StreetEasy/Zillow/NYPD/NYC. Complaint counts are not a guarantee of future safety.
+## Notes
 
----
-
-## CV Pipeline (sqft-from-photos)
-
-Computer vision pipeline for estimating apartment square footage from photos.
-
-### RunPod Setup
-
-**First time setup:**
-```bash
-bash sqft-from-photos/cv-pipeline/scripts/runpod_bootstrap.sh
-source /workspace/cv_pipeline_env.sh
-```
-
-This installs:
-- System dependencies (COLMAP)
-- Python environment (via uv)
-- Node.js (via NVM) + Codex + Claude Code CLIs
-
-**After pod restart:**
-```bash
-source /workspace/cv_pipeline_env.sh
-```
-
-The env file persists in `/workspace` and loads NVM automatically, making `node`, `npm`, `codex`, and `claude` available.
-
-### Using Codex
-
-After sourcing the env file:
-```bash
-codex          # Start Codex CLI
-claude         # Start Claude Code CLI
-```
-
-### Project Structure
-
-- `sqft-from-photos/cv-pipeline/` - Main pipeline code
-- `sqft-from-photos/sample-collection/` - Data collection scripts
-- See `sqft-from-photos/cv-pipeline/docs/PROJECT-PLAN.md` for roadmap
+- If you are shipping or testing the distributable, do not use ad-hoc paths from other folders; use `selfhost-nc/` only.
+- Local artifacts (`.playwright*`, `.artifacts`, runtime run folders) are intentionally ignored.

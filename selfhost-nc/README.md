@@ -1,6 +1,6 @@
 # SleepEasy Self-Host (Non-Commercial)
 
-This directory is a clean self-hosted release bundle for the extension + local CV backend.
+This directory is the canonical self-hosted release bundle for the extension + local CV backend.
 
 ## Important Usage Notice
 
@@ -18,33 +18,27 @@ See `THIRD_PARTY_NOTICES.md` before use.
 
 ## Quick Start
 
-1. From repo root, refresh this bundle from source files:
-
-```bash
-uv run selfhost-nc/scripts/sync_release.py
-```
-
-2. Install backend env + models:
+1. Install backend env + models:
 
 ```bash
 cd selfhost-nc
 bash scripts/install.sh
 ```
 
-3. Start local backend:
+2. Start local backend:
 
 ```bash
 bash scripts/start_backend.sh
 ```
 
-4. Load extension in Chrome:
+3. Load extension in Chrome:
 
 - Open `chrome://extensions`
 - Enable Developer mode
 - Click **Load unpacked**
 - Select `selfhost-nc/extension`
 
-5. Open a StreetEasy listing and use the side panel.
+4. Open a StreetEasy listing and use the side panel.
 
 ## Playwright UX Smoke Test (No CUDA)
 
@@ -84,7 +78,6 @@ In side panel settings:
 
 ## Scripts
 
-- `scripts/sync_release.py` - copies latest extension/backend/pipeline files from source-of-truth paths
 - `scripts/install.sh` - installs Python env and downloads DUSt3R + MoGe assets
 - `scripts/start_backend.sh` - runs local backend
 - `scripts/smoke_playwright_no_cuda.sh` - Playwright CLI UX smoke test for no-CUDA fallback
