@@ -14,3 +14,9 @@ sample-collection/curate_web.log
 __pycache__/
 *.pyc
 v2-pipeline/runs/
+
+# Local experiment artifacts
+.artifacts/
+.playwright/
+.playwright-cli/
+.playwright-cli-artifacts/

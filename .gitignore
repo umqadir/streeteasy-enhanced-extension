@@ -36,6 +36,13 @@ dist/
 build/
 *.zip
 
+# Local test artifacts
+.playwright/
+.playwright-cli/
+.playwright-cli-artifacts/
+sqft-from-photos/.artifacts/
+sqft-from-photos/.playwright-cli/
+
 # Extension packaging
 extension.crx
 extension.pem
