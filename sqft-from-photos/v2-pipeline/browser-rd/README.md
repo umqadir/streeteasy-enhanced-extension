@@ -15,7 +15,7 @@ The probe uses the MoGe-2 ONNX checkpoint:
 ## Quick run
 
 ```bash
-cd /Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos
+cd /Users/uzairqadir/Projects/data-projects/streeteasy-enhanced-extension/sqft-from-photos
 bash v2-pipeline/browser-rd/run_all.sh
 ```
 

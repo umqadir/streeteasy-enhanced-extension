@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+export ROOT
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 OUT="${ROOT}/v2-pipeline/runs/browser_rd_${STAMP}"
 
@@ -57,7 +59,7 @@ import json
 import os
 import sys
 
-ROOT = Path("/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos")
+ROOT = Path(os.environ["ROOT"])
 OUT = Path(os.environ["BROWSER_RD_OUT"])
 images = ROOT / "sample-collection" / "clean_set_export" / "photos" / "listing_001"
 sys.path.insert(0, str(ROOT / "cv-pipeline" / "src"))

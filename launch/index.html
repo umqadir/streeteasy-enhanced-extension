@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>SleepEasy — Crime context inside StreetEasy</title>
+    <meta
+      name="description"
+      content="SleepEasy adds a small, inline crime module to StreetEasy NYC listings—ambient risk index, per-100k, per-area, and raw incidents. Last 24 months."
+    />
+
+    <meta property="og:title" content="SleepEasy — Crime context inside StreetEasy" />
+    <meta
+      property="og:description"
+      content="A clean, inline crime snapshot for StreetEasy NYC listings. Designed to feel native—no side panels, no clutter."
+    />
+    <meta property="og:type" content="website" />
+
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230b1220'/%3E%3Cpath d='M40.8 44.5c-10.7 0-19.3-8.7-19.3-19.3 0-6.5 3.2-12.2 8.1-15.8-1.2 2.4-1.9 5-1.9 7.9 0 9.9 8 18 18 18 2.9 0 5.6-.7 8-2-3.6 4.9-9.4 8.2-14.9 8.2Z' fill='%23e5e7eb'/%3E%3C/svg%3E" />
+
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="container header-inner">
+        <a class="brand" href="#top" aria-label="SleepEasy home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" role="img" focusable="false">
+              <path
+                d="M15.3 20.4c-5.1 0-9.3-4.2-9.3-9.3 0-3.1 1.5-5.9 3.9-7.6-.6 1.1-.9 2.4-.9 3.8 0 4.8 3.9 8.7 8.7 8.7 1.4 0 2.7-.3 3.9-1-1.7 2.4-4.5 3.9-6.3 3.9Z"
+                fill="currentColor"
+              />
+            </svg>
+          </span>
+          <span class="brand-name">SleepEasy</span>
+        </a>
+
+        <nav class="nav" aria-label="Primary">
+          <a class="nav-link" href="#features">Features</a>
+          <a class="nav-link" href="#privacy">Privacy</a>
+          <a class="nav-link" href="#faq">FAQ</a>
+        </nav>
+
+        <div class="header-cta">
+          <a class="btn btn-primary" data-store-link href="#install">Install</a>
+        </div>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="container hero-inner">
+          <div class="hero-copy">
+            <div class="eyebrow">StreetEasy · NYC only</div>
+            <h1>Crime context, built into the listing.</h1>
+            <p class="lead">
+              SleepEasy adds a small, inline crime module to StreetEasy NYC listings—designed to feel native, not bolted on.
+            </p>
+
+            <div class="hero-actions">
+              <a class="btn btn-primary" data-store-link href="#install">Install</a>
+              <a class="btn btn-secondary" href="#demo">See the UI</a>
+            </div>
+
+            <p class="fineprint">
+              Last 24 months • Uses NYPD complaint data mapped to NYC NTAs • Measures include ambient risk index, per-100k, per-area, and raw incidents
+            </p>
+          </div>
+
+          <div class="hero-card" id="demo" aria-label="UI preview">
+            <div class="mock-listing">
+              <div class="mock-top">
+                <div class="mock-pill">1,050 ft²</div>
+                <div class="mock-dot" aria-hidden="true">·</div>
+                <div class="mock-pill">4 rooms</div>
+                <div class="mock-dot" aria-hidden="true">·</div>
+                <div class="mock-pill">2 beds</div>
+                <div class="mock-dot" aria-hidden="true">·</div>
+                <div class="mock-pill">1 bath</div>
+              </div>
+
+              <div class="mock-section">
+                <div class="mock-module">
+                  <div class="mock-module-top">
+                    <div class="mock-title">Crime</div>
+                    <div class="mock-controls" aria-hidden="true">
+                      <div class="mock-select">Ambient risk index</div>
+                      <div class="mock-info">i</div>
+                    </div>
+                  </div>
+
+                  <div class="mock-grid">
+                    <div class="mock-metric">
+                      <div class="mock-name">Felony Assault</div>
+                      <div class="mock-value">201.3 <span class="mock-unit">/ 100k</span></div>
+                      <div class="mock-rank">NYC risk rank 113/197</div>
+                    </div>
+                    <div class="mock-metric">
+                      <div class="mock-name">Property Crime</div>
+                      <div class="mock-value">1002.7 <span class="mock-unit">/ 100k</span></div>
+                      <div class="mock-rank">NYC risk rank 40/197</div>
+                    </div>
+                    <div class="mock-metric">
+                      <div class="mock-name">Murder</div>
+                      <div class="mock-value">0.0 <span class="mock-unit">/ 100k</span></div>
+                      <div class="mock-rank">NYC risk rank 139/197</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mock-disclaimer">
+                Under NYC law, you can’t be charged a broker fee if you didn’t hire a broker.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="features">
+        <div class="container">
+          <h2>Designed for decisions</h2>
+          <p class="subhead">Clean UI, consistent window, and a metric selector that makes “risk” interpretable.</p>
+
+          <div class="grid">
+            <div class="card">
+              <h3>Inline, not intrusive</h3>
+              <p>Embedded directly on the listing page—no side panel, no extra clicks.</p>
+            </div>
+            <div class="card">
+              <h3>Ambient risk index</h3>
+              <p>A practical “people present” denominator (residents + daytime workers), not just residential population.</p>
+            </div>
+            <div class="card">
+              <h3>One consistent window</h3>
+              <p>Everything uses the last 24 months to avoid cherry-picking and weird time toggles.</p>
+            </div>
+            <div class="card">
+              <h3>Accurate location</h3>
+              <p>Uses StreetEasy’s own Google Maps coordinate link (no listing geocoding needed).</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="install">
+        <div class="container">
+          <h2>Install</h2>
+          <p class="subhead">Chrome Web Store install is the default. Developer mode install is included for early access/testing.</p>
+
+          <div class="install-grid">
+            <div class="install-card install-store" data-install-store>
+              <div class="install-title">Chrome Web Store</div>
+              <div class="install-body">One click install.</div>
+              <div class="install-actions">
+                <a class="btn btn-primary btn-lg" data-store-link href="#" rel="noopener" target="_blank">Add to Chrome</a>
+              </div>
+            </div>
+
+            <div class="install-card install-dev" data-install-dev>
+              <div class="install-title">Developer mode (unpacked)</div>
+              <ol class="install-steps">
+                <li>Open <code>chrome://extensions</code></li>
+                <li>Enable <strong>Developer mode</strong></li>
+                <li>Click <strong>Load unpacked</strong> → select the <code>extension/</code> folder</li>
+                <li>Visit a StreetEasy listing page</li>
+              </ol>
+              <div class="install-footnote">After updates: reload the extension in <code>chrome://extensions</code>.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section-muted" id="privacy">
+        <div class="container">
+          <h2>Private by default</h2>
+          <div class="bullet-grid">
+            <div class="bullet">
+              <div class="bullet-title">No accounts</div>
+              <div class="bullet-body">Nothing to sign up for. It just works on StreetEasy listings.</div>
+            </div>
+            <div class="bullet">
+              <div class="bullet-title">No personal data</div>
+              <div class="bullet-body">No profile building. No selling. No “analytics dashboards.”</div>
+            </div>
+            <div class="bullet">
+              <div class="bullet-title">NYC only</div>
+              <div class="bullet-body">Focused scope: NYC listings on StreetEasy, mapped to NYC NTAs.</div>
+            </div>
+          </div>
+          <p class="privacy-note">
+            SleepEasy is an independent project and is not affiliated with StreetEasy, Zillow, the NYPD, or NYC government.
+          </p>
+        </div>
+      </section>
+
+      <section class="section" id="faq">
+        <div class="container">
+          <h2>FAQ</h2>
+
+          <div class="faq">
+            <details class="faq-item">
+              <summary>What is the “Ambient risk index”?</summary>
+              <div class="faq-body">
+                Incidents per 100k average people present (a blend of residents and daytime workers), so business districts aren’t unfairly distorted by low residential population.
+              </div>
+            </details>
+
+            <details class="faq-item">
+              <summary>What is “Property Crime”?</summary>
+              <div class="faq-body">
+                A simple index of NYPD offense categories: burglary, grand larceny, and grand larceny of motor vehicle.
+              </div>
+            </details>
+
+            <details class="faq-item">
+              <summary>Why might a neighborhood show 0 murders?</summary>
+              <div class="faq-body">
+                Stats are assigned to the official NYC NTA that contains the listing. NTAs don’t perfectly match StreetEasy neighborhood labels, and incidents near borders can fall into adjacent NTAs.
+              </div>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section-cta">
+        <div class="container">
+          <div class="cta-box">
+            <div>
+              <h2 class="cta-title">Install SleepEasy</h2>
+              <p class="cta-subhead">Get the inline crime module on StreetEasy NYC listings in under a minute.</p>
+            </div>
+            <div class="cta-actions">
+              <a class="btn btn-primary btn-lg" data-store-link href="#install">Install</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="container footer-inner">
+        <div class="footer-left">
+          <div class="footer-brand">SleepEasy</div>
+          <div class="footer-muted">© <span id="year"></span> SleepEasy</div>
+        </div>
+        <div class="footer-right">
+          <a class="footer-link" href="#privacy">Privacy</a>
+          <a class="footer-link" href="#faq">FAQ</a>
+        </div>
+      </div>
+    </footer>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
