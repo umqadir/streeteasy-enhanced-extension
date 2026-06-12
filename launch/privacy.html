@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SleepEasy — Privacy Policy</title>
+    <meta name="description" content="SleepEasy privacy policy: no accounts, no analytics, no data collection. Everything runs on your device." />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230b1220'/%3E%3Cpath d='M40.8 44.5c-10.7 0-19.3-8.7-19.3-19.3 0-6.5 3.2-12.2 8.1-15.8-1.2 2.4-1.9 5-1.9 7.9 0 9.9 8 18 18 18 2.9 0 5.6-.7 8-2-3.6 4.9-9.4 8.2-14.9 8.2Z' fill='%23e5e7eb'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="./styles.css" />
+    <style>
+      .legal { padding: 56px 0 80px; }
+      .legal .container { max-width: 760px; }
+      .legal h1 { font-size: clamp(28px, 4vw, 40px); margin: 0 0 8px; color: var(--strong); }
+      .legal .updated { color: var(--muted); margin: 0 0 36px; }
+      .legal h2 { margin: 36px 0 12px; color: var(--strong); font-size: 20px; }
+      .legal p, .legal li { color: var(--text); line-height: 1.7; }
+      .legal ul { padding-left: 22px; }
+      .legal li { margin: 6px 0; }
+      .legal .tldr { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; margin: 0 0 8px; }
+      .legal a { color: var(--primary-2); text-decoration: underline; }
+    </style>
+  </head>
+  <body>
+    <header class="header">
+      <div class="container header-inner">
+        <a class="brand" href="./index.html" aria-label="SleepEasy home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" role="img" focusable="false">
+              <path d="M15.3 20.4c-5.1 0-9.3-4.2-9.3-9.3 0-3.1 1.5-5.9 3.9-7.6-.6 1.1-.9 2.4-.9 3.8 0 4.8 3.9 8.7 8.7 8.7 1.4 0 2.7-.3 3.9-1-1.7 2.4-4.5 3.9-6.3 3.9Z" fill="currentColor" />
+            </svg>
+          </span>
+          <span class="brand-name">SleepEasy</span>
+        </a>
+        <nav class="nav" aria-label="Primary">
+          <a class="nav-link" href="./index.html#features">Features</a>
+          <a class="nav-link" href="./index.html#install">Install</a>
+          <a class="nav-link" href="https://github.com/umqadir/streeteasy-enhanced-extension" rel="noopener" target="_blank">GitHub</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="legal">
+      <div class="container">
+        <h1>Privacy Policy</h1>
+        <p class="updated">Last updated: June 12, 2026</p>
+
+        <div class="tldr">
+          <p style="margin:0"><strong>The short version:</strong> SleepEasy has no accounts, no analytics, and no servers it reports to. It does not collect, transmit, or sell any personal information. Everything happens on your own device.</p>
+        </div>
+
+        <h2>What SleepEasy does</h2>
+        <p>SleepEasy is a Chrome extension that adds neighborhood crime context and AI-estimated room square footage to StreetEasy NYC listing pages. It is an independent project and is not affiliated with StreetEasy, Zillow Group, the NYPD, or the City of New York.</p>
+
+        <h2>Information the extension handles</h2>
+        <ul>
+          <li><strong>Listing page content.</strong> On a StreetEasy listing, the extension reads the page to find the listing's map coordinates and photos. This reading happens entirely in your browser.</li>
+          <li><strong>Your room groupings and settings.</strong> When you group listing photos into rooms or change settings, those choices are saved locally using Chrome's <code>storage.local</code> on your device. They are never uploaded.</li>
+        </ul>
+
+        <h2>What is transmitted, and to whom</h2>
+        <ul>
+          <li><strong>Crime statistics: nothing leaves your browser.</strong> Crime data ships inside the extension as static files. Mapping a listing to its neighborhood and its statistics is computed locally. No network request is made.</li>
+          <li><strong>Square-footage estimation: only to your own computer.</strong> This optional feature requires a local backend that you install and run yourself on <code>127.0.0.1</code> (localhost). When you analyze a room, the listing's photo URLs are sent to that local backend, which downloads and analyzes the photos on your machine. No data is sent to the extension's developer or any third-party service.</li>
+        </ul>
+
+        <h2>What SleepEasy does not do</h2>
+        <ul>
+          <li>No user accounts or sign-in.</li>
+          <li>No analytics, telemetry, tracking, or advertising.</li>
+          <li>No collection of personal, financial, health, location-history, or browsing-history data.</li>
+          <li>No sale or sharing of any data with third parties.</li>
+        </ul>
+
+        <h2>Data retention and deletion</h2>
+        <p>Because all data stays on your device, you control it completely. Removing the extension, or clearing the extension's storage in <code>chrome://extensions</code>, deletes everything SleepEasy has saved. The local backend stores only model files and any analysis artifacts in folders on your computer, which you can delete at any time.</p>
+
+        <h2>Third-party data sources</h2>
+        <p>The bundled crime statistics are derived from public datasets — NYPD complaint data and neighborhood boundaries via <a href="https://opendata.cityofnewyork.us/" rel="noopener" target="_blank">NYC Open Data</a>, and population and workplace figures from the U.S. Census Bureau. These are compiled offline into static files; the extension does not contact these sources at runtime.</p>
+
+        <h2>Changes to this policy</h2>
+        <p>If this policy changes, the updated version will be posted at this URL with a new "last updated" date.</p>
+
+        <h2>Contact</h2>
+        <p>Questions or concerns? Open an issue on the project's <a href="https://github.com/umqadir/streeteasy-enhanced-extension/issues" rel="noopener" target="_blank">GitHub repository</a>.</p>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="container footer-inner">
+        <div class="footer-left">
+          <div class="footer-brand">SleepEasy</div>
+          <div class="footer-muted">© <span id="year"></span> SleepEasy</div>
+        </div>
+        <div class="footer-right">
+          <a class="footer-link" href="./index.html">Home</a>
+          <a class="footer-link" href="https://github.com/umqadir/streeteasy-enhanced-extension" rel="noopener" target="_blank">GitHub</a>
+        </div>
+      </div>
+    </footer>
+    <script>document.getElementById('year').textContent = String(new Date().getFullYear());</script>
+  </body>
+</html>
