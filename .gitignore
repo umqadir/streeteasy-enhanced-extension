@@ -71,3 +71,6 @@ temp/
 
 # Local-only site scratch (not part of deliverable)
 website/
+
+# Chrome Web Store upload zips are attached to GitHub releases, not committed
+docs/chrome-web-store/*.zip
