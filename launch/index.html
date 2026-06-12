@@ -4,16 +4,16 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>SleepEasy — Crime context inside StreetEasy</title>
+    <title>SleepEasy — Crime context and room sizes inside StreetEasy</title>
     <meta
       name="description"
-      content="SleepEasy adds a small, inline crime module to StreetEasy NYC listings—ambient risk index, per-100k, per-area, and raw incidents. Last 24 months."
+      content="SleepEasy adds an inline crime module and AI room square-footage estimates to StreetEasy NYC listings. Free, open source, and private — everything runs on your machine."
     />
 
-    <meta property="og:title" content="SleepEasy — Crime context inside StreetEasy" />
+    <meta property="og:title" content="SleepEasy — Crime context and room sizes inside StreetEasy" />
     <meta
       property="og:description"
-      content="A clean, inline crime snapshot for StreetEasy NYC listings. Designed to feel native—no side panels, no clutter."
+      content="An inline crime snapshot and AI room-size estimates for StreetEasy NYC listings. Designed to feel native—no clutter, no tracking."
     />
     <meta property="og:type" content="website" />
 
@@ -38,8 +38,10 @@
 
         <nav class="nav" aria-label="Primary">
           <a class="nav-link" href="#features">Features</a>
+          <a class="nav-link" href="#sqft">Room sizes</a>
           <a class="nav-link" href="#privacy">Privacy</a>
           <a class="nav-link" href="#faq">FAQ</a>
+          <a class="nav-link" href="https://github.com/umqadir/streeteasy-enhanced-extension" rel="noopener" target="_blank">GitHub</a>
         </nav>
 
         <div class="header-cta">
@@ -55,7 +57,7 @@
             <div class="eyebrow">StreetEasy · NYC only</div>
             <h1>Crime context, built into the listing.</h1>
             <p class="lead">
-              SleepEasy adds a small, inline crime module to StreetEasy NYC listings—designed to feel native, not bolted on.
+              SleepEasy adds a small, inline crime module to StreetEasy NYC listings—designed to feel native, not bolted on. Plus: AI-estimated room square footage, computed from the listing's own photos on your machine.
             </p>
 
             <div class="hero-actions">
@@ -144,29 +146,58 @@
         </div>
       </section>
 
+      <section class="section" id="sqft">
+        <div class="container">
+          <h2>Room sizes from listing photos</h2>
+          <p class="subhead">Listings love to skip square footage. SleepEasy estimates it from the photos.</p>
+
+          <div class="grid">
+            <div class="card">
+              <h3>Group photos into rooms</h3>
+              <p>Use the side panel to assign listing photos to rooms, then analyze each room with one click.</p>
+            </div>
+            <div class="card">
+              <h3>Real computer vision</h3>
+              <p>Semantic segmentation finds the floor, a metric-depth model recovers 3D geometry, and the floor plane is measured in real-world units.</p>
+            </div>
+            <div class="card">
+              <h3>Runs on your machine</h3>
+              <p>Photos are analyzed by a local backend you install in one command. Nothing is sent to a third-party service.</p>
+            </div>
+            <div class="card">
+              <h3>Honest accuracy</h3>
+              <p>About 5% error with multi-photo mode (NVIDIA GPU), about 20% with single-image mode (any machine). Benchmarks are published in the repo.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section class="section" id="install">
         <div class="container">
           <h2>Install</h2>
-          <p class="subhead">Chrome Web Store install is the default. Developer mode install is included for early access/testing.</p>
+          <p class="subhead">Free and open source. Crime stats need no setup at all; room sizes add a one-command local backend.</p>
 
           <div class="install-grid">
-            <div class="install-card install-store" data-install-store>
-              <div class="install-title">Chrome Web Store</div>
-              <div class="install-body">One click install.</div>
-              <div class="install-actions">
-                <a class="btn btn-primary btn-lg" data-store-link href="#" rel="noopener" target="_blank">Add to Chrome</a>
-              </div>
-            </div>
-
-            <div class="install-card install-dev" data-install-dev>
-              <div class="install-title">Developer mode (unpacked)</div>
+            <div class="install-card" data-install-download>
+              <div class="install-title">1 · Get the extension</div>
               <ol class="install-steps">
+                <li><a href="https://github.com/umqadir/streeteasy-enhanced-extension/releases/latest" rel="noopener" target="_blank">Download the latest release</a> and unzip it</li>
                 <li>Open <code>chrome://extensions</code></li>
                 <li>Enable <strong>Developer mode</strong></li>
                 <li>Click <strong>Load unpacked</strong> → select the <code>extension/</code> folder</li>
-                <li>Visit a StreetEasy listing page</li>
+                <li>Visit a StreetEasy listing page — crime stats just work</li>
               </ol>
-              <div class="install-footnote">After updates: reload the extension in <code>chrome://extensions</code>.</div>
+            </div>
+
+            <div class="install-card" data-install-dev>
+              <div class="install-title">2 · Optional: room square footage</div>
+              <ol class="install-steps">
+                <li>Clone the <a href="https://github.com/umqadir/streeteasy-enhanced-extension" rel="noopener" target="_blank">repository</a></li>
+                <li><code>cd selfhost && bash scripts/install.sh</code></li>
+                <li><code>bash scripts/start_backend.sh</code></li>
+                <li>Analyze rooms from the SleepEasy side panel</li>
+              </ol>
+              <div class="install-footnote">Requires <code>uv</code> and ~4 GB for model weights. Full guide in the repo README.</div>
             </div>
           </div>
         </div>
@@ -248,6 +279,7 @@
         <div class="footer-right">
           <a class="footer-link" href="#privacy">Privacy</a>
           <a class="footer-link" href="#faq">FAQ</a>
+          <a class="footer-link" href="https://github.com/umqadir/streeteasy-enhanced-extension" rel="noopener" target="_blank">GitHub</a>
         </div>
       </div>
     </footer>
