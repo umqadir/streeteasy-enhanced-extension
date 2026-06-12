@@ -1,76 +1,60 @@
-# SleepEasy Self-Host
+# SleepEasy Self-Host Bundle
 
-This directory is the canonical self-hosted release bundle for the extension + local CV backend.
+The canonical release bundle: Chrome extension + local CV backend. If you only want the crime stats, you just need `extension/` — no backend, no Python. The backend powers the room square-footage feature.
 
-## What This Release Does
+## Requirements (backend only)
 
-- Multi-photo default: `dust3r-scene` (DUSt3R path)
-- If CUDA is unavailable:
-  - first analyze attempt prompts once to enable single-image mode
-  - choice is persisted in extension settings
-  - single-image mode can be toggled manually in side panel settings
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) (manages Python and dependencies automatically)
+- ~4 GB disk for model weights (downloaded once to `~/.cache/cv_pipeline/models/`)
+- Any OS. An NVIDIA GPU enables the more accurate multi-photo mode; CPU and Apple Silicon machines use single-image mode.
 
-## Quick Start
+## Setup
 
-1. Install backend env + models:
+1. Install the backend environment and download models (10–15 minutes on first run):
 
 ```bash
 cd selfhost
 bash scripts/install.sh
 ```
 
-2. Start local backend:
+2. Start the backend (leave running):
 
 ```bash
 bash scripts/start_backend.sh
 ```
 
-3. Load extension in Chrome:
+3. Load the extension in Chrome:
 
 - Open `chrome://extensions`
-- Enable Developer mode
-- Click **Load unpacked**
-- Select `selfhost/extension`
+- Enable **Developer mode** (top right)
+- Click **Load unpacked** and select `selfhost/extension`
 
-4. Open a StreetEasy listing and use the side panel.
+4. Open a StreetEasy listing. Crime stats appear inline on the page; the SleepEasy side panel manages rooms and square-footage analysis.
 
-## Playwright UX Smoke Test (No CUDA)
+## Analysis modes
 
-Run this to validate extension UX <-> backend wiring on this machine class:
+- **Multi-photo (default)**: DUSt3R multi-view reconstruction — requires CUDA. ~5% error on the benchmark room.
+- **Single-image**: SegFormer + MoGe-2 on each photo independently — runs anywhere. ~20% error, biased low (measures visible floor only).
 
-```bash
-cd selfhost
-bash scripts/start_backend.sh
-```
+On a machine without CUDA, the first analysis prompts once to switch to single-image mode; the choice persists and can be changed any time in side panel settings.
 
-In a second terminal:
-
-```bash
-cd selfhost
-bash scripts/smoke_playwright_no_cuda.sh
-```
-
-What it validates (real backend-only path):
-- Sidepanel can connect to local backend (`GET_BACKEND_HEALTH`)
-- No-CUDA prompt appears once in `analysisMode=auto`
-- Decline path persists `noCudaPromptHandled=true`
-- Manual `single-image` mode emits `multiviewMethod=single-image` for multi-photo rooms
-- Room result is stored with `pipeline=single`
-
-## Backend Controls
-
-In side panel settings:
+## Side panel settings
 
 - Backend URL (default `http://127.0.0.1:8787`)
 - Device policy (`auto`, `mps`, `cpu`)
-- Analysis mode:
-  - `Auto (DUSt3R multi-view, CUDA required)`
-  - `Single-image mode (no CUDA required)`
+- Analysis mode (`auto` = DUSt3R multi-view, or `single-image`)
 
 ## Scripts
 
-- `scripts/install.sh` - installs Python env and downloads DUSt3R + MoGe assets
-- `scripts/start_backend.sh` - runs local backend
-- `scripts/smoke_playwright_no_cuda.sh` - Playwright CLI UX smoke test for no-CUDA fallback
-- `scripts/doctor.sh` - environment and asset checks
-- `scripts/bootstrap_models.py` - model/vendor download helper
+- `scripts/install.sh` — installs the Python env and downloads DUSt3R + MoGe assets
+- `scripts/start_backend.sh` — runs the local backend
+- `scripts/doctor.sh` — environment and asset checks; run this first if anything misbehaves
+- `scripts/bootstrap_models.py` — model/vendor download helper (called by install)
+- `scripts/smoke_playwright_no_cuda.sh` — automated UX smoke test for the no-CUDA fallback path (requires `playwright-cli`; start the backend first)
+
+## Troubleshooting
+
+- **Backend won't start / import errors**: `bash scripts/doctor.sh` — it checks uv, Python 3.11, and model assets.
+- **Extension can't reach backend**: confirm `curl http://127.0.0.1:8787/health` returns `"ok": true`, then re-check the backend URL in side panel settings.
+- **Analysis is slow**: first request loads models into memory (1–3 minutes); subsequent requests are much faster. CPU-only machines are inherently slower than MPS/CUDA.
+- **CUDA machine validation**: follow [docs/CUDA_RUNBOOK.md](../docs/CUDA_RUNBOOK.md) for an exact bring-up checklist.
