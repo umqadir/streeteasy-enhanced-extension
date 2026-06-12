@@ -4,7 +4,7 @@ Everything is staged. The only steps left are the ones that legally require you 
 
 ## What's already prepared
 
-- **Upload package:** `sleepeasy-chrome-store-v1.1.0.zip` — attached to the [v1.1.0 release](https://github.com/umqadir/streeteasy-enhanced-extension/releases/tag/v1.1.0) and copied to your `~/Downloads`. This is the **flat** zip (manifest at the root) the Web Store requires — not the same as the "Load unpacked" zip.
+- **Upload package:** `sleepeasy-chrome-store-v2.0.0.zip` — attached to the [v2.0.0 release](https://github.com/umqadir/streeteasy-enhanced-extension/releases/tag/v2.0.0) and copied to your `~/Downloads`. This is the **flat** zip (manifest at the root) the Web Store requires — not the same as the "Load unpacked" zip.
 - **Listing copy:** every field, ready to paste — [LISTING.md](LISTING.md)
 - **Screenshots:** three 1280×800 PNGs — [screenshots/](screenshots/)
 - **Privacy policy (live):** https://umqadir.github.io/streeteasy-enhanced-extension/privacy.html
@@ -15,7 +15,7 @@ Everything is staged. The only steps left are the ones that legally require you 
 
 2. **One-time developer registration**, if you've never published before: pay the **$5 USD** fee and accept the developer agreement. This is a one-time account fee, not per-extension.
 
-3. Click **+ New item** and **upload** `sleepeasy-chrome-store-v1.1.0.zip` (from `~/Downloads`).
+3. Click **+ New item** and **upload** `sleepeasy-chrome-store-v2.0.0.zip` (from `~/Downloads`).
 
 4. **Store listing tab** — paste from [LISTING.md](LISTING.md): name, summary, detailed description, category (Shopping), language. Upload the three screenshots from [screenshots/](screenshots/). Set homepage and support URLs.
 

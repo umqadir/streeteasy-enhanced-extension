@@ -28,8 +28,9 @@ SleepEasy adds two things StreetEasy doesn't show you, right on the listing page
 CRIME CONTEXT, INLINE ON EVERY LISTING
 A small module appears directly on StreetEasy NYC listing pages, designed to feel native rather than bolted on:
 • Murder, felony assault, and property-crime figures for the listing's neighborhood
-• Four ways to read them: an "ambient risk index" (incidents per 100,000 people actually present — residents plus daytime workers, so business-heavy areas aren't distorted), per 100,000 residents, per square mile, and raw counts
-• Each metric is ranked against all 197 NYC neighborhoods
+• Each metric sits on a lower-to-higher-crime spectrum showing its rank across all 197 NYC neighborhoods and how it compares to the citywide rate (e.g., "0.3× NYC")
+• Four ways to read the numbers: an "ambient risk index" (incidents per 100,000 people actually present — residents plus daytime workers, so business-heavy areas aren't distorted), per 100,000 residents, per square mile, and raw counts
+• Three time windows: the last 3, 12, or 24 months
 • Built from public NYPD complaint data via NYC Open Data
 
 There's no setup for this part. The data ships inside the extension and every lookup happens in your browser — nothing is sent to any server.

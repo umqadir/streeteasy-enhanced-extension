@@ -16,8 +16,9 @@ A small module injected directly into StreetEasy NYC listing pages — designed 
 
 - **Three metrics**: murder, felony assault, property crime (burglary + grand larceny + GLA of motor vehicle), from NYPD complaint data via NYC Open Data
 - **Four measures**: ambient risk index (incidents per 100k people *present* — residents plus daytime workers, so business districts aren't distorted), per 100k residents, per square mile, and raw incident counts
-- **Ranked**: each metric shows the neighborhood's rank and percentile across all 197 NYC NTAs
-- **Accurate location**: coordinates come from StreetEasy's own Google Maps link, mapped to the official NYC Neighborhood Tabulation Area by client-side point-in-polygon — no geocoding, no network call
+- **Ranked visually**: each metric is placed on a lower→higher-crime spectrum with its rank across all 197 NYC NTAs and a multiplier against the citywide rate (e.g., `0.3× NYC`)
+- **Three time windows**: last 3, 12, or 24 months
+- **Accurate location**: coordinates come from the page's structured data or StreetEasy's own Google Maps link, mapped to the official NYC Neighborhood Tabulation Area by client-side point-in-polygon — no geocoding, no network call
 
 ### Room square footage from listing photos
 
@@ -79,7 +80,7 @@ Full backend documentation, smoke tests, and troubleshooting: [selfhost/README.m
 └───────────────────────────────────────────────────────────────────┘
 ```
 
-- Crime data is compiled offline from NYC Open Data ([NYPD complaints](https://data.cityofnewyork.us/Public-Safety/NYPD-Complaint-Data-Historic/qgea-i56i), NTA boundaries, 2020 Census population, LODES workplace counts) by `scripts/compile-data.js` and `scripts/compile-nta-exposure.py`, and ships as static JSON inside the extension. Current data covers a 24-month window through September 30, 2025.
+- Crime data is compiled offline from NYC Open Data ([NYPD complaints](https://data.cityofnewyork.us/Public-Safety/NYPD-Complaint-Data-Historic/qgea-i56i), NTA boundaries, 2020 Census population, LODES workplace counts) by `scripts/compile-data.js` and `scripts/compile-nta-exposure.py`, and ships as static JSON inside the extension. Current data runs through March 31, 2026.
 - The sqft backend is a dependency-free Python HTTP server (`selfhost/backend/local_backend.py`) wrapping the v2 estimation pipeline (`selfhost/v2-pipeline/estimate_v2b.py`).
 
 ## Accuracy, honestly
@@ -100,7 +101,7 @@ Single-image estimates measure *visible* floor area, so they read low for shots 
 | `selfhost/` | The release bundle: extension, local backend, pipeline, install scripts |
 | `sqft-from-photos/` | CV research: pipelines, benchmark harness, eval dataset, licensing audit |
 | `launch/` | Landing page (deployed to GitHub Pages) |
-| `scripts/` | Crime-data compilation utilities (NYC Open Data → extension JSON) |
+| `scripts/` | Crime-data compilation (NYC Open Data → extension JSON), extension logic tests (`test-extension-logic.mjs`), and a Playwright e2e harness (`test-extension-e2e.py`) |
 | `docs/` | Research writeup, images, debug map for exploring the crime data |
 | `research/backend-archived/` | Earlier server-based architecture, kept for reference |
 
