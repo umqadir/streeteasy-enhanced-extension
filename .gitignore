@@ -45,6 +45,13 @@ sqft-from-photos/.playwright-cli/
 selfhost/backend-local/
 selfhost/backend/.runtime/
 
+# Python bytecode
+__pycache__/
+
+# Heavy research debug artifacts (summaries + result JSONs are tracked)
+sqft-from-photos/v2-pipeline/commercial_viable_paths/tmp_*_debug/
+sqft-from-photos/v2-pipeline/commercial_viable_paths/runs/*/debug/
+
 # Extension packaging
 extension.crx
 extension.pem

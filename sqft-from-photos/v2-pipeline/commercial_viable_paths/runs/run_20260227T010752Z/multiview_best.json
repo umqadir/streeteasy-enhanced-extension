@@ -1,0 +1,145 @@
+{
+  "sqft": 166.00041389677165,
+  "area_m2": 15.421943092268334,
+  "ci_90_lo": 162.69962625576147,
+  "ci_90_hi": 213.77752941213367,
+  "method": "moge-pose+moge-floor-visible",
+  "visible_area_m2": 15.421943092268334,
+  "rect_upper_m2": 15.421943092268334,
+  "n_images": 2,
+  "elapsed_s": 23.266847848892212,
+  "per_image": [
+    {
+      "image": "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/sample-collection/clean_set_export/photos/listing_001/photo_00.jpg",
+      "area_sqft": 213.77752941213367,
+      "area_m2": 19.86058236607663,
+      "floor_mask_frac": 0.3439935895506666,
+      "n_floor_points_3d": 91340,
+      "plane_residual_m": 0.006858901120722294,
+      "depth_median_m": 2.098712921142578
+    },
+    {
+      "image": "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/sample-collection/clean_set_export/photos/listing_001/photo_01.jpg",
+      "area_sqft": 162.69962625576147,
+      "area_m2": 15.11528988602406,
+      "floor_mask_frac": 0.30389442321004,
+      "n_floor_points_3d": 80747,
+      "plane_residual_m": 0.006676425226032734,
+      "depth_median_m": 1.9748194217681885
+    }
+  ],
+  "diagnostics": {
+    "debug_dir": "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/v2-pipeline/commercial_viable_paths/runs/run_20260227T010752Z/debug/multiview_moge_pose_orb",
+    "per_image_debug": [
+      {
+        "image": "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/sample-collection/clean_set_export/photos/listing_001/photo_00.jpg",
+        "area_sqft": 213.77752941213367,
+        "floor_mask_frac": 0.3439935895506666,
+        "n_floor_points_3d": 91340,
+        "plane_residual_m": 0.006858901120722294,
+        "depth_median_m": 2.098712921142578,
+        "alpha": 0.03956927532626767,
+        "artifacts": {
+          "original": "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/v2-pipeline/commercial_viable_paths/runs/run_20260227T010752Z/debug/multiview_moge_pose_orb/per_image/00_photo_00/original.jpg",
+          "floor_mask": "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/v2-pipeline/commercial_viable_paths/runs/run_20260227T010752Z/debug/multiview_moge_pose_orb/per_image/00_photo_00/floor_mask.png",
+          "floor_overlay": "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/v2-pipeline/commercial_viable_paths/runs/run_20260227T010752Z/debug/multiview_moge_pose_orb/per_image/00_photo_00/floor_overlay.jpg",
+          "depth_turbo": "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/v2-pipeline/commercial_viable_paths/runs/run_20260227T010752Z/debug/multiview_moge_pose_orb/per_image/00_photo_00/depth_turbo.png",
+          "floor_projection": "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/v2-pipeline/commercial_viable_paths/runs/run_20260227T010752Z/debug/multiview_moge_pose_orb/per_image/00_photo_00/floor_projection.png"
+        }
+      },
+      {
+        "image": "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/sample-collection/clean_set_export/photos/listing_001/photo_01.jpg",
+        "area_sqft": 162.69962625576147,
+        "floor_mask_frac": 0.30389442321004,
+        "n_floor_points_3d": 80747,
+        "plane_residual_m": 0.006676425226032734,
+        "depth_median_m": 1.9748194217681885,
+        "alpha": 0.038962550596089794,
+        "artifacts": {
+          "original": "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/v2-pipeline/commercial_viable_paths/runs/run_20260227T010752Z/debug/multiview_moge_pose_orb/per_image/01_photo_01/original.jpg",
+          "floor_mask": "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/v2-pipeline/commercial_viable_paths/runs/run_20260227T010752Z/debug/multiview_moge_pose_orb/per_image/01_photo_01/floor_mask.png",
+          "floor_overlay": "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/v2-pipeline/commercial_viable_paths/runs/run_20260227T010752Z/debug/multiview_moge_pose_orb/per_image/01_photo_01/floor_overlay.jpg",
+          "depth_turbo": "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/v2-pipeline/commercial_viable_paths/runs/run_20260227T010752Z/debug/multiview_moge_pose_orb/per_image/01_photo_01/depth_turbo.png",
+          "floor_projection": "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/v2-pipeline/commercial_viable_paths/runs/run_20260227T010752Z/debug/multiview_moge_pose_orb/per_image/01_photo_01/floor_projection.png"
+        }
+      }
+    ],
+    "multiview": {
+      "requested": "moge-pose",
+      "selected": "moge-pose",
+      "candidates": {
+        "moge-pose": {
+          "ok": true,
+          "method": "moge-pose+moge-floor-visible",
+          "pose_method": "moge-pose",
+          "pose_diagnostics": {
+            "matcher": "orb",
+            "allow_scale": false,
+            "n_raw_matches": 283,
+            "n_3d_pairs": 283,
+            "n_inliers": 9,
+            "rmse_m": 0.03717766333380856,
+            "scale": null,
+            "ransac_thresh_m": 0.12,
+            "ransac_iters": 2200,
+            "artifacts": {
+              "moge_pose_matches_inliers": "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/v2-pipeline/commercial_viable_paths/runs/run_20260227T010752Z/debug/multiview_moge_pose_orb/multiview/moge-pose/pose_est/moge_pose_matches_inliers.png"
+            }
+          },
+          "completion_mode": "visible-only",
+          "completion_geometry": {
+            "strategy": "none"
+          },
+          "visible_m2": 15.421943092268334,
+          "completed_m2": 15.421943092268334,
+          "rect_upper_m2": 15.421943092268334,
+          "n_points": 172087,
+          "n_floor_inliers": 82061,
+          "plane_residual_m": 0.02183120794467219,
+          "alpha": 0.039001498043291755,
+          "scale_m_per_unit": 1.0,
+          "scale_rel_std": 0.0,
+          "floor_score": 0.954122763382937,
+          "n_images_fused": 2,
+          "source_inliers": {
+            "0": 2258,
+            "1": 79803
+          },
+          "timings_s": {
+            "reconstruct": 0.1683189868927002,
+            "scale": 0.0,
+            "extract": 3.254986047744751,
+            "total": 3.423567056655884
+          },
+          "artifacts": {
+            "scene_floor_topdown": "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/v2-pipeline/commercial_viable_paths/runs/run_20260227T010752Z/debug/multiview_moge_pose_orb/multiview/moge-pose/scene_pose_moge_floor/scene_floor_topdown.png",
+            "scene_floor_components": "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/v2-pipeline/commercial_viable_paths/runs/run_20260227T010752Z/debug/multiview_moge_pose_orb/multiview/moge-pose/scene_pose_moge_floor/scene_floor_components.png",
+            "reproject_gallery": "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/v2-pipeline/commercial_viable_paths/runs/run_20260227T010752Z/debug/multiview_moge_pose_orb/multiview/moge-pose/scene_pose_moge_floor/reproject_gallery.png",
+            "reproject_views": [
+              "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/v2-pipeline/commercial_viable_paths/runs/run_20260227T010752Z/debug/multiview_moge_pose_orb/multiview/moge-pose/scene_pose_moge_floor/reproject_view_00.png",
+              "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/v2-pipeline/commercial_viable_paths/runs/run_20260227T010752Z/debug/multiview_moge_pose_orb/multiview/moge-pose/scene_pose_moge_floor/reproject_view_01.png"
+            ],
+            "reproject_cross_views": [
+              "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/v2-pipeline/commercial_viable_paths/runs/run_20260227T010752Z/debug/multiview_moge_pose_orb/multiview/moge-pose/scene_pose_moge_floor/reproject_cross_00.png",
+              "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/v2-pipeline/commercial_viable_paths/runs/run_20260227T010752Z/debug/multiview_moge_pose_orb/multiview/moge-pose/scene_pose_moge_floor/reproject_cross_01.png"
+            ],
+            "reproject_boundary_views": [
+              "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/v2-pipeline/commercial_viable_paths/runs/run_20260227T010752Z/debug/multiview_moge_pose_orb/multiview/moge-pose/scene_pose_moge_floor/reproject_boundary_00.png",
+              "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/v2-pipeline/commercial_viable_paths/runs/run_20260227T010752Z/debug/multiview_moge_pose_orb/multiview/moge-pose/scene_pose_moge_floor/reproject_boundary_01.png"
+            ],
+            "reproject_stitched_mosaic": "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/v2-pipeline/commercial_viable_paths/runs/run_20260227T010752Z/debug/multiview_moge_pose_orb/multiview/moge-pose/scene_pose_moge_floor/reproject_stitched_mosaic.png",
+            "reproject_stitched_floor_overlay": "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/v2-pipeline/commercial_viable_paths/runs/run_20260227T010752Z/debug/multiview_moge_pose_orb/multiview/moge-pose/scene_pose_moge_floor/reproject_stitched_floor_overlay.png",
+            "scene_all_points_ply": "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/v2-pipeline/commercial_viable_paths/runs/run_20260227T010752Z/debug/multiview_moge_pose_orb/multiview/moge-pose/scene_pose_moge_floor/scene_all_points.ply",
+            "scene_floor_points_ply": "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/v2-pipeline/commercial_viable_paths/runs/run_20260227T010752Z/debug/multiview_moge_pose_orb/multiview/moge-pose/scene_pose_moge_floor/scene_floor_points.ply",
+            "scene_camera_centers_ply": "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/v2-pipeline/commercial_viable_paths/runs/run_20260227T010752Z/debug/multiview_moge_pose_orb/multiview/moge-pose/scene_pose_moge_floor/scene_camera_centers.ply",
+            "scene_viewer_html": "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/v2-pipeline/commercial_viable_paths/runs/run_20260227T010752Z/debug/multiview_moge_pose_orb/multiview/moge-pose/scene_pose_moge_floor/scene_viewer.html",
+            "moge_pose_matches_inliers": "/Users/uzairqadir/Projects/data-projects/national/crimerisk-clone/streeteasy-enhanced-extension/sqft-from-photos/v2-pipeline/commercial_viable_paths/runs/run_20260227T010752Z/debug/multiview_moge_pose_orb/multiview/moge-pose/pose_est/moge_pose_matches_inliers.png"
+          },
+          "runtime_s": 3.423604965209961,
+          "peak_rss_mb": 3700.640625,
+          "peak_rss_delta_mb": 0.0
+        }
+      }
+    }
+  }
+}
