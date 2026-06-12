@@ -1,289 +1,225 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>SleepEasy — Crime context and room sizes inside StreetEasy</title>
-    <meta
-      name="description"
-      content="SleepEasy adds an inline crime module and AI room square-footage estimates to StreetEasy NYC listings. Free, open source, and private — everything runs on your machine."
-    />
+  <title>SleepEasy — What the listing doesn’t tell you</title>
+  <meta name="description"
+        content="A free Chrome extension that adds neighborhood crime context and AI room square-footage estimates to StreetEasy NYC listings. Open source, no tracking, everything on your device." />
 
-    <meta property="og:title" content="SleepEasy — Crime context and room sizes inside StreetEasy" />
-    <meta
-      property="og:description"
-      content="An inline crime snapshot and AI room-size estimates for StreetEasy NYC listings. Designed to feel native—no clutter, no tracking."
-    />
-    <meta property="og:type" content="website" />
+  <meta property="og:title" content="SleepEasy — What the listing doesn’t tell you" />
+  <meta property="og:description"
+        content="Neighborhood crime context and AI room sizes, inline on StreetEasy NYC listings. Free, open source, private." />
+  <meta property="og:type" content="website" />
 
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230b1220'/%3E%3Cpath d='M40.8 44.5c-10.7 0-19.3-8.7-19.3-19.3 0-6.5 3.2-12.2 8.1-15.8-1.2 2.4-1.9 5-1.9 7.9 0 9.9 8 18 18 18 2.9 0 5.6-.7 8-2-3.6 4.9-9.4 8.2-14.9 8.2Z' fill='%23e5e7eb'/%3E%3C/svg%3E" />
+  <link rel="icon" href="./assets/icon.png" />
+  <link rel="apple-touch-icon" href="./assets/icon.png" />
 
-    <link rel="stylesheet" href="./styles.css" />
-  </head>
-  <body>
-    <header class="header">
-      <div class="container header-inner">
-        <a class="brand" href="#top" aria-label="SleepEasy home">
-          <span class="brand-mark" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" role="img" focusable="false">
-              <path
-                d="M15.3 20.4c-5.1 0-9.3-4.2-9.3-9.3 0-3.1 1.5-5.9 3.9-7.6-.6 1.1-.9 2.4-.9 3.8 0 4.8 3.9 8.7 8.7 8.7 1.4 0 2.7-.3 3.9-1-1.7 2.4-4.5 3.9-6.3 3.9Z"
-                fill="currentColor"
-              />
-            </svg>
-          </span>
-          <span class="brand-name">SleepEasy</span>
-        </a>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
 
-        <nav class="nav" aria-label="Primary">
-          <a class="nav-link" href="#features">Features</a>
-          <a class="nav-link" href="#sqft">Room sizes</a>
-          <a class="nav-link" href="#privacy">Privacy</a>
-          <a class="nav-link" href="#faq">FAQ</a>
-          <a class="nav-link" href="https://github.com/umqadir/streeteasy-enhanced-extension" rel="noopener" target="_blank">GitHub</a>
-        </nav>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
 
-        <div class="header-cta">
-          <a class="btn btn-primary" data-store-link href="#install">Install</a>
-        </div>
+  <header class="masthead">
+    <a class="brand" href="#" aria-label="SleepEasy">
+      <img src="./assets/icon.png" alt="" width="22" height="22" />
+      <span>SleepEasy</span>
+    </a>
+    <nav aria-label="Primary">
+      <a href="#install">Install</a>
+      <a href="./privacy.html">Privacy</a>
+      <a href="https://github.com/umqadir/streeteasy-enhanced-extension" rel="noopener">GitHub</a>
+    </nav>
+  </header>
+
+  <main>
+
+    <section class="hero">
+      <p class="eyebrow reveal">A free Chrome extension for StreetEasy · NYC</p>
+      <h1 class="reveal d1">What the listing<br />doesn’t tell you.</h1>
+      <p class="lead reveal d2">
+        How much crime actually happens on that block, and how big the rooms
+        really are. SleepEasy adds both to every StreetEasy listing —
+        open&nbsp;source, no accounts, no tracking, computed entirely on your&nbsp;device.
+      </p>
+      <div class="actions reveal d3">
+        <a class="btn primary" href="https://github.com/umqadir/streeteasy-enhanced-extension/releases/latest">Download for Chrome</a>
+        <a class="btn" href="https://github.com/umqadir/streeteasy-enhanced-extension" rel="noopener">View source</a>
       </div>
-    </header>
+    </section>
 
-    <main id="top">
-      <section class="hero">
-        <div class="container hero-inner">
-          <div class="hero-copy">
-            <div class="eyebrow">StreetEasy · NYC only</div>
-            <h1>Crime context, built into the listing.</h1>
-            <p class="lead">
-              SleepEasy adds a small, inline crime module to StreetEasy NYC listings—designed to feel native, not bolted on. Plus: AI-estimated room square footage, computed from the listing's own photos on your machine.
-            </p>
-
-            <div class="hero-actions">
-              <a class="btn btn-primary" data-store-link href="#install">Install</a>
-              <a class="btn btn-secondary" href="#demo">See the UI</a>
-            </div>
-
-            <p class="fineprint">
-              Last 24 months • Uses NYPD complaint data mapped to NYC NTAs • Measures include ambient risk index, per-100k, per-area, and raw incidents
-            </p>
+    <!-- Faithful replica of the actual crime module, with live values -->
+    <figure class="module-figure reveal d4">
+      <div class="module" role="img" aria-label="SleepEasy crime module showing statistics for Upper East Side-Yorkville">
+        <div class="m-head">
+          <div>
+            <div class="m-label">Crime</div>
+            <div class="m-place">Upper East Side-Yorkville, Manhattan</div>
           </div>
-
-          <div class="hero-card" id="demo" aria-label="UI preview">
-            <div class="mock-listing">
-              <div class="mock-top">
-                <div class="mock-pill">1,050 ft²</div>
-                <div class="mock-dot" aria-hidden="true">·</div>
-                <div class="mock-pill">4 rooms</div>
-                <div class="mock-dot" aria-hidden="true">·</div>
-                <div class="mock-pill">2 beds</div>
-                <div class="mock-dot" aria-hidden="true">·</div>
-                <div class="mock-pill">1 bath</div>
-              </div>
-
-              <div class="mock-section">
-                <div class="mock-module">
-                  <div class="mock-module-top">
-                    <div class="mock-title">Crime</div>
-                    <div class="mock-controls" aria-hidden="true">
-                      <div class="mock-select">Ambient risk index</div>
-                      <div class="mock-info">i</div>
-                    </div>
-                  </div>
-
-                  <div class="mock-grid">
-                    <div class="mock-metric">
-                      <div class="mock-name">Felony Assault</div>
-                      <div class="mock-value">201.3 <span class="mock-unit">/ 100k</span></div>
-                      <div class="mock-rank">NYC risk rank 113/197</div>
-                    </div>
-                    <div class="mock-metric">
-                      <div class="mock-name">Property Crime</div>
-                      <div class="mock-value">1002.7 <span class="mock-unit">/ 100k</span></div>
-                      <div class="mock-rank">NYC risk rank 40/197</div>
-                    </div>
-                    <div class="mock-metric">
-                      <div class="mock-name">Murder</div>
-                      <div class="mock-value">0.0 <span class="mock-unit">/ 100k</span></div>
-                      <div class="mock-rank">NYC risk rank 139/197</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="mock-disclaimer">
-                Under NYC law, you can’t be charged a broker fee if you didn’t hire a broker.
-              </div>
-            </div>
-          </div>
+          <span class="m-info">i</span>
         </div>
-      </section>
+        <div class="m-scale"><span>lower crime</span><span>higher crime</span></div>
 
-      <section class="section" id="features">
-        <div class="container">
-          <h2>Designed for decisions</h2>
-          <p class="subhead">Clean UI, consistent window, and a metric selector that makes “risk” interpretable.</p>
-
-          <div class="grid">
-            <div class="card">
-              <h3>Inline, not intrusive</h3>
-              <p>Embedded directly on the listing page—no side panel, no extra clicks.</p>
-            </div>
-            <div class="card">
-              <h3>Ambient risk index</h3>
-              <p>A practical “people present” denominator (residents + daytime workers), not just residential population.</p>
-            </div>
-            <div class="card">
-              <h3>One consistent window</h3>
-              <p>Everything uses the last 24 months to avoid cherry-picking and weird time toggles.</p>
-            </div>
-            <div class="card">
-              <h3>Accurate location</h3>
-              <p>Uses StreetEasy’s own Google Maps coordinate link (no listing geocoding needed).</p>
-            </div>
-          </div>
+        <div class="m-metric">
+          <div class="m-line"><span class="m-name">Felony assault</span><span class="m-value"><strong>247.3</strong> <em>/ 100k present</em></span></div>
+          <div class="m-line m-sub"><span class="m-track"><span class="m-dot" style="left:9.7%"></span></span><span class="m-rank">#20 of 197 · 0.3× NYC rate</span></div>
         </div>
-      </section>
-
-      <section class="section" id="sqft">
-        <div class="container">
-          <h2>Room sizes from listing photos</h2>
-          <p class="subhead">Listings love to skip square footage. SleepEasy estimates it from the photos.</p>
-
-          <div class="grid">
-            <div class="card">
-              <h3>Group photos into rooms</h3>
-              <p>Use the side panel to assign listing photos to rooms, then analyze each room with one click.</p>
-            </div>
-            <div class="card">
-              <h3>Real computer vision</h3>
-              <p>Semantic segmentation finds the floor, a metric-depth model recovers 3D geometry, and the floor plane is measured in real-world units.</p>
-            </div>
-            <div class="card">
-              <h3>Runs on your machine</h3>
-              <p>Photos are analyzed by a local backend you install in one command. Nothing is sent to a third-party service.</p>
-            </div>
-            <div class="card">
-              <h3>Honest accuracy</h3>
-              <p>About 5% error with multi-photo mode (NVIDIA GPU), about 20% with single-image mode (any machine). Benchmarks are published in the repo.</p>
-            </div>
-          </div>
+        <div class="m-metric">
+          <div class="m-line"><span class="m-name">Property crime</span><span class="m-value"><strong>1,352</strong> <em>/ 100k present</em></span></div>
+          <div class="m-line m-sub"><span class="m-track"><span class="m-dot" style="left:26.5%"></span></span><span class="m-rank">#53 of 197 · 0.7× NYC rate</span></div>
         </div>
-      </section>
-
-      <section class="section" id="install">
-        <div class="container">
-          <h2>Install</h2>
-          <p class="subhead">Free and open source. Crime stats need no setup at all; room sizes add a one-command local backend.</p>
-
-          <div class="install-grid">
-            <div class="install-card" data-install-download>
-              <div class="install-title">1 · Get the extension</div>
-              <ol class="install-steps">
-                <li><a href="https://github.com/umqadir/streeteasy-enhanced-extension/releases/latest" rel="noopener" target="_blank">Download the latest release</a> and unzip it</li>
-                <li>Open <code>chrome://extensions</code></li>
-                <li>Enable <strong>Developer mode</strong></li>
-                <li>Click <strong>Load unpacked</strong> → select the <code>extension/</code> folder</li>
-                <li>Visit a StreetEasy listing page — crime stats just work</li>
-              </ol>
-            </div>
-
-            <div class="install-card" data-install-dev>
-              <div class="install-title">2 · Optional: room square footage</div>
-              <ol class="install-steps">
-                <li>Clone the <a href="https://github.com/umqadir/streeteasy-enhanced-extension" rel="noopener" target="_blank">repository</a></li>
-                <li><code>cd selfhost && bash scripts/install.sh</code></li>
-                <li><code>bash scripts/start_backend.sh</code></li>
-                <li>Analyze rooms from the SleepEasy side panel</li>
-              </ol>
-              <div class="install-footnote">Requires <code>uv</code> and ~4 GB for model weights. Full guide in the repo README.</div>
-            </div>
-          </div>
+        <div class="m-metric">
+          <div class="m-line"><span class="m-name">Murder</span><span class="m-value"><strong>1.6</strong> <em>/ 100k present</em></span></div>
+          <div class="m-line m-sub"><span class="m-track"><span class="m-dot" style="left:26.0%"></span></span><span class="m-rank">#52 of 197 · 0.2× NYC rate</span></div>
         </div>
-      </section>
 
-      <section class="section section-muted" id="privacy">
-        <div class="container">
-          <h2>Private by default</h2>
-          <div class="bullet-grid">
-            <div class="bullet">
-              <div class="bullet-title">No accounts</div>
-              <div class="bullet-body">Nothing to sign up for. It just works on StreetEasy listings.</div>
-            </div>
-            <div class="bullet">
-              <div class="bullet-title">No personal data</div>
-              <div class="bullet-body">No profile building. No selling. No “analytics dashboards.”</div>
-            </div>
-            <div class="bullet">
-              <div class="bullet-title">NYC only</div>
-              <div class="bullet-body">Focused scope: NYC listings on StreetEasy, mapped to NYC NTAs.</div>
-            </div>
-          </div>
-          <p class="privacy-note">
-            SleepEasy is an independent project and is not affiliated with StreetEasy, Zillow, the NYPD, or NYC government. Read the full <a href="./privacy.html" style="text-decoration:underline">privacy policy</a>.
-          </p>
+        <div class="m-controls">
+          <span class="m-select">Ambient risk index ▾</span>
+          <span class="m-select">Last 24 months ▾</span>
         </div>
-      </section>
-
-      <section class="section" id="faq">
-        <div class="container">
-          <h2>FAQ</h2>
-
-          <div class="faq">
-            <details class="faq-item">
-              <summary>What is the “Ambient risk index”?</summary>
-              <div class="faq-body">
-                Incidents per 100k average people present (a blend of residents and daytime workers), so business districts aren’t unfairly distorted by low residential population.
-              </div>
-            </details>
-
-            <details class="faq-item">
-              <summary>What is “Property Crime”?</summary>
-              <div class="faq-body">
-                A simple index of NYPD offense categories: burglary, grand larceny, and grand larceny of motor vehicle.
-              </div>
-            </details>
-
-            <details class="faq-item">
-              <summary>Why might a neighborhood show 0 murders?</summary>
-              <div class="faq-body">
-                Stats are assigned to the official NYC NTA that contains the listing. NTAs don’t perfectly match StreetEasy neighborhood labels, and incidents near borders can fall into adjacent NTAs.
-              </div>
-            </details>
-          </div>
-        </div>
-      </section>
-
-      <section class="section section-cta">
-        <div class="container">
-          <div class="cta-box">
-            <div>
-              <h2 class="cta-title">Install SleepEasy</h2>
-              <p class="cta-subhead">Get the inline crime module on StreetEasy NYC listings in under a minute.</p>
-            </div>
-            <div class="cta-actions">
-              <a class="btn btn-primary btn-lg" data-store-link href="#install">Install</a>
-            </div>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <footer class="footer">
-      <div class="container footer-inner">
-        <div class="footer-left">
-          <div class="footer-brand">SleepEasy</div>
-          <div class="footer-muted">© <span id="year"></span> SleepEasy</div>
-        </div>
-        <div class="footer-right">
-          <a class="footer-link" href="./privacy.html">Privacy</a>
-          <a class="footer-link" href="#faq">FAQ</a>
-          <a class="footer-link" href="https://github.com/umqadir/streeteasy-enhanced-extension" rel="noopener" target="_blank">GitHub</a>
-        </div>
+        <div class="m-foot">NYPD complaints via NYC Open Data · through Mar 31, 2026</div>
       </div>
-    </footer>
+      <figcaption>The module as it appears on a listing — real values for an Upper East Side address.</figcaption>
+    </figure>
 
-    <script src="./script.js"></script>
-  </body>
+    <section class="chapter" id="crime">
+      <p class="eyebrow">01 — Crime context</p>
+      <h2>Every neighborhood, ranked honestly.</h2>
+      <p>
+        SleepEasy reads the listing’s coordinates from the page, maps them to the
+        official NYC neighborhood by point-in-polygon, and shows murder, felony
+        assault, and property crime — each ranked against all 197 neighborhoods.
+        The headline measure is an <strong>ambient risk index</strong>: incidents per
+        100,000 people <em>actually present</em>, residents plus daytime workers, so
+        business districts aren’t unfairly inflated. Prefer per-resident rates,
+        density, or raw counts? One click.
+      </p>
+      <p>
+        All data ships inside the extension, compiled from NYPD complaint records on
+        NYC Open Data. Nothing is looked up over the network — your browsing never
+        leaves your browser.
+      </p>
+      <ul class="facts">
+        <li><strong>197</strong> neighborhoods ranked</li>
+        <li><strong>4</strong> ways to read the numbers</li>
+        <li><strong>0</strong> network requests</li>
+      </ul>
+    </section>
+
+    <section class="chapter" id="sqft">
+      <p class="eyebrow">02 — Room square footage</p>
+      <h2>Listings skip the square footage.<br />The photos can’t.</h2>
+      <p>
+        Group a listing’s photos into rooms and SleepEasy estimates each floor area
+        with a computer-vision pipeline running on a local backend you install with
+        one command: semantic segmentation isolates the floor, a metric-depth model
+        recovers 3D geometry, and the floor plane is measured in real-world units.
+        Photos are fetched and analyzed on your machine — never sent to anyone.
+      </p>
+
+      <div class="triptych">
+        <figure><img src="./assets/floor-segmentation-overlay.jpg" alt="Listing photo with the floor highlighted by semantic segmentation" loading="lazy" /><figcaption>Floor segmentation</figcaption></figure>
+        <figure><img src="./assets/depth-map.png" alt="Metric depth map of the room" loading="lazy" /><figcaption>Metric depth</figcaption></figure>
+        <figure><img src="./assets/floor-topdown-reconstruction.png" alt="Reconstructed top-down floor plan" loading="lazy" /><figcaption>Fused top-down floor</figcaption></figure>
+      </div>
+
+      <table class="accuracy">
+        <thead>
+          <tr><th>Pipeline</th><th>Hardware</th><th>Error</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Multi-photo (DUSt3R camera fusion)</td><td>NVIDIA GPU</td><td><strong>5.4%</strong></td></tr>
+          <tr><td>Single-image (visible floor only)</td><td>Any machine</td><td>19.9%</td></tr>
+        </tbody>
+      </table>
+      <p class="fineprint">
+        Benchmarked against one professionally photographed room with known
+        dimensions — treat estimates as a sanity check, not gospel. The full
+        23-configuration evaluation is in the
+        <a href="https://github.com/umqadir/streeteasy-enhanced-extension/blob/main/docs/RESEARCH.md">research write-up</a>.
+      </p>
+    </section>
+
+    <section class="chapter" id="install">
+      <p class="eyebrow">03 — Install</p>
+      <h2>Two minutes for crime stats.<br />A few more for room sizes.</h2>
+
+      <div class="path">
+        <h3>Crime stats <span>— no dependencies</span></h3>
+        <ol>
+          <li>Download <a href="https://github.com/umqadir/streeteasy-enhanced-extension/releases/latest/download/sleepeasy-extension.zip">sleepeasy-extension.zip</a> and unzip it</li>
+          <li>Open <code>chrome://extensions</code>, turn on <strong>Developer mode</strong></li>
+          <li>Click <strong>Load unpacked</strong> and pick the unzipped <code>extension</code> folder</li>
+          <li>Open any StreetEasy listing</li>
+        </ol>
+      </div>
+
+      <div class="path">
+        <h3>Room square footage <span>— adds the local AI backend</span></h3>
+        <pre><code>git clone https://github.com/umqadir/streeteasy-enhanced-extension.git
+cd streeteasy-enhanced-extension/selfhost
+bash scripts/install.sh        <span class="comment"># python env + ~4 GB of model weights</span>
+bash scripts/start_backend.sh  <span class="comment"># serves http://127.0.0.1:8787</span></code></pre>
+        <p class="fineprint">
+          Requires <a href="https://docs.astral.sh/uv/getting-started/installation/">uv</a>.
+          Works on any machine; an NVIDIA GPU unlocks the more accurate multi-photo mode.
+          Full docs in <a href="https://github.com/umqadir/streeteasy-enhanced-extension/blob/main/selfhost/README.md">selfhost/README</a>.
+        </p>
+      </div>
+    </section>
+
+    <section class="chapter" id="privacy">
+      <p class="eyebrow">04 — Privacy</p>
+      <h2>Nothing leaves your machine.</h2>
+      <p>
+        No accounts. No analytics. No tracking. Crime lookups run against data
+        bundled in the extension; photo analysis talks only to
+        <code>127.0.0.1</code>. The entire codebase is MIT-licensed and
+        <a href="https://github.com/umqadir/streeteasy-enhanced-extension">public</a>,
+        so you don’t have to take our word for it.
+        <a href="./privacy.html">Read the privacy policy</a>.
+      </p>
+    </section>
+
+    <section class="chapter" id="faq">
+      <p class="eyebrow">Questions</p>
+      <details>
+        <summary>Is this affiliated with StreetEasy?</summary>
+        <p>No. SleepEasy is an independent open-source project, not affiliated with or endorsed by StreetEasy, Zillow Group, the NYPD, or the City of New York.</p>
+      </details>
+      <details>
+        <summary>Where does the crime data come from?</summary>
+        <p>NYPD complaint records published on NYC Open Data, joined with official neighborhood boundaries, 2020 Census population, and Census LODES workplace counts. The compilation scripts are in the repository, so every number is reproducible.</p>
+      </details>
+      <details>
+        <summary>Do crime statistics really say whether I’ll be safe?</summary>
+        <p>No — they describe reported incidents in an area over a window of time. Past incidence does not predict future safety, and complaint data has well-known reporting biases. SleepEasy shows context, not verdicts.</p>
+      </details>
+      <details>
+        <summary>Why does the square-footage feature need a separate install?</summary>
+        <p>It runs real computer-vision models (segmentation, metric depth, multi-view fusion) that can’t ship inside a browser extension. Running them locally is also what keeps the photos on your machine.</p>
+      </details>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <p>
+      SleepEasy is an independent project, not affiliated with StreetEasy, Zillow Group,
+      the NYPD, or the City of New York. Crime statistics are informational; past
+      incidence does not predict future safety.
+    </p>
+    <p>
+      <a href="https://github.com/umqadir/streeteasy-enhanced-extension">GitHub</a> ·
+      <a href="https://github.com/umqadir/streeteasy-enhanced-extension/blob/main/docs/RESEARCH.md">Research</a> ·
+      <a href="./privacy.html">Privacy</a> ·
+      MIT License · © 2026
+    </p>
+  </footer>
+
+</body>
 </html>
