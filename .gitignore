@@ -74,3 +74,6 @@ website/
 
 # Chrome Web Store upload zips are attached to GitHub releases, not committed
 docs/chrome-web-store/*.zip
+
+# E2E test artifacts
+scripts/fixtures/out/

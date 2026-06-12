@@ -296,15 +296,15 @@
       const res = await window.SleepEasyBridge.analyzeRoom(currentListingId, roomId);
       if (!res?.success) {
         if (res?.errorCode === 'NO_CUDA_MULTI_UNAVAILABLE') {
-          await handleNoCudaEstimateFallback(roomId, res);
+          await handleNoCudaEstimateFallback(roomId);
           return;
         }
         console.error('[SleepEasy] Room estimate failed:', res?.error || 'Unknown error');
-        window.alert(`Analyze failed: ${res?.error || 'Unknown error'}`);
+        showToast(`Analyze failed: ${res?.error || 'Unknown error'}`);
       }
     } catch (err) {
       console.error('[SleepEasy] Room estimate failed:', err);
-      window.alert(`Analyze failed: ${err?.message || 'Unknown error'}`);
+      showToast(`Analyze failed: ${err?.message || 'Unknown error'}`);
       if (btn) {
         btn.disabled = false;
         btn.innerHTML = '<span class="sleepsy-analyze-label">Analyze</span> <span class="sleepsy-sqft-unknown">???</span> <span class="sleepsy-sqft-unit">sqft</span>';
@@ -317,46 +317,32 @@
     }
   }
 
-  async function handleNoCudaEstimateFallback(roomId, response) {
-    const guidance = 'Multi-photo DUSt3R needs CUDA in this self-hosted release. Switch to Single-image mode in the side panel settings.';
-    const promptRequired = response?.promptRequired !== false;
-
-    if (promptRequired) {
-      const accepted = window.confirm(
-        'CUDA was not detected for multi-photo DUSt3R.\n\nEnable Single-image mode now and retry this room?'
-      );
-      if (accepted) {
-        const cfg = await window.SleepEasyBridge.send({
-          type: 'SET_BACKEND_CONFIG',
-          config: {
-            analysisMode: 'single-image',
-            noCudaPromptHandled: true,
-          },
-        });
-        if (!cfg?.success) {
-          throw new Error(cfg?.error || 'Failed to switch analysis mode');
-        }
-        const retry = await window.SleepEasyBridge.analyzeRoom(currentListingId, roomId);
-        if (!retry?.success) {
-          if (retry?.errorCode === 'NO_CUDA_MULTI_UNAVAILABLE') {
-            window.alert(guidance);
-            return;
-          }
-          throw new Error(retry?.error || 'Retry failed');
-        }
-        return;
-      }
-
-      const markHandled = await window.SleepEasyBridge.send({
-        type: 'SET_BACKEND_CONFIG',
-        config: { noCudaPromptHandled: true },
-      });
-      if (!markHandled?.success) {
-        throw new Error(markHandled?.error || 'Failed to update backend settings');
-      }
+  /**
+   * Multi-photo DUSt3R needs CUDA. When the backend reports no CUDA, switch
+   * to single-image mode once (persisted), notify, and retry.
+   */
+  async function handleNoCudaEstimateFallback(roomId) {
+    const cfg = await window.SleepEasyBridge.send({
+      type: 'SET_BACKEND_CONFIG',
+      config: {
+        analysisMode: 'single-image',
+        noCudaPromptHandled: true,
+      },
+    });
+    if (!cfg?.success) {
+      throw new Error(cfg?.error || 'Failed to switch analysis mode');
     }
 
-    window.alert(guidance);
+    showToast('No CUDA GPU detected — switched to single-image mode. Estimates measure visible floor only and read low. Change in side panel settings.', { duration: 8000 });
+
+    const retry = await window.SleepEasyBridge.analyzeRoom(currentListingId, roomId);
+    if (!retry?.success) {
+      if (retry?.errorCode === 'NO_CUDA_MULTI_UNAVAILABLE') {
+        showToast('Multi-photo analysis needs a CUDA GPU. Single-image mode is available in side panel settings.');
+        return;
+      }
+      throw new Error(retry?.error || 'Retry failed');
+    }
   }
 
   // ── Room dropdown ──
@@ -616,7 +602,29 @@
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  // ── Toast (non-blocking notice; replaces window.alert) ──
+
+  let toastTimer = null;
+
+  function showToast(message, { duration = 5000 } = {}) {
+    document.querySelector('.sleepeasy-toast')?.remove();
+    if (toastTimer) clearTimeout(toastTimer);
+
+    const toast = document.createElement('div');
+    toast.className = 'sleepeasy-toast';
+    toast.setAttribute('role', 'status');
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    requestAnimationFrame(() => toast.classList.add('visible'));
+    toastTimer = setTimeout(() => {
+      toast.classList.remove('visible');
+      setTimeout(() => toast.remove(), 200);
+    }, duration);
   }
 
   function getNextDefaultRoomName(rooms) {

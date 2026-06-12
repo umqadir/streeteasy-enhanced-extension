@@ -1,30 +1,37 @@
 /**
- * SleepEasy Utility Functions
- * Shared utilities for coordinate extraction, geocoding, and data fetching
+ * SleepEasy crime-stats assembly.
  *
- * Note: This version uses static precompiled data for crime statistics
- * instead of a backend API. All data lookups happen client-side.
+ * Takes a coordinate, resolves the NTA, and builds the full payload the crime
+ * module renders: per-metric values for every measure, NYC ranks, and
+ * city-wide reference values. All lookups are client-side against the bundled
+ * data files (see geo-utils.js).
  */
 
-// Configuration
 const CONFIG = {
-  CACHE_TTL_MS: 1000 * 60 * 60 * 24, // 24 hours
   DEFAULT_TIME_WINDOW: '24m',
   DEFAULT_MEASURE: 'ambient'
 };
 
 const MEASURE_DEFS = {
-  count: { id: 'count', label: 'Raw', unit: 'incidents' },
-  per100k: { id: 'per100k', label: 'Per 100k', unit: '/ 100k' },
-  perSqMi: { id: 'perSqMi', label: 'Per sq mi', unit: '/ sq mi' },
-  ambient: { id: 'ambient', label: 'Ambient', unit: '/ 100k' }
+  ambient: { id: 'ambient', label: 'Ambient risk index', unit: '/ 100k present' },
+  per100k: { id: 'per100k', label: 'Per 100k residents', unit: '/ 100k residents' },
+  perSqMi: { id: 'perSqMi', label: 'Per square mile', unit: '/ sq mi' },
+  count: { id: 'count', label: 'Raw incidents', unit: 'incidents' }
 };
 
+const TIME_WINDOW_DEFS = {
+  '3m': { id: '3m', label: 'Last 3 months' },
+  '12m': { id: '12m', label: 'Last 12 months' },
+  '24m': { id: '24m', label: 'Last 24 months' }
+};
+
+/**
+ * Average people present in an NTA, approximated with a simple day/night
+ * split: residents counted 16h/day, workers 8h/day.
+ */
 function computeAmbientPopulation(population, jobsWac) {
   const pop = Number(population) || 0;
   const jobs = Number(jobsWac) || 0;
-  // Approximate average people present (person-hours) using a simple day/night split.
-  // 16h residents + 8h workers.
   return ((pop * 16) + (jobs * 8)) / 24;
 }
 
@@ -33,6 +40,7 @@ function computeMeasureValue({ measure, entry, exposure, areaSqMi }) {
   const count = Number(entry.count);
 
   if (measure === 'count') return Number.isFinite(count) ? count : null;
+
   if (measure === 'per100k') {
     const rate = Number(entry.rate);
     return Number.isFinite(rate) ? rate : null;
@@ -54,63 +62,88 @@ function computeMeasureValue({ measure, entry, exposure, areaSqMi }) {
 }
 
 /**
- * Fetch crime statistics using static precompiled data (no backend required)
- * @param {number} lat - Latitude
- * @param {number} lon - Longitude
- * @param {string} window - Time window (e.g., '12m', '24m', 'ytd')
- * @returns {Promise<Object|null>} Crime statistics data
+ * City-wide reference value per metric and measure, computed from totals
+ * (population-weighted), not as an average of NTA rates. Used for the
+ * "x.x× NYC" comparison. Returns null for 'count' (a citywide incident
+ * count is not a comparable reference for one neighborhood).
  */
-async function fetchCrimeStats(lat, lon, window = CONFIG.DEFAULT_TIME_WINDOW) {
-  try {
-    // Find NTA for this location using client-side point-in-polygon
-    const nta = await ntaLookup.findNTA(lat, lon);
+function computeCityValue({ measure, metricKey, windowStats, boundaries, exposures }) {
+  if (measure === 'count') return null;
 
+  let totalCount = 0;
+  let totalPop = 0;
+  let totalAmbient = 0;
+  let totalArea = 0;
+
+  for (const [id, ntaMetrics] of Object.entries(windowStats)) {
+    const entry = ntaMetrics?.[metricKey];
+    if (!entry) continue;
+    const count = Number(entry.count);
+    if (!Number.isFinite(count)) continue;
+    totalCount += count;
+
+    const exposure = exposures?.[id];
+    if (exposure) {
+      totalPop += Number(exposure.population) || 0;
+      totalAmbient += computeAmbientPopulation(exposure.population, exposure.jobsWac);
+    }
+    const area = Number(boundaries?.[id]?.areaSqMi);
+    if (Number.isFinite(area) && area > 0) totalArea += area;
+  }
+
+  if (measure === 'per100k') {
+    return totalPop > 0 ? (totalCount / totalPop) * 100000 : null;
+  }
+  if (measure === 'ambient') {
+    return totalAmbient > 0 ? (totalCount / totalAmbient) * 100000 : null;
+  }
+  if (measure === 'perSqMi') {
+    return totalArea > 0 ? totalCount / totalArea : null;
+  }
+  return null;
+}
+
+/**
+ * Fetch crime statistics for a coordinate from the bundled data.
+ * @returns {Promise<Object|null>} payload for the crime module, or null
+ */
+async function fetchCrimeStats(lat, lon, timeWindow = CONFIG.DEFAULT_TIME_WINDOW) {
+  try {
+    const nta = await ntaLookup.findNTA(lat, lon);
     if (!nta) {
       SleepEasyLog.warn('[SleepEasy] Location not found in NYC boundaries');
       return null;
     }
 
-    // Get crime statistics from precompiled data
-    const stats = await crimeStatsManager.getStats(nta.id, window);
-
+    const stats = await crimeStatsManager.getStats(nta.id, timeWindow);
     if (!stats) {
       SleepEasyLog.warn('[SleepEasy] No crime statistics for NTA:', nta.id);
       return null;
     }
 
-    const dataGenerated = crimeStatsManager?.data?.generated || null;
+    // Exposure powers the ambient measure; if it fails to load those values
+    // render as "—" but everything else still works.
+    await ntaExposureManager.load();
 
-    // Get comparisons with borough-specific data
-    const comparisons = await crimeStatsManager.getComparisons(window, nta.borough);
-
-    const exposureOk = await (ntaExposureManager?.load?.() ?? Promise.resolve(false));
-    if (!exposureOk) {
-      SleepEasyLog.warn('[SleepEasy] Exposure data unavailable; per-area/ambient measures will be unavailable');
-    }
-
-    const enrichedMetrics = enrichMetricsWithMeasures({
+    const { metrics, city } = enrichMetricsWithMeasures({
       ntaId: nta.id,
-      timeWindow: window,
+      timeWindow,
       metrics: stats.metrics
     });
 
-    // Build response matching the original API format
     return {
-      geography: {
-        ntaId: nta.id,
-        ntaName: nta.name,
-        borough: nta.borough
-      },
-      metrics: enrichedMetrics,
-      timeWindow: window,
-      dataGenerated,
+      geography: { ntaId: nta.id, ntaName: nta.name, borough: nta.borough },
+      metrics,
+      city,
+      timeWindow,
+      dataGenerated: crimeStatsManager?.data?.generated || null,
       dataThrough: stats.dataThrough,
       computedAt: new Date().toISOString(),
-      comparisons: comparisons || { nycAverage: {}, boroughAverage: {} },
+      comparisons: (await crimeStatsManager.getComparisons(timeWindow, nta.borough)) || { nycAverage: {} },
       methodologyVersion: stats.methodologyVersion,
-      measureDefs: MEASURE_DEFS
+      measureDefs: MEASURE_DEFS,
+      timeWindowDefs: TIME_WINDOW_DEFS
     };
-
   } catch (e) {
     SleepEasyLog.error('[SleepEasy] Error fetching crime stats:', e);
     return null;
@@ -118,36 +151,42 @@ async function fetchCrimeStats(lat, lon, window = CONFIG.DEFAULT_TIME_WINDOW) {
 }
 
 /**
- * Attach computed measures (count/rate/density/ambient) and NYC risk ranks.
- * NYC rank is ascending: 1 = lowest risk (lowest value).
- * @param {{ntaId: string, timeWindow: string, metrics: Object}} params
- * @returns {Object}
+ * Attach computed measures (count/per100k/perSqMi/ambient) with NYC risk
+ * ranks to each metric, plus city-wide reference values.
+ *
+ * NYC rank is ascending: 1 = lowest value = lowest risk. Ties share a rank
+ * (competition ranking).
+ *
+ * @returns {{metrics: Object, city: Object}}
  */
 function enrichMetricsWithMeasures({ ntaId, timeWindow, metrics }) {
   const windowStats = crimeStatsManager?.data?.stats?.[timeWindow];
   const boundaries = ntaLookup?.boundaries;
   const exposures = ntaExposureManager?.exposures;
-  if (!windowStats || !boundaries || !metrics) return metrics;
+  if (!windowStats || !boundaries || !metrics) return { metrics, city: {} };
 
   const result = {};
+  const city = {};
 
   for (const [metricKey, metric] of Object.entries(metrics)) {
     const ranksByMeasure = {};
+    city[metricKey] = {};
 
     for (const measure of Object.keys(MEASURE_DEFS)) {
       const items = [];
       for (const [id, m] of Object.entries(windowStats)) {
         const entry = m?.[metricKey];
         if (!entry) continue;
-        const areaSqMi = boundaries[id]?.areaSqMi;
-        const exposure = exposures?.[id] || null;
-        const value = computeMeasureValue({ measure, entry, exposure, areaSqMi });
+        const value = computeMeasureValue({
+          measure,
+          entry,
+          exposure: exposures?.[id] || null,
+          areaSqMi: boundaries[id]?.areaSqMi
+        });
         if (!Number.isFinite(value)) continue;
         items.push({ id, value });
       }
 
-      // NYC rank: 1 = lowest risk (lowest value).
-      // Use a tie-aware competition rank so identical values share the same rank.
       items.sort((a, b) => (a.value - b.value) || a.id.localeCompare(b.id));
 
       const total = items.length;
@@ -163,11 +202,14 @@ function enrichMetricsWithMeasures({ ntaId, timeWindow, metrics }) {
         ranks[items[i].id] = currentRank;
       }
 
-      const rank = ranks[ntaId] ?? null;
       ranksByMeasure[measure] = {
-        riskRank: rank,
+        riskRank: ranks[ntaId] ?? null,
         total: total || null
       };
+
+      city[metricKey][measure] = computeCityValue({
+        measure, metricKey, windowStats, boundaries, exposures
+      });
     }
 
     const areaSqMi = boundaries[ntaId]?.areaSqMi;
@@ -183,65 +225,35 @@ function enrichMetricsWithMeasures({ ntaId, timeWindow, metrics }) {
       };
     }
 
-    result[metricKey] = {
-      ...metric,
-      measures
-    };
+    result[metricKey] = { ...metric, measures };
   }
 
-  return result;
+  return { metrics: result, city };
 }
 
-/**
- * Format a number with commas
- * @param {number} num - Number to format
- * @returns {string} Formatted number
- */
+// ── Formatting helpers ──
+
 function formatNumber(num) {
   if (num === null || num === undefined) return '—';
   return Number(num).toLocaleString('en-US');
 }
 
-/**
- * Format a rate per 100k
- * @param {number} rate - Rate to format
- * @returns {string} Formatted rate
- */
 function formatRate(rate) {
   if (rate === null || rate === undefined) return '—';
-  return Number(rate).toFixed(1);
+  const n = Number(rate);
+  if (n >= 1000) return Math.round(n).toLocaleString('en-US');
+  return n.toFixed(1);
 }
 
 /**
- * Format a percentile for display
- * @param {number} percentile - Percentile (0-100)
- * @returns {string} Display text
+ * "0.4×" / "1.2×" / "12×" multiplier vs the city reference value.
+ * Returns null when either side is missing or the reference is zero.
  */
-function formatPercentile(percentile) {
-  const rounded = Math.round(percentile);
-  return `Safer than ${rounded}% of NYC neighborhoods`;
-}
-
-/**
- * Get color class based on percentile
- * @param {number} percentile - Percentile (0-100)
- * @returns {string} CSS class name
- */
-function getPercentileColorClass(percentile) {
-  if (percentile >= 75) return 'percentile-high'; // Green - Very safe
-  if (percentile >= 50) return 'percentile-medium'; // Yellow - Average
-  if (percentile >= 25) return 'percentile-low'; // Orange - Below average
-  return 'percentile-very-low'; // Red - Low safety
-}
-
-// Export for use in other scripts
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
-    CONFIG,
-    fetchCrimeStats,
-    formatNumber,
-    formatRate,
-    formatPercentile,
-    getPercentileColorClass
-  };
+function formatCityMultiple(value, cityValue) {
+  const v = Number(value);
+  const c = Number(cityValue);
+  if (!Number.isFinite(v) || !Number.isFinite(c) || c <= 0) return null;
+  const ratio = v / c;
+  if (ratio >= 10) return `${Math.round(ratio)}×`;
+  return `${ratio.toFixed(1)}×`;
 }

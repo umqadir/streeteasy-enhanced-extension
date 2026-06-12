@@ -1,10 +1,17 @@
 /**
- * SleepEasy Geo Utilities
- * Client-side geographic utilities for NTA lookup
+ * SleepEasy geo utilities.
+ *
+ * Client-side NTA (Neighborhood Tabulation Area) lookup plus loaders for the
+ * three data files that ship with the extension:
+ *   data/nta-boundaries.json  - simplified NTA polygons (197 residential NTAs)
+ *   data/crime-stats.json     - precompiled NYPD complaint stats per NTA/window
+ *   data/nta-exposure.json    - 2020 census population + LODES jobs per NTA
+ *
+ * No network requests: everything is bundled and read via chrome.runtime.getURL.
  */
 
-// Minimal logger (disabled by default). To debug, set `globalThis.__SLEEPEASY_DEBUG__ = true`
-// in the "Content scripts" execution context and reload the page.
+// Minimal logger (silent by default). To debug, set
+// `globalThis.__SLEEPEASY_DEBUG__ = true` in the content-script context and reload.
 if (!globalThis.SleepEasyLog) {
   globalThis.__SLEEPEASY_DEBUG__ = globalThis.__SLEEPEASY_DEBUG__ === true;
   globalThis.SleepEasyLog = {
@@ -14,10 +21,7 @@ if (!globalThis.SleepEasyLog) {
   };
 }
 
-// Back-compat for older builds.
-globalThis.StreetSafeLog = globalThis.SleepEasyLog;
-
-const EARTH_RADIUS_M = 6378137; // WGS84 spheroid major axis (good enough for local area approx)
+const EARTH_RADIUS_M = 6378137; // WGS84 major axis; fine for local-area approximations
 const SQ_METERS_PER_SQ_MILE = 2589988.110336;
 
 function toRad(deg) {
@@ -82,16 +86,33 @@ function geometryAreaSqMeters(geometry) {
   return 0;
 }
 
+function geometryBBox(geometry) {
+  let minLon = Infinity, minLat = Infinity, maxLon = -Infinity, maxLat = -Infinity;
+  const scanRing = (ring) => {
+    for (const [lon, lat] of ring) {
+      if (lon < minLon) minLon = lon;
+      if (lon > maxLon) maxLon = lon;
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+    }
+  };
+  if (geometry.type === 'Polygon') {
+    for (const ring of geometry.coordinates) scanRing(ring);
+  } else if (geometry.type === 'MultiPolygon') {
+    for (const poly of geometry.coordinates) for (const ring of poly) scanRing(ring);
+  }
+  return { minLon, minLat, maxLon, maxLat };
+}
+
 function roundTo(num, decimals) {
   const factor = 10 ** decimals;
   return Math.round(num * factor) / factor;
 }
 
 /**
- * Simple point-in-polygon test using ray casting algorithm
- * @param {number[]} point - [lon, lat] coordinates
- * @param {number[][]} polygon - Array of [lon, lat] coordinate pairs forming the polygon ring
- * @returns {boolean} True if point is inside polygon
+ * Ray-casting point-in-polygon test.
+ * @param {number[]} point - [lon, lat]
+ * @param {number[][]} polygon - ring of [lon, lat] pairs
  */
 function pointInPolygon(point, polygon) {
   const [x, y] = point;
@@ -110,43 +131,27 @@ function pointInPolygon(point, polygon) {
 }
 
 /**
- * Check if a point is inside a GeoJSON geometry (Polygon or MultiPolygon)
- * @param {number} lon - Longitude
- * @param {number} lat - Latitude
- * @param {Object} geometry - GeoJSON geometry object
- * @returns {boolean} True if point is inside geometry
+ * Point-in-geometry test for GeoJSON Polygon / MultiPolygon (holes respected).
  */
 function pointInGeometry(lon, lat, geometry) {
   const point = [lon, lat];
 
   if (geometry.type === 'Polygon') {
-    // Check if point is inside outer ring
-    if (!pointInPolygon(point, geometry.coordinates[0])) {
-      return false;
-    }
-    // Check if point is inside any holes
+    if (!pointInPolygon(point, geometry.coordinates[0])) return false;
     for (let i = 1; i < geometry.coordinates.length; i++) {
-      if (pointInPolygon(point, geometry.coordinates[i])) {
-        return false; // Point is in a hole
-      }
+      if (pointInPolygon(point, geometry.coordinates[i])) return false; // in a hole
     }
     return true;
-  } else if (geometry.type === 'MultiPolygon') {
-    // Check each polygon in the MultiPolygon
+  }
+
+  if (geometry.type === 'MultiPolygon') {
     for (const polygon of geometry.coordinates) {
-      // Check outer ring
       if (pointInPolygon(point, polygon[0])) {
-        // Check if point is inside any holes
         let inHole = false;
         for (let i = 1; i < polygon.length; i++) {
-          if (pointInPolygon(point, polygon[i])) {
-            inHole = true;
-            break;
-          }
+          if (pointInPolygon(point, polygon[i])) { inHole = true; break; }
         }
-        if (!inHole) {
-          return true;
-        }
+        if (!inHole) return true;
       }
     }
   }
@@ -155,171 +160,113 @@ function pointInGeometry(lon, lat, geometry) {
 }
 
 /**
- * NTA (Neighborhood Tabulation Area) Lookup Manager
- * Handles loading NTA boundaries and performing point-in-polygon lookups
+ * Shared single-flight loader: load() resolves once, concurrent callers await
+ * the same promise.
+ */
+class JsonResourceLoader {
+  constructor(path) {
+    this._path = path;
+    this._promise = null;
+  }
+  load() {
+    if (!this._promise) {
+      this._promise = (async () => {
+        const url = chrome.runtime.getURL(this._path);
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Failed to load ${this._path}: ${response.status}`);
+        }
+        return response.json();
+      })().catch(err => {
+        this._promise = null; // allow retry after a failed load
+        throw err;
+      });
+    }
+    return this._promise;
+  }
+}
+
+/**
+ * NTA boundary lookup with precomputed bboxes and areas.
  */
 class NTALookup {
   constructor() {
     this.boundaries = null;
-    this.loaded = false;
-    this.loading = false;
+    this._loader = new JsonResourceLoader('data/nta-boundaries.json');
   }
 
-  /**
-   * Load NTA boundaries data
-   * @returns {Promise<boolean>} True if loaded successfully
-   */
   async load() {
-    if (this.loaded) return true;
-    if (this.loading) {
-      // Wait for ongoing load to complete
-      while (this.loading) {
-        await new Promise(resolve => setTimeout(resolve, 50));
-      }
-      return this.loaded;
-    }
-
-    this.loading = true;
-
+    if (this.boundaries) return true;
     try {
-      // Load from extension's data directory
-      const url = chrome.runtime.getURL('data/nta-boundaries.json');
-      const response = await fetch(url);
+      const data = await this._loader.load();
+      const boundaries = data.boundaries;
 
-      if (!response.ok) {
-        throw new Error(`Failed to load NTA boundaries: ${response.status}`);
-      }
-
-      const data = await response.json();
-      this.boundaries = data.boundaries;
-
-      // Precompute approximate land area (sq mi) for density-style measures.
-      for (const nta of Object.values(this.boundaries)) {
+      for (const nta of Object.values(boundaries)) {
+        nta.bbox = geometryBBox(nta.geometry);
         try {
-          const areaM2 = geometryAreaSqMeters(nta.geometry);
-          nta.areaSqMi = roundTo(areaM2 / SQ_METERS_PER_SQ_MILE, 4);
+          nta.areaSqMi = roundTo(geometryAreaSqMeters(nta.geometry) / SQ_METERS_PER_SQ_MILE, 4);
         } catch {
           nta.areaSqMi = null;
         }
       }
 
-      this.loaded = true;
-      SleepEasyLog.debug(`[SleepEasy] Loaded ${Object.keys(this.boundaries).length} NTA boundaries`);
+      this.boundaries = boundaries;
+      SleepEasyLog.debug(`[SleepEasy] Loaded ${Object.keys(boundaries).length} NTA boundaries`);
       return true;
     } catch (error) {
       SleepEasyLog.error('[SleepEasy] Error loading NTA boundaries:', error);
       return false;
-    } finally {
-      this.loading = false;
     }
   }
 
   /**
-   * Find the NTA containing a given point
-   * @param {number} lat - Latitude
-   * @param {number} lon - Longitude
-   * @returns {Promise<Object|null>} NTA info {id, name, borough} or null if not found
+   * Find the NTA containing a point.
+   * @returns {Promise<{id, name, borough}|null>}
    */
   async findNTA(lat, lon) {
-    if (!this.loaded) {
-      const success = await this.load();
-      if (!success) return null;
-    }
+    if (!(await this.load())) return null;
 
-    // Search through all NTAs
-    for (const [ntaId, nta] of Object.entries(this.boundaries)) {
+    for (const nta of Object.values(this.boundaries)) {
+      const b = nta.bbox;
+      if (b && (lon < b.minLon || lon > b.maxLon || lat < b.minLat || lat > b.maxLat)) continue;
       if (pointInGeometry(lon, lat, nta.geometry)) {
-        return {
-          id: nta.id,
-          name: nta.name,
-          borough: nta.borough
-        };
+        return { id: nta.id, name: nta.name, borough: nta.borough };
       }
     }
 
     return null;
   }
 
-  /**
-   * Get NTA info by ID
-   * @param {string} ntaId - NTA identifier
-   * @returns {Promise<Object|null>} NTA info or null
-   */
   async getNTA(ntaId) {
-    if (!this.loaded) {
-      const success = await this.load();
-      if (!success) return null;
-    }
-
+    if (!(await this.load())) return null;
     const nta = this.boundaries[ntaId];
-    if (nta) {
-      return {
-        id: nta.id,
-        name: nta.name,
-        borough: nta.borough
-      };
-    }
-    return null;
+    return nta ? { id: nta.id, name: nta.name, borough: nta.borough } : null;
   }
 }
 
 /**
- * Crime Statistics Manager
- * Handles loading and querying precomputed crime statistics
+ * Precompiled crime statistics (per NTA, per time window).
  */
 class CrimeStatsManager {
   constructor() {
     this.data = null;
-    this.loaded = false;
-    this.loading = false;
+    this._loader = new JsonResourceLoader('data/crime-stats.json');
   }
 
-  /**
-   * Load crime statistics data
-   * @returns {Promise<boolean>} True if loaded successfully
-   */
   async load() {
-    if (this.loaded) return true;
-    if (this.loading) {
-      while (this.loading) {
-        await new Promise(resolve => setTimeout(resolve, 50));
-      }
-      return this.loaded;
-    }
-
-    this.loading = true;
-
+    if (this.data) return true;
     try {
-      const url = chrome.runtime.getURL('data/crime-stats.json');
-      const response = await fetch(url);
-
-      if (!response.ok) {
-        throw new Error(`Failed to load crime stats: ${response.status}`);
-      }
-
-      this.data = await response.json();
-      this.loaded = true;
+      this.data = await this._loader.load();
       SleepEasyLog.debug('[SleepEasy] Crime statistics loaded');
       return true;
     } catch (error) {
       SleepEasyLog.error('[SleepEasy] Error loading crime stats:', error);
       return false;
-    } finally {
-      this.loading = false;
     }
   }
 
-  /**
-   * Get crime statistics for an NTA
-   * @param {string} ntaId - NTA identifier
-   * @param {string} timeWindow - Time window ('12m', '24m', 'ytd')
-   * @returns {Promise<Object|null>} Crime stats or null
-   */
   async getStats(ntaId, timeWindow = '24m') {
-    if (!this.loaded) {
-      const success = await this.load();
-      if (!success) return null;
-    }
+    if (!(await this.load())) return null;
 
     const windowStats = this.data.stats[timeWindow];
     if (!windowStats) return null;
@@ -336,109 +283,65 @@ class CrimeStatsManager {
     };
   }
 
-  /**
-   * Get comparisons (NYC and borough averages)
-   * @param {string} timeWindow - Time window
-   * @param {string} borough - Borough name (optional, for borough-specific averages)
-   * @returns {Promise<Object|null>}
-   */
   async getComparisons(timeWindow = '24m', borough = null) {
-    if (!this.loaded) {
-      const success = await this.load();
-      if (!success) return null;
-    }
+    if (!(await this.load())) return null;
 
     const comparisons = this.data.comparisons[timeWindow];
     if (!comparisons) return null;
 
-    const result = {
-      nycAverage: comparisons.nycAverage
-    };
-
+    const result = { nycAverage: comparisons.nycAverage };
     if (borough && comparisons.boroughAverage && comparisons.boroughAverage[borough]) {
       result.boroughAverage = comparisons.boroughAverage[borough];
     }
-
     return result;
   }
 
-  /**
-   * Get data freshness date
-   * @returns {Promise<string|null>}
-   */
   async getDataDate() {
-    if (!this.loaded) {
-      const success = await this.load();
-      if (!success) return null;
-    }
+    if (!(await this.load())) return null;
     return this.data.dataThrough;
   }
 }
 
 /**
- * NTA Exposure Manager
- * Loads resident population (2020) + LODES jobs (WAC) for ambient denominators.
+ * Resident population (2020 census) + LODES jobs per NTA, used as the
+ * denominator for the ambient risk measure.
  */
 class NTAExposureManager {
   constructor() {
     this.exposures = null;
-    this.loaded = false;
-    this.loading = false;
     this.meta = null;
+    this._loader = new JsonResourceLoader('data/nta-exposure.json');
   }
 
   async load() {
-    if (this.loaded) return true;
-    if (this.loading) {
-      while (this.loading) {
-        await new Promise(resolve => setTimeout(resolve, 50));
-      }
-      return this.loaded;
-    }
-
-    this.loading = true;
-
+    if (this.exposures) return true;
     try {
-      const url = chrome.runtime.getURL('data/nta-exposure.json');
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`Failed to load NTA exposure: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const data = await this._loader.load();
       this.exposures = data.exposures || null;
       this.meta = {
         generatedAt: data.generatedAt || null,
         populationYear: data.populationYear || null,
         lodesYear: data.lodesYear || null
       };
-
-      this.loaded = true;
       SleepEasyLog.debug(`[SleepEasy] NTA exposure loaded (${this.exposures ? Object.keys(this.exposures).length : 0} NTAs)`);
       return true;
     } catch (error) {
       SleepEasyLog.error('[SleepEasy] Error loading NTA exposure:', error);
       return false;
-    } finally {
-      this.loading = false;
     }
   }
 
   async getExposure(ntaId) {
-    if (!this.loaded) {
-      const success = await this.load();
-      if (!success) return null;
-    }
+    if (!(await this.load())) return null;
     return this.exposures?.[ntaId] || null;
   }
 }
 
-// Create singleton instances
+// Singletons shared by the content scripts
 const ntaLookup = new NTALookup();
 const crimeStatsManager = new CrimeStatsManager();
 const ntaExposureManager = new NTAExposureManager();
 
-// Export for use in other scripts
 if (typeof window !== 'undefined') {
   window.NTALookup = NTALookup;
   window.CrimeStatsManager = CrimeStatsManager;

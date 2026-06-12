@@ -31,6 +31,7 @@
   // ── DOM refs ──
 
   const listingsEl = document.getElementById('listings');
+  const noticeEl = document.getElementById('panel-notice');
   const settingsToggle = document.getElementById('settings-toggle');
   const settingsPanel = document.getElementById('settings-panel');
   const backendUrlEl = document.getElementById('backend-url');
@@ -490,6 +491,16 @@
     });
   }
 
+  let noticeTimer = null;
+
+  function showNotice(message, { duration = 7000 } = {}) {
+    if (!noticeEl) return;
+    if (noticeTimer) clearTimeout(noticeTimer);
+    noticeEl.textContent = message;
+    noticeEl.classList.remove('hidden');
+    noticeTimer = setTimeout(() => noticeEl.classList.add('hidden'), duration);
+  }
+
   async function handleAnalyze(listingId, roomId) {
     if (!listingId || !roomId) return;
     analyzingRoomIds.add(roomId);
@@ -498,49 +509,40 @@
       const res = await chrome.runtime.sendMessage({ type: 'ANALYZE_ROOM', listingId, roomId });
       if (!res?.success) {
         if (res?.errorCode === 'NO_CUDA_MULTI_UNAVAILABLE') {
-          await handleNoCudaAnalyzeFallback(listingId, roomId, res);
+          await handleNoCudaAnalyzeFallback(listingId, roomId);
           return;
         }
         console.error('[SleepEasy SidePanel] Analyze failed:', res?.error || 'Unknown error');
-        window.alert(`Analyze failed: ${res?.error || 'Unknown error'}`);
+        showNotice(`Analyze failed: ${res?.error || 'Unknown error'}`);
       }
     } catch (err) {
       console.error('[SleepEasy SidePanel] Analyze failed:', err);
-      window.alert(`Analyze failed: ${err?.message || 'Unknown error'}`);
+      showNotice(`Analyze failed: ${err?.message || 'Unknown error'}`);
     } finally {
       analyzingRoomIds.delete(roomId);
       render();
     }
   }
 
-  async function handleNoCudaAnalyzeFallback(listingId, roomId, response) {
-    const promptRequired = response?.promptRequired !== false;
-    const guidance = 'Multi-photo DUSt3R needs CUDA in this self-hosted release. Use Single-image mode in Settings.';
+  /**
+   * Multi-photo DUSt3R needs CUDA. When the backend reports no CUDA, switch
+   * to single-image mode once (persisted), notify, and retry.
+   */
+  async function handleNoCudaAnalyzeFallback(listingId, roomId) {
+    await updateBackendConfig({
+      analysisMode: 'single-image',
+      noCudaPromptHandled: true,
+    });
+    showNotice('No CUDA GPU detected — switched to single-image mode. Estimates measure visible floor only and read low. Change in settings.', { duration: 9000 });
 
-    if (promptRequired) {
-      const accepted = window.confirm(
-        'CUDA was not detected for multi-photo DUSt3R.\n\nEnable Single-image mode now and retry this room?'
-      );
-      if (accepted) {
-        await updateBackendConfig({
-          analysisMode: 'single-image',
-          noCudaPromptHandled: true,
-        });
-        const retry = await chrome.runtime.sendMessage({ type: 'ANALYZE_ROOM', listingId, roomId });
-        if (!retry?.success) {
-          if (retry?.errorCode === 'NO_CUDA_MULTI_UNAVAILABLE') {
-            window.alert(guidance);
-            return;
-          }
-          throw new Error(retry?.error || 'Retry failed');
-        }
+    const retry = await chrome.runtime.sendMessage({ type: 'ANALYZE_ROOM', listingId, roomId });
+    if (!retry?.success) {
+      if (retry?.errorCode === 'NO_CUDA_MULTI_UNAVAILABLE') {
+        showNotice('Multi-photo analysis needs a CUDA GPU. Single-image mode is available in settings.');
         return;
       }
-
-      await updateBackendConfig({ noCudaPromptHandled: true });
+      throw new Error(retry?.error || 'Retry failed');
     }
-
-    window.alert(guidance);
   }
 
   async function handleDelete(listingId, roomId) {

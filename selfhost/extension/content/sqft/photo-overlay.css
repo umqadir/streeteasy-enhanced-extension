@@ -371,3 +371,31 @@
 .sleepsy-dd-remove:hover {
   background: #fef2f2;
 }
+
+/* ── Toast notice ── */
+
+.sleepeasy-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translate(-50%, 8px);
+  z-index: 2147483646;
+  max-width: min(440px, 86vw);
+  background: rgba(17, 24, 39, 0.96);
+  color: #f9fafb;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.45;
+  padding: 11px 16px;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  pointer-events: none;
+}
+
+.sleepeasy-toast.visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}

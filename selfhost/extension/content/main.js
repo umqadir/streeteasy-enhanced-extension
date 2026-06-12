@@ -1,6 +1,6 @@
 /**
- * SleepEasy Main Content Script
- * Orchestrates coordinate extraction, data fetching, and UI injection
+ * SleepEasy main content script.
+ * Orchestrates coordinate extraction, crime-stats lookup, and UI injection.
  */
 
 (function() {
@@ -8,11 +8,15 @@
 
   let uiInjector = null;
   let currentPageKey = getPageKey();
-  let isProcessing = false;
   let currentMeasure = CONFIG.DEFAULT_MEASURE;
+  let currentTimeWindow = CONFIG.DEFAULT_TIME_WINDOW;
   let currentLocationData = null;
   let currentStats = null;
   let removalObserver = null;
+
+  // Monotonic token: each (re)initialization bumps it, and async results from
+  // a superseded run are discarded instead of clobbering the current page.
+  let runToken = 0;
 
   function getPageKey() {
     try {
@@ -23,84 +27,60 @@
     }
   }
 
-  /**
-   * Initialize SleepEasy on the current page
-   */
   async function initialize() {
-    if (!CoordinatesExtractor.isListingPage()) {
-      return;
-    }
+    if (!CoordinatesExtractor.isListingPage()) return;
 
-    if (isProcessing) {
-      return;
-    }
-
-    isProcessing = true;
+    const token = ++runToken;
 
     try {
-      // Step 1: Show loading UI immediately
+      // Show loading state immediately
       uiInjector = uiInjector || new UIInjector({
-        onMeasureChange: handleMeasureChange
+        onMeasureChange: handleMeasureChange,
+        onTimeWindowChange: handleTimeWindowChange
       });
-      const injected = uiInjector.inject(null); // null = loading state
+      if (!uiInjector.inject(null)) return;
 
-      if (!injected) {
-        isProcessing = false;
-        return;
-      }
-
-      // Watch for React hydration removing our container
+      // React hydration can replace our container's ancestors — watch and re-inject.
       watchForRemoval();
 
-      // Step 2: Extract coordinates
       const extractor = new CoordinatesExtractor();
       const locationData = await extractor.extract();
+      if (token !== runToken) return; // superseded by navigation
 
       if (!locationData) {
         currentLocationData = null;
-        uiInjector?.update({ error: 'Crime unavailable.' });
-        isProcessing = false;
+        uiInjector?.update({ error: 'Crime data unavailable for this listing.' });
         return;
       }
-
       currentLocationData = locationData;
 
-      // Step 3: Fetch crime statistics
-      const stats = await fetchCrimeStats(
-        locationData.lat,
-        locationData.lon,
-        CONFIG.DEFAULT_TIME_WINDOW
-      );
+      const stats = await fetchCrimeStats(locationData.lat, locationData.lon, currentTimeWindow);
+      if (token !== runToken) return;
 
       if (!stats) {
         currentStats = null;
-        uiInjector?.update({ error: 'Crime unavailable.' });
-        isProcessing = false;
+        uiInjector?.update({ error: 'Crime data unavailable for this listing.' });
         return;
       }
-
       currentStats = stats;
 
-      // Step 4: Update UI with data
-      uiInjector?.update({ location: locationData, stats, uiState: { measure: currentMeasure } });
-
+      uiInjector?.update({
+        location: locationData,
+        stats,
+        uiState: { measure: currentMeasure, timeWindow: currentTimeWindow }
+      });
     } catch (error) {
       SleepEasyLog.error('[SleepEasy] Error during initialization:', error);
-      currentStats = null;
-      uiInjector?.update({ error: 'Crime unavailable.' });
-    } finally {
-      isProcessing = false;
+      if (token === runToken) {
+        currentStats = null;
+        uiInjector?.update({ error: 'Crime data unavailable for this listing.' });
+      }
     }
   }
 
   /**
-   * Use a MutationObserver to detect when our injected container is removed
-   * from the DOM (e.g., by React hydration rebuilding the page tree).
-   * Re-injects automatically when that happens.
-   *
-   * Observes document.body with subtree: true because React can replace any
-   * ancestor node — watching only the immediate parent misses grandparent
-   * replacements.
+   * Detect when React hydration removes our injected container and re-inject.
+   * Observes document.body with subtree because React can replace any ancestor.
    */
   function watchForRemoval() {
     if (removalObserver) removalObserver.disconnect();
@@ -110,11 +90,7 @@
       if (uiInjector?.container && !document.contains(uiInjector.container)) {
         removalObserver.disconnect();
         removalObserver = null;
-        // Reset injector state and re-inject
-        uiInjector.isInjected = false;
-        uiInjector.container = null;
-        uiInjector.shadowRoot = null;
-        isProcessing = false;
+        uiInjector.reset();
         setTimeout(initialize, 300);
       }
     });
@@ -122,10 +98,8 @@
     removalObserver.observe(document.body, { childList: true, subtree: true });
   }
 
-  /**
-   * Clean up when navigating away
-   */
   function cleanup() {
+    runToken++;
     if (removalObserver) {
       removalObserver.disconnect();
       removalObserver = null;
@@ -134,14 +108,10 @@
       uiInjector.remove();
       uiInjector = null;
     }
-    isProcessing = false;
     currentLocationData = null;
     currentStats = null;
   }
 
-  /**
-   * Handle URL changes (for SPA navigation)
-   */
   function handleNavigationChange() {
     const newKey = getPageKey();
     if (newKey === currentPageKey) return;
@@ -150,31 +120,44 @@
     setTimeout(initialize, 500);
   }
 
-  /**
-   * Handle measure change (pure UI transform; does not refetch).
-   * @param {string} measure
-   */
+  /** Measure change is a pure UI transform — no refetch. */
   function handleMeasureChange(measure) {
     currentMeasure = measure;
-    if (!uiInjector) return;
-    if (!currentLocationData || !currentStats) {
-      return;
-    }
-    uiInjector.update({ location: currentLocationData, stats: currentStats, uiState: { measure: currentMeasure } });
+    if (!uiInjector || !currentLocationData || !currentStats) return;
+    uiInjector.update({
+      location: currentLocationData,
+      stats: currentStats,
+      uiState: { measure: currentMeasure, timeWindow: currentTimeWindow }
+    });
   }
 
-  // Initialize on page load
+  /** Time-window change re-derives stats from the bundled data (still local). */
+  async function handleTimeWindowChange(timeWindow) {
+    currentTimeWindow = timeWindow;
+    if (!uiInjector || !currentLocationData) return;
+
+    const token = runToken;
+    const stats = await fetchCrimeStats(currentLocationData.lat, currentLocationData.lon, timeWindow);
+    if (token !== runToken) return;
+
+    if (stats) {
+      currentStats = stats;
+      uiInjector.update({
+        location: currentLocationData,
+        stats,
+        uiState: { measure: currentMeasure, timeWindow: currentTimeWindow }
+      });
+    }
+  }
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initialize);
   } else {
     initialize();
   }
 
-  // SPA navigation detection.
-  // navigation-hook.js (runs in MAIN world) intercepts the page's pushState/
-  // replaceState and dispatches __sleepEasyNav on window. We also listen for
-  // popstate (back/forward button).
+  // SPA navigation: navigation-hook.js (MAIN world) re-dispatches pushState/
+  // replaceState as __sleepEasyNav; popstate covers back/forward.
   window.addEventListener('popstate', () => handleNavigationChange());
   window.addEventListener('__sleepEasyNav', () => handleNavigationChange());
-
 })();

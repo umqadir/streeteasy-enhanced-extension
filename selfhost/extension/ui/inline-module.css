@@ -1,18 +1,10 @@
-/* SleepEasy Inline Module Styles
- * Note: Primary styles are injected via Shadow DOM in ui-injector.js
- * This file provides fallback/base styles for the container
- */
+/* SleepEasy crime-module container.
+ * All real styling lives inside the module's Shadow DOM (ui-injector.js);
+ * this only ensures the host container behaves in the page layout. */
 
-.streetsafe-container {
+.sleepeasy-container {
   position: relative;
   width: 100%;
   margin: 0;
   padding: 0;
-}
-
-@media (max-width: 768px) {
-  .streetsafe-container {
-    margin: 0;
-    padding: 0;
-  }
 }
