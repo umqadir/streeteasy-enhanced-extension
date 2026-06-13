@@ -1,0 +1,8 @@
+backend/.venv/
+backend/.python-version
+backend/.runtime/
+backend-local/
+**/__pycache__/
+*.pyc
+*.log
+.DS_Store
