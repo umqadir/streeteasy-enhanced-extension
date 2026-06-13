@@ -1,0 +1,27 @@
+[project]
+name = "sleepeasy-selfhost-backend"
+version = "0.1.0"
+description = "Self-hosted SleepEasy backend (DUSt3R default with single-image fallback mode)"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+  "torch>=2.1",
+  "torchvision>=0.16",
+  "numpy>=1.26",
+  "scipy>=1.10",
+  "shapely>=2.0",
+  "opencv-python>=4.8",
+  "pillow>=10",
+  "einops>=0.7",
+  "roma>=1.5",
+  "tqdm>=4.67.3",
+  "packaging>=26.0",
+  "huggingface-hub>=1.4.1",
+  "transformers>=5.1.0",
+  "utils3d",
+  "timm>=1.0.24",
+  "sentencepiece>=0.2.1",
+  "kornia>=0.8.2",
+]
+
+[tool.uv.sources]
+utils3d = { git = "https://github.com/EasternJournalist/utils3d.git", rev = "3fab839f0be9931dac7c8488eb0e1600c236e183" }

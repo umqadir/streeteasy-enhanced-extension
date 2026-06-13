@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>SleepEasy — Chrome extension for StreetEasy (NYC)</title>
+  <meta name="description"
+        content="Chrome extension that adds neighborhood crime statistics and photo-based room square-footage estimates to StreetEasy NYC listings. Open source; runs on your device." />
+
+  <meta property="og:title" content="SleepEasy — Chrome extension for StreetEasy (NYC)" />
+  <meta property="og:description"
+        content="Neighborhood crime statistics and room square-footage estimates on StreetEasy NYC listings. Open source, runs on your device." />
+  <meta property="og:type" content="website" />
+
+  <link rel="icon" href="./assets/icon.png" />
+  <link rel="apple-touch-icon" href="./assets/icon.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+
+  <header class="masthead">
+    <a class="brand" href="#" aria-label="SleepEasy">
+      <img src="./assets/icon.png" alt="" width="22" height="22" />
+      <span>SleepEasy</span>
+    </a>
+    <nav aria-label="Primary">
+      <a href="#install">Install</a>
+      <a href="./privacy.html">Privacy</a>
+      <a href="https://github.com/umqadir/streeteasy-enhanced-extension" rel="noopener">GitHub</a>
+    </nav>
+  </header>
+
+  <main>
+
+    <section class="hero">
+      <p class="eyebrow reveal">Chrome extension · StreetEasy · NYC</p>
+      <h1 class="reveal d1">Crime stats and room<br />sizes for StreetEasy.</h1>
+      <p class="lead reveal d2">
+        Neighborhood crime statistics and photo-based room square-footage
+        estimates, added to StreetEasy NYC listing pages. Open source. Runs on
+        your device.
+      </p>
+      <div class="actions reveal d3">
+        <a class="btn primary" href="https://github.com/umqadir/streeteasy-enhanced-extension/releases/latest">Download for Chrome</a>
+        <a class="btn" href="https://github.com/umqadir/streeteasy-enhanced-extension" rel="noopener">Source</a>
+      </div>
+    </section>
+
+    <figure class="module-figure reveal d4">
+      <div class="module" role="img" aria-label="SleepEasy crime module">
+        <div class="m-head">
+          <div>
+            <div class="m-label">Crime</div>
+            <div class="m-place">Upper East Side-Yorkville, Manhattan</div>
+          </div>
+          <span class="m-info">i</span>
+        </div>
+        <div class="m-scale"><span>lower crime</span><span>higher crime</span></div>
+
+        <div class="m-metric">
+          <div class="m-line"><span class="m-name">Felony assault</span><span class="m-value"><strong>247.3</strong> <em>/ 100k present</em></span></div>
+          <div class="m-line m-sub"><span class="m-track"><span class="m-dot" style="left:9.7%"></span></span><span class="m-rank">#20 of 197 · 0.3× NYC rate</span></div>
+        </div>
+        <div class="m-metric">
+          <div class="m-line"><span class="m-name">Property crime</span><span class="m-value"><strong>1,352</strong> <em>/ 100k present</em></span></div>
+          <div class="m-line m-sub"><span class="m-track"><span class="m-dot" style="left:26.5%"></span></span><span class="m-rank">#53 of 197 · 0.7× NYC rate</span></div>
+        </div>
+        <div class="m-metric">
+          <div class="m-line"><span class="m-name">Murder</span><span class="m-value"><strong>1.6</strong> <em>/ 100k present</em></span></div>
+          <div class="m-line m-sub"><span class="m-track"><span class="m-dot" style="left:26.0%"></span></span><span class="m-rank">#52 of 197 · 0.2× NYC rate</span></div>
+        </div>
+
+        <div class="m-controls">
+          <span class="m-select">Ambient risk index ▾</span>
+          <span class="m-select">Last 24 months ▾</span>
+        </div>
+        <div class="m-foot">NYPD complaints via NYC Open Data · through Mar 31, 2026</div>
+      </div>
+      <figcaption>The crime module, inline on a listing.</figcaption>
+    </figure>
+
+    <section class="chapter" id="crime">
+      <p class="eyebrow">Crime statistics</p>
+      <h2>Per-neighborhood crime, ranked across NYC.</h2>
+      <p>
+        Coordinates from the listing page are mapped to the official NYC
+        Neighborhood Tabulation Area by point-in-polygon. The module shows
+        murder, felony assault, and property crime, each ranked against all 197
+        neighborhoods. The default measure is an ambient risk index — incidents
+        per 100,000 people present (residents plus daytime workers). Per-resident
+        rate, density, and raw counts are also available, across 3-, 12-, and
+        24-month windows.
+      </p>
+      <p>
+        Data ships inside the extension, compiled from NYPD complaint records on
+        NYC Open Data. No lookups over the network.
+      </p>
+      <ul class="facts">
+        <li><strong>197</strong> neighborhoods</li>
+        <li><strong>4</strong> measures</li>
+        <li><strong>0</strong> network requests</li>
+      </ul>
+    </section>
+
+    <section class="chapter" id="sqft">
+      <p class="eyebrow">Square footage</p>
+      <h2>Room square footage from listing photos.</h2>
+      <p>
+        Group a listing's photos into rooms; the extension estimates each floor
+        area with a computer-vision pipeline on a local backend. Semantic
+        segmentation isolates the floor, a metric-depth model recovers geometry,
+        and the floor plane is measured in real-world units. Photos are fetched
+        and analyzed on your machine.
+      </p>
+
+      <div class="triptych">
+        <figure><img src="./assets/floor-segmentation-overlay.jpg" alt="Listing photo with the floor highlighted by semantic segmentation" loading="lazy" /><figcaption>Floor segmentation</figcaption></figure>
+        <figure><img src="./assets/depth-map.png" alt="Metric depth map of the room" loading="lazy" /><figcaption>Metric depth</figcaption></figure>
+        <figure><img src="./assets/floor-topdown-reconstruction.png" alt="Reconstructed top-down floor plan" loading="lazy" /><figcaption>Top-down floor</figcaption></figure>
+      </div>
+
+      <table class="accuracy">
+        <thead>
+          <tr><th>Pipeline</th><th>Hardware</th><th>Error</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Multi-photo (DUSt3R camera fusion)</td><td>NVIDIA GPU</td><td><strong>5.4%</strong></td></tr>
+          <tr><td>Single-image (visible floor only)</td><td>Any machine</td><td>19.9%</td></tr>
+        </tbody>
+      </table>
+      <p class="fineprint">Single benchmark room. Estimates are approximate; research project, accuracy not guaranteed.</p>
+    </section>
+
+    <section class="chapter" id="install">
+      <p class="eyebrow">Install</p>
+      <h2>Two install paths.</h2>
+
+      <div class="path">
+        <h3>Crime statistics <span>— no dependencies</span></h3>
+        <ol>
+          <li>Download <a href="https://github.com/umqadir/streeteasy-enhanced-extension/releases/latest/download/sleepeasy-extension.zip">sleepeasy-extension.zip</a> and unzip it</li>
+          <li>Open <code>chrome://extensions</code>, enable Developer mode</li>
+          <li>Load unpacked → the unzipped <code>extension</code> folder</li>
+          <li>Open a StreetEasy listing</li>
+        </ol>
+      </div>
+
+      <div class="path">
+        <h3>Room square footage <span>— local backend</span></h3>
+        <pre><code>git clone https://github.com/umqadir/streeteasy-enhanced-extension.git
+cd streeteasy-enhanced-extension/selfhost
+bash scripts/install.sh        <span class="comment"># python env + ~4 GB of model weights</span>
+bash scripts/start_backend.sh  <span class="comment"># http://127.0.0.1:8787</span></code></pre>
+        <p class="fineprint">
+          Requires <a href="https://docs.astral.sh/uv/getting-started/installation/">uv</a>.
+          Runs on any machine; an NVIDIA GPU enables multi-photo mode. See
+          <a href="https://github.com/umqadir/streeteasy-enhanced-extension/blob/main/selfhost/README.md">selfhost/README</a>.
+        </p>
+      </div>
+    </section>
+
+    <section class="chapter" id="privacy">
+      <p class="eyebrow">Privacy</p>
+      <h2>Runs on your device.</h2>
+      <p>
+        No accounts, no analytics, no tracking. Crime lookups run against data
+        bundled in the extension; photo analysis contacts only
+        <code>127.0.0.1</code>. MIT-licensed and
+        <a href="https://github.com/umqadir/streeteasy-enhanced-extension">open source</a>.
+        <a href="./privacy.html">Privacy policy</a>.
+      </p>
+    </section>
+
+    <section class="chapter" id="faq">
+      <p class="eyebrow">Notes</p>
+      <details>
+        <summary>Affiliation</summary>
+        <p>Independent open-source project. Not affiliated with or endorsed by StreetEasy, Zillow Group, the NYPD, or the City of New York.</p>
+      </details>
+      <details>
+        <summary>Data sources</summary>
+        <p>NYPD complaint records on NYC Open Data, joined with NYC neighborhood boundaries, 2020 Census population, and Census LODES workplace counts. Compiled offline by the scripts in the repository.</p>
+      </details>
+      <details>
+        <summary>Why square footage needs a separate install</summary>
+        <p>It runs computer-vision models that can't ship inside a browser extension. Running them locally also keeps the photos on your machine.</p>
+      </details>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <p>
+      Independent project, not affiliated with StreetEasy, Zillow Group, the NYPD,
+      or the City of New York. Crime statistics are informational; past incidence
+      does not predict future safety.
+    </p>
+    <p>
+      <a href="https://github.com/umqadir/streeteasy-enhanced-extension">GitHub</a> ·
+      <a href="./privacy.html">Privacy</a> ·
+      MIT License
+    </p>
+  </footer>
+
+</body>
+</html>

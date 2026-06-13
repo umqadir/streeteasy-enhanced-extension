@@ -1,0 +1,10 @@
+/* SleepEasy crime-module container.
+ * All real styling lives inside the module's Shadow DOM (ui-injector.js);
+ * this only ensures the host container behaves in the page layout. */
+
+.sleepeasy-container {
+  position: relative;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
