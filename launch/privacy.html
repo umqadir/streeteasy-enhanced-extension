@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SleepEasy — Privacy Policy</title>
+  <meta name="description" content="SleepEasy privacy policy: no accounts, no analytics, no data collection. Everything runs on your device." />
+
+  <link rel="icon" href="./assets/icon.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+
+  <header class="masthead">
+    <a class="brand" href="./index.html" aria-label="SleepEasy home">
+      <img src="./assets/icon.png" alt="" width="22" height="22" />
+      <span>SleepEasy</span>
+    </a>
+    <nav aria-label="Primary">
+      <a href="./index.html#install">Install</a>
+      <a href="https://github.com/umqadir/streeteasy-enhanced-extension" rel="noopener">GitHub</a>
+    </nav>
+  </header>
+
+  <main class="prose">
+    <h1>Privacy Policy</h1>
+    <p class="updated">Last updated: June 12, 2026</p>
+
+    <p>
+      <strong>The short version:</strong> SleepEasy has no accounts, no analytics, and
+      no servers it reports to. It does not collect, transmit, or sell any personal
+      information. Everything happens on your own device.
+    </p>
+
+    <h2>What SleepEasy does</h2>
+    <p>SleepEasy is a Chrome extension that adds neighborhood crime context and AI-estimated room square footage to StreetEasy NYC listing pages. It is an independent project and is not affiliated with StreetEasy, Zillow Group, the NYPD, or the City of New York.</p>
+
+    <h2>Information the extension handles</h2>
+    <ul>
+      <li><strong>Listing page content.</strong> On a StreetEasy listing, the extension reads the page to find the listing's map coordinates and photos. This reading happens entirely in your browser.</li>
+      <li><strong>Your room groupings and settings.</strong> When you group listing photos into rooms or change settings, those choices are saved locally using Chrome's <code>storage.local</code> on your device. They are never uploaded.</li>
+    </ul>
+
+    <h2>What is transmitted, and to whom</h2>
+    <ul>
+      <li><strong>Crime statistics: nothing leaves your browser.</strong> Crime data ships inside the extension as static files. Mapping a listing to its neighborhood and its statistics is computed locally. No network request is made.</li>
+      <li><strong>Square-footage estimation: on your device.</strong> When you analyze a room, the extension fetches the listing's own photos and runs a computer-vision model in your browser to estimate floor area. The model files download once from Hugging Face and are cached; your photos are analyzed locally and are not sent to the developer or any third party. An optional local backend (installed separately) adds a higher-accuracy multi-photo mode and runs only on <code>127.0.0.1</code>.</li>
+    </ul>
+
+    <h2>What SleepEasy does not do</h2>
+    <ul>
+      <li>No user accounts or sign-in.</li>
+      <li>No analytics, telemetry, tracking, or advertising.</li>
+      <li>No collection of personal, financial, health, location-history, or browsing-history data.</li>
+      <li>No sale or sharing of any data with third parties.</li>
+    </ul>
+
+    <h2>Data retention and deletion</h2>
+    <p>Because all data stays on your device, you control it completely. Removing the extension, or clearing the extension's storage in <code>chrome://extensions</code>, deletes everything SleepEasy has saved. The local backend stores only model files and any analysis artifacts in folders on your computer, which you can delete at any time.</p>
+
+    <h2>Third-party data sources</h2>
+    <p>The bundled crime statistics are derived from public datasets — NYPD complaint data and neighborhood boundaries via <a href="https://opendata.cityofnewyork.us/" rel="noopener">NYC Open Data</a>, and population and workplace figures from the U.S. Census Bureau. These are compiled offline into static files; the extension does not contact these sources at runtime.</p>
+
+    <h2>Changes to this policy</h2>
+    <p>If this policy changes, the updated version will be posted at this URL with a new "last updated" date.</p>
+
+    <h2>Contact</h2>
+    <p>Questions or concerns? Open an issue on the project's <a href="https://github.com/umqadir/streeteasy-enhanced-extension/issues" rel="noopener">GitHub repository</a>.</p>
+  </main>
+
+  <footer class="footer">
+    <p>
+      SleepEasy is an independent project, not affiliated with StreetEasy, Zillow Group,
+      the NYPD, or the City of New York.
+    </p>
+    <p>
+      <a href="./index.html">Home</a> ·
+      <a href="https://github.com/umqadir/streeteasy-enhanced-extension">GitHub</a> ·
+      MIT License · © 2026
+    </p>
+  </footer>
+
+</body>
+</html>
