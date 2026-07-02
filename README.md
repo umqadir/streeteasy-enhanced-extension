@@ -29,11 +29,11 @@ In the side panel settings, set Analysis to use the local backend. Multi-photo m
 
 Crime: listing coordinates → NYC NTA via point-in-polygon → precompiled per-NTA statistics (NYPD complaints, 2020 Census population, LODES workplace counts), computed client-side. Compiled by `scripts/compile-data.js` and `scripts/compile-nta-exposure.py`. Current data through 2026-03-31.
 
-Square footage: floor segmentation (SegFormer) → metric depth (MoGe-2) → floor-plane fit → visible-floor area. The in-browser path runs both models as ONNX via onnxruntime-web (WebGPU, WASM fallback); the optional local backend adds DUSt3R multi-view camera fusion for multi-photo mode.
+Square footage: floor segmentation (SegFormer) → metric depth (MoGe-2) → floor-plane fit → wall-to-wall layout completion (Manhattan wall-plane fit, with visible-floor fallback). The in-browser path runs both models as ONNX via onnxruntime-web (WebGPU, WASM fallback); the optional local backend adds DUSt3R multi-view camera fusion for multi-photo mode.
 
 ## Accuracy
 
-Estimates are approximate. Single-image mode measures visible floor and reads low. Research project; accuracy is not guaranteed.
+Estimates are approximate. Single-image mode completes the room to its walls when the layout is confident and otherwise falls back to visible floor; error varies with viewing angle and room. Research project; accuracy is not guaranteed.
 
 ## Privacy
 
