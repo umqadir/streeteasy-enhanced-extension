@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "SleepEasy",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "NYC crime context and on-device AI room square-footage estimates, inline on StreetEasy listings. Private: everything runs on your device.",
   "permissions": [
     "sidePanel",

@@ -34,7 +34,7 @@ CRIME STATISTICS
 
 ROOM SQUARE FOOTAGE (ON-DEVICE)
 • Group a listing's photos into rooms and estimate each room's floor area
-• A computer-vision model runs in your browser (WebGPU, with a CPU fallback): floor segmentation, metric depth, and floor-plane fitting
+• A computer-vision model runs in your browser (WebGPU, with a CPU fallback): floor segmentation, metric depth, floor-plane fitting, and wall-to-wall layout completion that recovers floor hidden by furniture
 • The model downloads once (about 150 MB) from Hugging Face and is cached; your photos are analyzed locally and never sent to a server
 • A higher-accuracy multi-photo mode is available via an optional local backend (open-source, installed separately)
 
@@ -43,7 +43,7 @@ PRIVACY
 • Photos are analyzed on your device; no listing or personal data is transmitted
 • NYC only
 
-This is a personal research project. Square-footage estimates are approximate (single-image mode measures visible floor and reads low), and crime statistics are informational; past incidence does not predict future safety. Independent project, not affiliated with or endorsed by StreetEasy, Zillow Group, the NYPD, or the City of New York.
+This is a personal research project. Square-footage estimates are approximate: the extension estimates wall-to-wall floor area and falls back to visible floor when a room's layout cannot be confidently completed. Crime statistics are informational; past incidence does not predict future safety. Independent project, not affiliated with or endorsed by StreetEasy, Zillow Group, the NYPD, or the City of New York.
 
 Source: https://github.com/umqadir/streeteasy-enhanced-extension
 ```
