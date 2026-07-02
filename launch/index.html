@@ -115,9 +115,9 @@
         Group a listing's photos into rooms; the extension estimates each floor
         area with a computer-vision pipeline that runs in your browser. Semantic
         segmentation isolates the floor, a metric-depth model recovers geometry,
-        and the floor plane is measured in real-world units — all on your device
-        (WebGPU, with a CPU fallback). An optional local backend adds a
-        higher-accuracy multi-photo mode.
+        and the room is completed out to its walls — recovering floor hidden by
+        furniture — all on your device (WebGPU, with a CPU fallback). An optional
+        local backend adds a higher-accuracy multi-photo mode.
       </p>
 
       <div class="triptych">
@@ -132,10 +132,11 @@
         </thead>
         <tbody>
           <tr><td>Multi-photo (DUSt3R camera fusion)</td><td>NVIDIA GPU</td><td><strong>5.4%</strong></td></tr>
-          <tr><td>Single-image (visible floor only)</td><td>Any machine</td><td>19.9%</td></tr>
+          <tr><td>Single-image, wall-to-wall completion</td><td>Any machine</td><td>~5&ndash;12%</td></tr>
+          <tr><td>Single-image, visible floor (fallback)</td><td>Any machine</td><td>~30%</td></tr>
         </tbody>
       </table>
-      <p class="fineprint">Single benchmark room. Estimates are approximate; research project, accuracy not guaranteed.</p>
+      <p class="fineprint">266&nbsp;sqft benchmark room; single-image error varies with viewing angle and room. Estimates are approximate; research project, accuracy not guaranteed.</p>
     </section>
 
     <section class="chapter" id="install">
