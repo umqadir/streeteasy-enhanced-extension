@@ -6,8 +6,8 @@ const STD = [0.229, 0.224, 0.225];
 const SEG_SIZE = 512;
 const FLOOR_CLASSES = new Set([3, 28]);
 
-// Returns Uint8Array(H*W): 1 where floor, at the requested output H×W.
-export async function segmentFloor(ort, session, imgEl, H, W) {
+// Returns Int16Array(H*W): ADE20K class id at the requested output H×W.
+export async function segmentClasses(ort, session, imgEl, H, W) {
   const c = document.createElement('canvas'); c.width = SEG_SIZE; c.height = SEG_SIZE;
   const ctx = c.getContext('2d'); ctx.drawImage(imgEl, 0, 0, SEG_SIZE, SEG_SIZE);
   const id = ctx.getImageData(0, 0, SEG_SIZE, SEG_SIZE).data;
@@ -23,8 +23,8 @@ export async function segmentFloor(ort, session, imgEl, H, W) {
   const logits = out.logits;
   const [, C, lh, lw] = logits.dims;
   const data = logits.data;
-  // argmax over C at each (y,x) of the logits grid -> floor bool grid
-  const segGrid = new Uint8Array(lh * lw);
+  // argmax over C at each (y,x) of the logits grid -> ADE20K class grid
+  const segGrid = new Int16Array(lh * lw);
   const cstride = lh * lw;
   for (let y = 0; y < lh; y++) {
     for (let x = 0; x < lw; x++) {
@@ -34,17 +34,25 @@ export async function segmentFloor(ort, session, imgEl, H, W) {
         const v = data[cc * cstride + base];
         if (v > bestV) { bestV = v; bestC = cc; }
       }
-      segGrid[base] = FLOOR_CLASSES.has(bestC) ? 1 : 0;
+      segGrid[base] = bestC;
     }
   }
   // nearest-neighbour upsample logits grid -> H×W
-  const floor = new Uint8Array(H * W);
+  const seg = new Int16Array(H * W);
   for (let y = 0; y < H; y++) {
     const sy = Math.min(lh - 1, (y * lh / H) | 0);
     for (let x = 0; x < W; x++) {
       const sx = Math.min(lw - 1, (x * lw / W) | 0);
-      floor[y * W + x] = segGrid[sy * lw + sx];
+      seg[y * W + x] = segGrid[sy * lw + sx];
     }
   }
+  return seg;
+}
+
+// Returns Uint8Array(H*W): 1 where floor, at the requested output H×W.
+export async function segmentFloor(ort, session, imgEl, H, W) {
+  const seg = await segmentClasses(ort, session, imgEl, H, W);
+  const floor = new Uint8Array(H * W);
+  for (let p = 0; p < H * W; p++) floor[p] = FLOOR_CLASSES.has(seg[p]) ? 1 : 0;
   return floor;
 }

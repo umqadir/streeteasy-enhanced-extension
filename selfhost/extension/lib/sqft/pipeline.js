@@ -4,8 +4,8 @@
 // (offscreen document) with WebGPU; model weights are fetched once and cached.
 
 import * as ort from '../ort/ort.webgpu.min.mjs';
-import { computeFloorArea } from './geometry.js';
-import { segmentFloor } from './seg-onnx.js';
+import { completeLayout, computeFloorArea } from './geometry.js';
+import { segmentClasses } from './seg-onnx.js';
 import { runMoge } from './moge-onnx.js';
 
 // ORT loads its wasm from the packaged lib/ort/ directory (no remote code).
@@ -65,28 +65,42 @@ export async function estimate(imgEl, { tokens = 1800, maxSide = 644 } = {}) {
   const timings = {};
   let t = performance.now();
 
-  const floorAtFull = async (H, W) => segmentFloor(ort, _segSession, imgEl, H, W);
-
   const moge = await runMoge(ort, _mogeSession, imgEl, { tokens, maxSide });
   timings.mogeMs = Math.round(performance.now() - t); t = performance.now();
 
-  const floor = await floorAtFull(moge.H, moge.W);
+  const seg = await segmentClasses(ort, _segSession, imgEl, moge.H, moge.W);
+  const floor = new Uint8Array(moge.H * moge.W);
+  for (let p = 0; p < floor.length; p++) floor[p] = (seg[p] === 3 || seg[p] === 28) ? 1 : 0;
   timings.segMs = Math.round(performance.now() - t); t = performance.now();
 
   const area = computeFloorArea({
     points: moge.points, normal: moge.normal, mask: moge.mask, floor,
     H: moge.H, W: moge.W,
   });
+  const layout = completeLayout({
+    points: moge.points, normal: moge.normal, mask: moge.mask, seg,
+    H: moge.H, W: moge.W,
+  });
   timings.areaMs = Math.round(performance.now() - t);
 
+  const completedStatuses = new Set(['completed', 'low_confidence_completed']);
+  const visibleSqft = Math.round(area.sqft || 0);
+  const wallToWallSqft = completedStatuses.has(layout.status) ? Math.round(layout.areaSqft || 0) : null;
+  const reportedSqft = completedStatuses.has(layout.status) ? wallToWallSqft : visibleSqft;
+
   return {
-    sqft: Math.round(area.sqft || 0),
+    sqft: reportedSqft,
+    visibleSqft,
+    wallToWallSqft,
+    status: layout.status,
+    confidence: layout.confidence || 0,
     convexSqft: Math.round(area.convexSqft || 0),
     areaM2: area.areaM2 || 0,
     backend: _backend,
     nFloor: area.nFloor || 0,
     nInliers: area.nInliers || 0,
     ok: !!area.ok,
+    layout,
     timings,
   };
 }
