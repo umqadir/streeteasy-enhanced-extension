@@ -1,8 +1,8 @@
-# Chrome Web Store Listing — SleepEasy
+# Chrome Web Store Listing - SleepEasy
 
 Paste-ready fields for the Web Store submission. The store build does both
-features fully on-device: crime stats from bundled data, and room square-footage
-from an in-browser computer-vision model. No localhost, no accounts.
+features fully on-device: crime stats from bundled data, and photo-based room
+area estimates from a local model. No localhost, no accounts.
 
 ---
 
@@ -10,12 +10,12 @@ from an in-browser computer-vision model. No localhost, no accounts.
 
 **Item name**
 ```
-SleepEasy — Crime stats & room sizes for StreetEasy
+SleepEasy - Crime stats and room sizes for StreetEasy
 ```
 
 **Summary** (132 characters max)
 ```
-Adds NYC crime stats and on-device AI room square-footage estimates to StreetEasy listings. Private: runs on your device.
+Adds NYC crime stats and local room-size estimates to StreetEasy listing pages.
 ```
 
 **Category:** Shopping
@@ -24,26 +24,28 @@ Adds NYC crime stats and on-device AI room square-footage estimates to StreetEas
 
 **Detailed description**
 ```
-SleepEasy adds neighborhood crime statistics and room square-footage estimates to StreetEasy NYC listing pages. Everything runs on your device — no accounts, no tracking, no data sent anywhere.
+SleepEasy adds neighborhood crime stats and photo-based room-size estimates to StreetEasy NYC listings.
 
-CRIME STATISTICS
+CRIME STATS
 • Murder, felony assault, and property crime for the listing's neighborhood
-• Ranked across all 197 NYC neighborhoods, with comparison to the citywide rate
-• Four measures (ambient risk index, per 100k residents, per square mile, raw counts) and three time windows
-• Built from NYPD complaint data via NYC Open Data; computed in your browser, no network calls
+• Rank across 197 NYC neighborhoods and comparison with the citywide rate
+• Views for ambient risk, residents, area, raw count, and time window
+• Bundled NYPD complaint data from NYC Open Data
 
-ROOM SQUARE FOOTAGE (ON-DEVICE)
-• Group a listing's photos into rooms and estimate each room's floor area
-• A computer-vision model runs in your browser (WebGPU, with a CPU fallback): floor segmentation, metric depth, floor-plane fitting, and wall-to-wall layout completion that recovers floor hidden by furniture
-• The model downloads once (about 150 MB) from Hugging Face and is cached; your photos are analyzed locally and never sent to a server
-• A higher-accuracy multi-photo mode is available via an optional local backend (open-source, installed separately)
+PHOTO AREA ESTIMATES
+• Analyze listing photos one at a time
+• Label photos with room names to keep them organized
+• Runs locally in Chrome, using WebGPU when available and CPU fallback otherwise
+• Uses floor segmentation, depth, floor-plane fitting, and room-layout completion
+• Downloads model data from Hugging Face once and caches it
 
-PRIVACY
-• No accounts, no analytics, no tracking
-• Photos are analyzed on your device; no listing or personal data is transmitted
-• NYC only
-
-This is a personal research project. Square-footage estimates are approximate: the extension estimates wall-to-wall floor area and falls back to visible floor when a room's layout cannot be confidently completed. Crime statistics are informational; past incidence does not predict future safety. Independent project, not affiliated with or endorsed by StreetEasy, Zillow Group, the NYPD, or the City of New York.
+PRIVACY AND NOTES
+• No account, analytics, or tracking
+• Listing photos are processed locally and are not uploaded
+• NYC listing pages only
+• Estimates are approximate. SleepEasy reports wall-to-wall floor area when the photo layout can be inferred; otherwise it reports visible floor area.
+• Crime stats are informational and do not predict future safety.
+• Independent project. Not affiliated with StreetEasy, Zillow Group, the NYPD, or the City of New York.
 
 Source: https://github.com/umqadir/streeteasy-enhanced-extension
 ```
@@ -59,9 +61,9 @@ https://github.com/umqadir/streeteasy-enhanced-extension/issues
 ```
 
 **Screenshots** (1280×800, in `screenshots/`)
-1. `01-crime-in-context.png` — crime module on a real listing
-2. `02-room-sqft.png` — side panel room estimate
-3. `03-how-it-works.png` — floor segmentation / computer vision
+1. `01-crime-in-context.png` - crime module on a real listing
+2. `02-room-sqft.png` - side panel room estimate
+3. `03-how-it-works.png` - floor segmentation / computer vision
 
 ---
 
@@ -69,37 +71,37 @@ https://github.com/umqadir/streeteasy-enhanced-extension/issues
 
 **Single purpose** (required)
 ```
-SleepEasy augments StreetEasy NYC listing pages with neighborhood crime statistics and on-device room square-footage estimates.
+SleepEasy augments StreetEasy NYC listing pages with neighborhood crime statistics and on-device photo-based floor-area estimates.
 ```
 
 **Permission justifications**
 
 | Permission | Justification to paste |
 |---|---|
-| `storage` | Saves the user's room/photo groupings and extension settings locally on their device. No data leaves the browser. |
-| `sidePanel` | Provides the side-panel UI where users group listing photos into rooms and view square-footage estimates. |
+| `storage` | Saves the user's analyzed photos, room labels, and extension settings locally on their device. No data leaves the browser. |
+| `sidePanel` | Provides the side-panel UI where users label listing photos and view square-footage estimates. |
 | `activeTab` | Lets the extension read the current StreetEasy listing the user is viewing so it can show stats for that listing. |
 | Host access to `streeteasy.com` (content scripts) | The extension only runs on StreetEasy listing pages, where it reads listing details and injects the crime module and photo controls. |
 | Host access to `photos.zillowstatic.com` / `images.streeteasy.com` | Fetches the listing's own photos so the room-area model can analyze them on the user's device. The images are not stored or transmitted anywhere. |
-| Host access to `huggingface.co` / `hf.co` | Downloads the open-source computer-vision model files (data, not code) once, then caches them. No user data is sent. |
+| Host access to `huggingface.co` / `hf.co` | Downloads the open-source model files (data, not code) once, then caches them. No user data is sent. |
 
-**Remote code:** No — all executable code (JavaScript and WebAssembly) ships in the package. Only model weight files (data) are fetched from Hugging Face and cached.
+**Remote code:** No. All executable code (JavaScript and WebAssembly) ships in the package. Only model weight files (data) are fetched from Hugging Face and cached.
 
-**Data usage disclosures** — the extension does **not** collect or use any category:
-- Personally identifiable information — No
-- Health information — No
-- Financial and payment information — No
-- Authentication information — No
-- Personal communications — No
-- Location — No (it reads a listing's location from the page to map it to a neighborhood, but does not collect or transmit any location data)
-- Web history — No
-- User activity — No
-- Website content — No (listing photos are fetched and analyzed transiently on-device, not collected or transmitted)
+**Data usage disclosures:** the extension does **not** collect or use any category:
+- Personally identifiable information - No
+- Health information - No
+- Financial and payment information - No
+- Authentication information - No
+- Personal communications - No
+- Location - No (it reads a listing's location from the page to map it to a neighborhood, but does not collect or transmit any location data)
+- Web history - No
+- User activity - No
+- Website content - No (listing photos are fetched and analyzed transiently on-device, not collected or transmitted)
 
 **Certifications** (check all):
-- I do not sell or transfer user data to third parties, outside of approved use cases — ✔
-- I do not use or transfer user data for purposes unrelated to my item's single purpose — ✔
-- I do not use or transfer user data to determine creditworthiness or for lending purposes — ✔
+- I do not sell or transfer user data to third parties, outside of approved use cases - checked
+- I do not use or transfer user data for purposes unrelated to my item's single purpose - checked
+- I do not use or transfer user data to determine creditworthiness or for lending purposes - checked
 
 **Privacy policy URL**
 ```

@@ -265,56 +265,67 @@ details[open] > .listing-summary .listing-chevron {
   color: #9ca3af;
 }
 
-/* ── Room cards ── */
+/* ── Photo rows ── */
 
-.room-list {
+.photo-list {
   margin-bottom: 0;
 }
 
-.room-card {
-  background: transparent;
-  border: none;
+.photo-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 6px;
   border-top: 1px solid #f0f0f0;
   padding: 8px 0;
 }
 
-.room-list .room-card:first-child {
+.photo-list .photo-row:first-child {
   border-top: none;
 }
 
-.room-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.photo-meta {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
 }
 
-.room-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: #080808;
+.photo-position {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.photo-label {
+  width: 100%;
+  min-width: 0;
   border: none;
   background: none;
-  padding: 2px 4px;
-  margin: 0;
   border-radius: 3px;
+  color: #080808;
   cursor: text;
-  min-width: 0;
-  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 2px 4px;
 }
 
-.room-name:hover {
+.photo-label::placeholder {
+  color: #9ca3af;
+}
+
+.photo-label:hover {
   background: #f5f5f5;
 }
 
-.room-name:focus {
+.photo-label:focus {
   outline: none;
   background: #f5f5f5;
   box-shadow: 0 0 0 1.5px #080808;
 }
 
-/* ── Sqft button (the main CTA per room) ── */
-
-.room-sqft-btn {
+.photo-sqft-btn {
   display: inline-flex;
   align-items: center;
   gap: 3px;
@@ -332,18 +343,17 @@ details[open] > .listing-summary .listing-chevron {
   font-variant-numeric: tabular-nums;
 }
 
-.room-sqft-btn:hover {
+.photo-sqft-btn:hover {
   background: #f0f0f0;
 }
 
-.room-sqft-btn .unit {
+.photo-sqft-btn .unit {
   font-size: 11px;
   font-weight: 600;
   color: #6a7889;
 }
 
-/* Placeholder: "Analyze ??? sqft" - clear CTA state */
-.room-sqft-btn.placeholder {
+.photo-sqft-btn.placeholder {
   background: #f0f0f0;
   border: 1px dashed #c8c8c8;
   color: #080808;
@@ -352,45 +362,28 @@ details[open] > .listing-summary .listing-chevron {
   gap: 5px;
 }
 
-.room-sqft-btn.placeholder:hover {
+.photo-sqft-btn.placeholder:hover {
   background: #e8e8e8;
   border-color: #999;
 }
 
-.room-sqft-btn.placeholder .analyze-label {
+.photo-sqft-btn.placeholder .analyze-label {
   font-size: 11px;
   font-weight: 700;
   color: #080808;
 }
 
-.room-sqft-btn.placeholder .unknown {
+.photo-sqft-btn.placeholder .unknown {
   color: #9ca3af;
   letter-spacing: 0.5px;
 }
 
-/* Outdated estimate */
-.room-sqft-btn.outdated {
-  opacity: 0.55;
-}
-
-/* No photos yet */
-.room-sqft-btn.disabled {
-  cursor: default;
-  opacity: 0.3;
-}
-
-.room-sqft-btn.disabled:hover {
-  background: none;
-}
-
-/* Analyzing spinner state */
-.room-sqft-btn.analyzing {
+.photo-sqft-btn.analyzing {
   cursor: wait;
   opacity: 0.5;
 }
 
-/* Delete button */
-.room-delete {
+.photo-delete {
   border: none;
   background: none;
   color: #d1d5db;
@@ -403,44 +396,11 @@ details[open] > .listing-summary .listing-chevron {
   transition: opacity 0.12s, color 0.12s;
 }
 
-.room-card:hover .room-delete {
+.photo-row:hover .photo-delete {
   opacity: 1;
 }
 
-.room-delete:hover {
-  color: #ef4444;
-  background: #fef2f2;
-}
-
-/* ── Photo count + clear ── */
-
-.room-photo-count {
-  font-size: 11px;
-  font-weight: 500;
-  color: #9ca3af;
-  flex: 0 0 auto;
-  white-space: nowrap;
-}
-
-.room-clear {
-  border: none;
-  background: none;
-  color: #d1d5db;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 2px 4px;
-  border-radius: 3px;
-  opacity: 0;
-  transition: opacity 0.12s, color 0.12s;
-  white-space: nowrap;
-}
-
-.room-card:hover .room-clear {
-  opacity: 1;
-}
-
-.room-clear:hover {
+.photo-delete:hover {
   color: #ef4444;
   background: #fef2f2;
 }
@@ -459,37 +419,4 @@ details[open] > .listing-summary .listing-chevron {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
-}
-
-/* ── Total area bar ── */
-
-.total-area {
-  margin-top: 4px;
-  padding: 8px 0 0;
-  border-top: 1px solid #e8e8e8;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.total-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: #6a7889;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.total-value {
-  font-size: 16px;
-  font-weight: 800;
-  color: #080808;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
-}
-
-.total-value .unit {
-  font-size: 12px;
-  font-weight: 600;
-  color: #6a7889;
 }

@@ -1,34 +1,17 @@
 /**
- * SleepEasy Side Panel - Sq Ft Analysis (Room-Centric)
- *
- * A single accordion list of listings, ordered by most recently modified.
- * Each listing is collapsible; expanding lazily loads rooms and renders the
- * room-centric controls (estimate, rename, remove photo, delete room).
+ * SleepEasy side panel: photo-level square-footage estimates.
  */
 
 (function () {
   'use strict';
 
-  // ── State ──
-
-  /** @type {Array<{id: string, url: string, address: (string|null), updatedAt: number, roomCount: (number|null), totalSqft: (number|null)}>} */
   let listingSummaries = [];
-
-  /** @type {Map<string, {loading: boolean, error: (string|null), listing: any, rooms: any[], positions: Object<string, number>}>} */
   const listingState = new Map();
-
-  /** @type {Set<string>} */
   const openListingIds = new Set();
-
-  /** @type {Set<string>} */
-  const analyzingRoomIds = new Set();
-
-  /** @type {string|null} */
+  const analyzingPhotoIds = new Set();
   let activeListingId = null;
-
   let historyRefreshTimer = null;
-
-  // ── DOM refs ──
+  let noticeTimer = null;
 
   const listingsEl = document.getElementById('listings');
   const noticeEl = document.getElementById('panel-notice');
@@ -36,26 +19,18 @@
   const settingsPanel = document.getElementById('settings-panel');
   const backendUrlEl = document.getElementById('backend-url');
   const backendDeviceEl = document.getElementById('backend-device');
-  const backendAnalysisModeEl = document.getElementById('backend-analysis-mode');
   const analysisBackendEl = document.getElementById('analysis-backend');
   const backendSaveEl = document.getElementById('backend-save');
   const backendCheckEl = document.getElementById('backend-check');
   const backendStatusEl = document.getElementById('backend-status');
-
-  // ── Init ──
 
   async function initialize() {
     attachDelegatedListeners();
     initSettingsToggle();
     listenForUpdates();
     initBackendControls();
-    await Promise.all([
-      refreshAll({ initial: true }),
-      loadBackendConfig(),
-    ]);
+    await Promise.all([refreshAll({ initial: true }), loadBackendConfig()]);
   }
-
-  // ── Settings toggle ──
 
   function initSettingsToggle() {
     if (!settingsToggle || !settingsPanel) return;
@@ -65,8 +40,6 @@
     });
   }
 
-  // ── Data loading ──
-
   async function getActiveTabListingContext() {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab) return null;
@@ -75,8 +48,7 @@
         type: 'GET_LISTING_CONTEXT',
         target: 'content',
       });
-      if (!response?.listingId) return null;
-      return response;
+      return response?.listingId ? response : null;
     } catch {
       return null;
     }
@@ -85,8 +57,7 @@
   async function loadHistorySummaries() {
     try {
       const res = await chrome.runtime.sendMessage({ type: 'GET_HISTORY' });
-      if (!res?.success) return [];
-      return res.history || [];
+      return res?.success ? (res.history || []) : [];
     } catch {
       return [];
     }
@@ -96,17 +67,15 @@
     const ctx = await getActiveTabListingContext();
     activeListingId = ctx?.listingId || null;
 
-    const history = await loadHistorySummaries();
-    listingSummaries = history;
-
+    listingSummaries = await loadHistorySummaries();
     if (activeListingId && !listingSummaries.some(l => l.id === activeListingId)) {
       listingSummaries = [{
         id: activeListingId,
         url: ctx?.listingUrl || '',
         address: ctx?.address || activeListingId,
         updatedAt: Date.now(),
-        roomCount: null,
-        totalSqft: null,
+        photoCount: null,
+        analyzedPhotoCount: null,
       }, ...listingSummaries];
     }
 
@@ -116,13 +85,8 @@
     }
 
     render();
-
-    for (const id of openListingIds) {
-      void ensureListingStateLoaded(id);
-    }
+    for (const id of openListingIds) void ensureListingStateLoaded(id);
   }
-
-  // ── Backend settings ──
 
   function initBackendControls() {
     if (!backendSaveEl || !backendCheckEl) return;
@@ -134,25 +98,20 @@
     if (!backendStatusEl) return;
     backendStatusEl.textContent = message || '';
     backendStatusEl.classList.remove('ok', 'warn', 'error');
-    if (['ok', 'warn', 'error'].includes(level)) {
-      backendStatusEl.classList.add(level);
-    }
+    if (['ok', 'warn', 'error'].includes(level)) backendStatusEl.classList.add(level);
   }
 
   function applyBackendConfigToForm(config) {
     if (!config) return;
     if (backendUrlEl) backendUrlEl.value = config.baseUrl || 'http://127.0.0.1:8787';
     if (backendDeviceEl) backendDeviceEl.value = config.devicePolicy || 'auto';
-    if (backendAnalysisModeEl) backendAnalysisModeEl.value = config.analysisMode || 'auto';
     if (analysisBackendEl) analysisBackendEl.value = config.analysisBackend || 'auto';
   }
 
   function readBackendConfigFromForm() {
     return {
-      mode: 'local',
       baseUrl: (backendUrlEl?.value || '').trim(),
       devicePolicy: backendDeviceEl?.value || 'auto',
-      analysisMode: backendAnalysisModeEl?.value || 'auto',
       analysisBackend: analysisBackendEl?.value || 'auto',
     };
   }
@@ -177,29 +136,22 @@
     if (!health) { setBackendStatus('No status yet', 'warn'); return; }
     if (health.ok) {
       const device = health?.device?.policy ? ` (${health.device.policy})` : '';
-      const cuda = Boolean(health?.capabilities?.cudaAvailable);
-      const analysis = health?.analysisMode ? ` · ${health.analysisMode}` : '';
-      setBackendStatus(`Connected${device} · ${cuda ? 'CUDA' : 'No CUDA'}${analysis}`, cuda ? 'ok' : 'warn');
+      setBackendStatus(`Connected${device}`, 'ok');
       return;
     }
     setBackendStatus(`Unavailable: ${health.error || 'unknown'}`, 'error');
   }
 
-  async function updateBackendConfig(partialConfig) {
-    const res = await chrome.runtime.sendMessage({ type: 'SET_BACKEND_CONFIG', config: partialConfig });
-    if (!res?.success) {
-      throw new Error(res?.error || 'Failed to save backend config');
-    }
-    applyBackendConfigToForm(res.config || partialConfig);
-    renderHealthStatus(res.health);
-    return res;
-  }
-
   async function saveBackendConfig() {
     setBackendStatus('Saving...');
     try {
-      const config = readBackendConfigFromForm();
-      await updateBackendConfig(config);
+      const res = await chrome.runtime.sendMessage({
+        type: 'SET_BACKEND_CONFIG',
+        config: readBackendConfigFromForm(),
+      });
+      if (!res?.success) throw new Error(res?.error || 'Failed to save backend config');
+      applyBackendConfigToForm(res.config || {});
+      renderHealthStatus(res.health);
     } catch (err) {
       setBackendStatus(`Failed: ${err?.message || 'unknown'}`, 'error');
     }
@@ -209,7 +161,7 @@
     setBackendStatus('Checking...');
     try {
       const res = await chrome.runtime.sendMessage({ type: 'GET_BACKEND_HEALTH' });
-      if (!res?.success) { setBackendStatus(`Failed: ${res?.error || 'unknown'}`, 'error'); return; }
+      if (!res?.success) throw new Error(res?.error || 'unknown');
       renderHealthStatus(res.health);
     } catch (err) {
       setBackendStatus(`Failed: ${err?.message || 'unknown'}`, 'error');
@@ -219,50 +171,50 @@
   async function ensureListingStateLoaded(listingId) {
     if (!listingId) return;
     const existing = listingState.get(listingId);
-    if (existing && (existing.loading || existing.rooms)) return;
+    if (existing && (existing.loading || existing.photos)) return;
 
-    listingState.set(listingId, { loading: true, error: null, listing: null, rooms: [], positions: {} });
+    listingState.set(listingId, { loading: true, error: null, listing: null, photos: [], positions: {} });
     render();
 
     try {
       const res = await chrome.runtime.sendMessage({ type: 'GET_LISTING_STATE', listingId });
       if (!res?.success) {
-        listingState.set(listingId, { loading: false, error: res?.error || 'Failed to load', listing: null, rooms: [], positions: {} });
+        listingState.set(listingId, { loading: false, error: res?.error || 'Failed to load', listing: null, photos: [], positions: {} });
         render();
         return;
       }
-      listingState.set(listingId, { loading: false, error: null, listing: res.listing || null, rooms: res.rooms || [], positions: res.positions || {} });
+      listingState.set(listingId, {
+        loading: false,
+        error: null,
+        listing: res.listing || null,
+        photos: res.photos || [],
+        positions: res.positions || {},
+      });
       render();
     } catch (err) {
-      listingState.set(listingId, { loading: false, error: err?.message || 'Failed to load', listing: null, rooms: [], positions: {} });
+      listingState.set(listingId, { loading: false, error: err?.message || 'Failed to load', listing: null, photos: [], positions: {} });
       render();
     }
   }
-
-  // ── Live updates ──
 
   function listenForUpdates() {
     chrome.runtime.onMessage.addListener((msg) => {
       if (msg.target !== 'sidepanel') return;
 
-      // Service worker asks the side panel (which has WebGPU) to run the
-      // on-device estimate for a room.
-      if (msg.type === 'RUN_INBROWSER' && msg.listingId && msg.roomId) {
-        void runInBrowserEstimate(msg.listingId, msg.roomId);
+      if (msg.type === 'RUN_INBROWSER_PHOTO' && msg.listingId && msg.photoId) {
+        void runInBrowserEstimate(msg.listingId, msg.photoId);
         return;
       }
 
       if (msg.type !== 'STATE_CHANGED' || !msg.listingId) return;
-
-      const prev = listingState.get(msg.listingId) || { loading: false, error: null, listing: null, rooms: [], positions: {} };
+      const prev = listingState.get(msg.listingId) || { loading: false, error: null, listing: null, photos: [], positions: {} };
       listingState.set(msg.listingId, {
         ...prev,
         loading: false,
         error: null,
-        rooms: msg.rooms || [],
+        photos: msg.photos || [],
         positions: msg.positions || prev.positions || {},
       });
-
       scheduleHistoryRefresh();
       render();
     });
@@ -274,16 +226,13 @@
     if (historyRefreshTimer) clearTimeout(historyRefreshTimer);
     historyRefreshTimer = setTimeout(async () => {
       historyRefreshTimer = null;
-      const history = await loadHistorySummaries();
-      listingSummaries = history;
+      listingSummaries = await loadHistorySummaries();
       if (activeListingId && !listingSummaries.some(l => l.id === activeListingId)) {
-        listingSummaries = [{ id: activeListingId, url: '', address: activeListingId, updatedAt: Date.now(), roomCount: null, totalSqft: null }, ...listingSummaries];
+        listingSummaries = [{ id: activeListingId, url: '', address: activeListingId, updatedAt: Date.now(), photoCount: null, analyzedPhotoCount: null }, ...listingSummaries];
       }
       render();
     }, 350);
   }
-
-  // ── Rendering ──
 
   const CHEVRON_SVG = '<svg class="listing-chevron" viewBox="0 0 16 16" fill="none"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
@@ -291,19 +240,17 @@
     if (!listingSummaries.length) {
       listingsEl.innerHTML = `
         <div class="empty-state">
-          <p>No listings yet</p>
-          <span class="hint">Open a StreetEasy listing and hover photos to assign rooms</span>
+          <p>No photos yet</p>
+          <span class="hint">Hover a listing photo to analyze or label it</span>
         </div>
       `;
       return;
     }
 
     listingsEl.innerHTML = listingSummaries.map(summary => renderListingSection(summary)).join('');
-
     listingsEl.querySelectorAll('details.listing').forEach(details => {
       const id = details.dataset.listingId;
-      if (!id) return;
-      details.open = openListingIds.has(id);
+      if (id) details.open = openListingIds.has(id);
     });
   }
 
@@ -314,8 +261,8 @@
     const date = summary.updatedAt ? new Date(summary.updatedAt).toLocaleDateString() : '';
 
     const subtitleBits = [];
-    if (summary.roomCount != null) subtitleBits.push(summary.roomCount === 1 ? '1 room' : `${summary.roomCount} rooms`);
-    if (summary.totalSqft != null) subtitleBits.push(`${summary.totalSqft} sqft`);
+    if (summary.photoCount != null) subtitleBits.push(summary.photoCount === 1 ? '1 photo' : `${summary.photoCount} photos`);
+    if (summary.analyzedPhotoCount) subtitleBits.push(`${summary.analyzedPhotoCount} analyzed`);
     if (date) subtitleBits.push(date);
 
     let bodyHtml = '';
@@ -324,119 +271,78 @@
     } else if (st?.error) {
       bodyHtml = `<div class="listing-body"><div class="empty-state compact"><span class="hint">${escapeHtml(st.error)}</span></div></div>`;
     } else if (st) {
-      bodyHtml = `<div class="listing-body">${renderRoomsForListing(id, st.rooms, st.positions)}</div>`;
-    } else {
-      bodyHtml = '';
+      bodyHtml = `<div class="listing-body">${renderPhotosForListing(id, st.photos, st.positions)}</div>`;
     }
 
-    const openAttr = openListingIds.has(id) ? ' open' : '';
     return `
-      <details class="listing" data-listing-id="${escapeHtml(id)}"${openAttr}>
+      <details class="listing" data-listing-id="${escapeHtml(id)}"${openListingIds.has(id) ? ' open' : ''}>
         <summary class="listing-summary">
           ${CHEVRON_SVG}
           <div class="listing-info">
             <div class="listing-title">${address}</div>
-            ${subtitleBits.length ? `<div class="listing-subtitle">${escapeHtml(subtitleBits.join(' \u00b7 '))}</div>` : ''}
+            ${subtitleBits.length ? `<div class="listing-subtitle">${escapeHtml(subtitleBits.join(' · '))}</div>` : ''}
           </div>
-          <button class="listing-open-btn" data-action="open-listing" data-listing-id="${escapeHtml(id)}" title="Open in tab">\u2197</button>
+          <button class="listing-open-btn" data-action="open-listing" data-listing-id="${escapeHtml(id)}" title="Open in tab">↗</button>
         </summary>
         ${bodyHtml}
       </details>
     `;
   }
 
-  function renderRoomsForListing(listingId, rooms, positions) {
-    if (!rooms || rooms.length === 0) {
+  function renderPhotosForListing(listingId, photos, positions) {
+    if (!photos?.length) {
       return `
         <div class="empty-state compact">
-          <p>No rooms yet</p>
-          <span class="hint">Hover photos on the listing to add them</span>
+          <p>No photos yet</p>
+          <span class="hint">Hover a listing photo to analyze or label it</span>
         </div>
       `;
     }
 
-    const cards = rooms.map(room => renderRoomCard(listingId, room, positions)).join('');
-    const totalHtml = renderTotalArea(rooms);
-    return `<div class="room-list">${cards}</div>${totalHtml}`;
+    const sorted = [...photos].sort((a, b) => {
+      const ap = positions[a.photoUrl] || Number.MAX_SAFE_INTEGER;
+      const bp = positions[b.photoUrl] || Number.MAX_SAFE_INTEGER;
+      return ap - bp;
+    });
+    return `<div class="photo-list">${sorted.map(photo => renderPhotoRow(listingId, photo, positions)).join('')}</div>`;
   }
 
-  function renderRoomCard(listingId, room, positions) {
-    const isAnalyzing = analyzingRoomIds.has(room.id);
-    const hasPhotos = room.photoUrls.length > 0;
-    const isMulti = room.photoUrls.length > 1;
-    const hasEstimate = room.estimatedSqft !== null && room.estimatedSqft !== undefined;
-    const hasValidEstimate = hasEstimate && !(isMulti && room.pipeline === 'single') && !room.outdated;
+  function renderPhotoRow(listingId, photo, positions) {
+    const isAnalyzing = analyzingPhotoIds.has(photo.id);
+    const hasEstimate = photo.estimatedSqft !== null && photo.estimatedSqft !== undefined;
+    const position = positions[photo.photoUrl] || null;
+    const labelValue = escapeHtml(photo.label || '');
 
     let sqftHtml;
     if (isAnalyzing) {
+      sqftHtml = `<button class="photo-sqft-btn analyzing" disabled><span class="spinner-sm"></span></button>`;
+    } else if (hasEstimate) {
       sqftHtml = `
-        <button class="room-sqft-btn analyzing" disabled>
-          <span class="spinner-sm"></span>
+        <button class="photo-sqft-btn has-result" data-action="analyze" data-listing-id="${escapeHtml(listingId)}" data-photo-id="${escapeHtml(photo.id)}" title="Re-analyze photo">
+          ${photo.estimatedSqft} <span class="unit">sqft</span>
         </button>
       `;
-    } else if (hasValidEstimate) {
+    } else {
       sqftHtml = `
-        <button class="room-sqft-btn has-result" data-action="analyze" data-listing-id="${escapeHtml(listingId)}" data-room-id="${escapeHtml(room.id)}"
-                title="Click to re-estimate">
-          ${room.estimatedSqft} <span class="unit">sqft</span>
-        </button>
-      `;
-    } else if (hasEstimate && hasPhotos) {
-      sqftHtml = `
-        <button class="room-sqft-btn outdated" data-action="analyze" data-listing-id="${escapeHtml(listingId)}" data-room-id="${escapeHtml(room.id)}"
-                title="Click to re-estimate">
-          ${room.estimatedSqft} <span class="unit">sqft</span>
-        </button>
-      `;
-    } else if (hasPhotos) {
-      sqftHtml = `
-        <button class="room-sqft-btn placeholder" data-action="analyze" data-listing-id="${escapeHtml(listingId)}" data-room-id="${escapeHtml(room.id)}"
-                title="Click to estimate sq ft">
+        <button class="photo-sqft-btn placeholder" data-action="analyze" data-listing-id="${escapeHtml(listingId)}" data-photo-id="${escapeHtml(photo.id)}" title="Analyze photo">
           <span class="analyze-label">Analyze</span>
           <span class="unknown">???</span> <span class="unit">sqft</span>
         </button>
       `;
-    } else {
-      sqftHtml = `<span class="room-sqft-btn disabled">&mdash; <span class="unit">sqft</span></span>`;
     }
 
-    const photoCount = room.photoUrls.length;
-    const photoLabel = photoCount === 1 ? '1 photo' : `${photoCount} photos`;
-
     return `
-      <div class="room-card" data-room-id="${escapeHtml(room.id)}">
-        <div class="room-header">
-          <input class="room-name" type="text" value="${escapeHtml(room.name)}"
-                 data-action="rename" data-listing-id="${escapeHtml(listingId)}" data-room-id="${escapeHtml(room.id)}" />
-          ${hasPhotos ? `<span class="room-photo-count">${photoLabel}</span>` : ''}
-          ${sqftHtml}
-          ${hasPhotos ? `<button class="room-clear" data-action="clear-photos" data-listing-id="${escapeHtml(listingId)}" data-room-id="${escapeHtml(room.id)}" title="Clear all photos">Clear</button>` : ''}
-          <button class="room-delete" data-action="delete" data-listing-id="${escapeHtml(listingId)}" data-room-id="${escapeHtml(room.id)}"
-                  title="Delete room">&times;</button>
+      <div class="photo-row" data-photo-id="${escapeHtml(photo.id)}">
+        <div class="photo-meta">
+          <span class="photo-position">${position ? `Photo ${position}` : 'Photo'}</span>
+          <input class="photo-label" type="text" value="${labelValue}" placeholder="Label room"
+                 data-action="label" data-listing-id="${escapeHtml(listingId)}" data-photo-id="${escapeHtml(photo.id)}" />
         </div>
+        ${sqftHtml}
+        <button class="photo-delete" data-action="delete" data-listing-id="${escapeHtml(listingId)}" data-photo-id="${escapeHtml(photo.id)}" title="Remove photo">×</button>
       </div>
     `;
   }
-
-  function renderTotalArea(rooms) {
-    const validRooms = rooms.filter(r => {
-      if (r.estimatedSqft === null || r.estimatedSqft === undefined) return false;
-      if (r.outdated) return false;
-      if (r.photoUrls.length > 1 && r.pipeline === 'single') return false;
-      return true;
-    });
-
-    if (!validRooms.length) return '';
-    const total = validRooms.reduce((sum, r) => sum + r.estimatedSqft, 0);
-    return `
-      <div class="total-area">
-        <span class="total-label">Total (${validRooms.length} room${validRooms.length > 1 ? 's' : ''})</span>
-        <span class="total-value">${total} <span class="unit">sqft</span></span>
-      </div>
-    `;
-  }
-
-  // ── Event handling (delegated) ──
 
   function attachDelegatedListeners() {
     listingsEl.addEventListener('toggle', (e) => {
@@ -455,45 +361,33 @@
     listingsEl.addEventListener('click', (e) => {
       const el = e.target.closest?.('[data-action]');
       if (!el) return;
-      const action = el.dataset.action;
 
-      if (action === 'open-listing') {
+      if (el.dataset.action === 'open-listing') {
         e.preventDefault();
         e.stopPropagation();
-        const listingId = el.dataset.listingId;
-        const summary = listingSummaries.find(l => l.id === listingId);
-        const url = summary?.url;
-        if (!url) return;
+        const listing = listingSummaries.find(l => l.id === el.dataset.listingId);
+        if (!listing?.url) return;
         chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
-          if (tab) chrome.tabs.update(tab.id, { url });
+          if (tab) chrome.tabs.update(tab.id, { url: listing.url });
         });
         return;
       }
 
-      if (action === 'analyze') {
-        void handleAnalyze(el.dataset.listingId, el.dataset.roomId);
-        return;
-      }
-
-      if (action === 'delete') {
-        void handleDelete(el.dataset.listingId, el.dataset.roomId);
-        return;
-      }
-
-      if (action === 'clear-photos') {
-        void handleClearPhotos(el.dataset.listingId, el.dataset.roomId);
-        return;
+      if (el.dataset.action === 'analyze') {
+        void handleAnalyze(el.dataset.listingId, el.dataset.photoId);
+      } else if (el.dataset.action === 'delete') {
+        void handleDelete(el.dataset.listingId, el.dataset.photoId);
       }
     });
 
     listingsEl.addEventListener('change', (e) => {
-      const input = e.target.closest?.('[data-action="rename"]');
+      const input = e.target.closest?.('[data-action="label"]');
       if (!input) return;
-      void handleRename(input.dataset.listingId, input.dataset.roomId, input.value);
+      void handleLabel(input.dataset.listingId, input.dataset.photoId, input.value);
     });
 
     listingsEl.addEventListener('keydown', (e) => {
-      const input = e.target.closest?.('[data-action="rename"]');
+      const input = e.target.closest?.('[data-action="label"]');
       if (!input) return;
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -501,8 +395,6 @@
       }
     });
   }
-
-  let noticeTimer = null;
 
   function showNotice(message, { duration = 7000 } = {}) {
     if (!noticeEl) return;
@@ -512,33 +404,24 @@
     noticeTimer = setTimeout(() => noticeEl.classList.add('hidden'), duration);
   }
 
-  async function handleAnalyze(listingId, roomId) {
-    if (!listingId || !roomId) return;
-    analyzingRoomIds.add(roomId);
+  async function handleAnalyze(listingId, photoId) {
+    if (!listingId || !photoId) return;
+    analyzingPhotoIds.add(photoId);
     render();
     let deferred = false;
     try {
-      const res = await chrome.runtime.sendMessage({ type: 'ANALYZE_ROOM', listingId, roomId });
-      // In-browser path: the service worker relays RUN_INBROWSER back here, and
-      // runInBrowserEstimate owns the spinner from that point.
+      const res = await chrome.runtime.sendMessage({ type: 'ANALYZE_PHOTO', listingId, photoId });
       if (res?.deferred) { deferred = true; return; }
-      if (!res?.success) {
-        if (res?.errorCode === 'NO_CUDA_MULTI_UNAVAILABLE') {
-          await handleNoCudaAnalyzeFallback(listingId, roomId);
-          return;
-        }
-        console.error('[SleepEasy SidePanel] Analyze failed:', res?.error || 'Unknown error');
-        showNotice(`Analyze failed: ${res?.error || 'Unknown error'}`);
-      }
+      if (!res?.success) throw new Error(res?.error || 'Unknown error');
     } catch (err) {
-      console.error('[SleepEasy SidePanel] Analyze failed:', err);
       showNotice(`Analyze failed: ${err?.message || 'Unknown error'}`);
     } finally {
-      if (!deferred) { analyzingRoomIds.delete(roomId); render(); }
+      if (!deferred) {
+        analyzingPhotoIds.delete(photoId);
+        render();
+      }
     }
   }
-
-  // ── In-browser estimate (runs in this page; has WebGPU) ──
 
   async function fetchImage(url) {
     const res = await fetch(url, { credentials: 'omit' });
@@ -558,113 +441,73 @@
     }
   }
 
-  async function getRoom(listingId, roomId) {
+  async function getPhoto(listingId, photoId) {
     const st = listingState.get(listingId);
-    let room = st?.rooms?.find(r => r.id === roomId);
-    if (room) return room;
+    let photo = st?.photos?.find(p => p.id === photoId);
+    if (photo) return photo;
     const res = await chrome.runtime.sendMessage({ type: 'GET_LISTING_STATE', listingId });
-    return res?.rooms?.find(r => r.id === roomId) || null;
+    return res?.photos?.find(p => p.id === photoId) || null;
   }
 
-  async function runInBrowserEstimate(listingId, roomId) {
-    if (analyzingRoomIds.has(roomId) === false) { analyzingRoomIds.add(roomId); render(); }
+  async function runInBrowserEstimate(listingId, photoId) {
+    if (!analyzingPhotoIds.has(photoId)) {
+      analyzingPhotoIds.add(photoId);
+      render();
+    }
     try {
-      const room = await getRoom(listingId, roomId);
-      if (!room || !room.photoUrls?.length) throw new Error('Room has no photos');
+      const photo = await getPhoto(listingId, photoId);
+      if (!photo?.photoUrl) throw new Error('Photo is not saved');
 
       const { estimate } = await import('../lib/sqft/pipeline.js');
-      let best = null;
-      let lastErr = null;
-      for (const url of room.photoUrls.slice(0, 4)) {
-        try {
-          const img = await fetchImage(url);
-          const r = await estimate(img, { tokens: 1200 });
-          if (r?.ok && Number.isFinite(r.sqft) && r.sqft > 0 && (!best || r.sqft > best.sqft)) best = r;
-        } catch (e) { lastErr = e; }
+      const img = await fetchImage(photo.photoUrl);
+      const result = await estimate(img, { tokens: 1200 });
+      if (!result?.ok || !Number.isFinite(result.sqft) || result.sqft <= 0) {
+        throw new Error('No floor area detected in this photo');
       }
-      if (!best) throw new Error(lastErr?.message || 'No floor area detected in the room photos');
 
       await chrome.runtime.sendMessage({
-        type: 'SET_ROOM_ESTIMATE', listingId, roomId,
-        sqft: best.sqft, pipeline: 'inbrowser',
+        type: 'SET_PHOTO_ESTIMATE',
+        listingId,
+        photoId,
+        sqft: result.sqft,
+        pipeline: 'inbrowser',
       });
     } catch (err) {
-      console.error('[SleepEasy SidePanel] In-browser analyze failed:', err);
       showNotice(`Analyze failed: ${err?.message || 'Unknown error'}`);
     } finally {
-      analyzingRoomIds.delete(roomId);
+      analyzingPhotoIds.delete(photoId);
       render();
     }
   }
 
-  /**
-   * Multi-photo DUSt3R needs CUDA. When the backend reports no CUDA, switch
-   * to single-image mode once (persisted), notify, and retry.
-   */
-  async function handleNoCudaAnalyzeFallback(listingId, roomId) {
-    await updateBackendConfig({
-      analysisMode: 'single-image',
-      noCudaPromptHandled: true,
-    });
-    showNotice('No CUDA GPU detected — switched to single-image mode. Estimates measure visible floor only and read low. Change in settings.', { duration: 9000 });
-
-    const retry = await chrome.runtime.sendMessage({ type: 'ANALYZE_ROOM', listingId, roomId });
-    if (!retry?.success) {
-      if (retry?.errorCode === 'NO_CUDA_MULTI_UNAVAILABLE') {
-        showNotice('Multi-photo analysis needs a CUDA GPU. Single-image mode is available in settings.');
-        return;
-      }
-      throw new Error(retry?.error || 'Retry failed');
-    }
-  }
-
-  async function handleDelete(listingId, roomId) {
-    if (!listingId || !roomId) return;
+  async function handleDelete(listingId, photoId) {
+    if (!listingId || !photoId) return;
     try {
-      const res = await chrome.runtime.sendMessage({ type: 'DELETE_ROOM', listingId, roomId });
-      if (!res?.success) console.error('[SleepEasy SidePanel] Delete failed:', res?.error);
+      const res = await chrome.runtime.sendMessage({ type: 'DELETE_PHOTO', listingId, photoId });
+      if (!res?.success) throw new Error(res?.error || 'Delete failed');
     } catch (err) {
-      console.error('[SleepEasy SidePanel] Delete failed:', err);
+      showNotice(err?.message || 'Delete failed');
     }
   }
 
-  async function handleClearPhotos(listingId, roomId) {
-    if (!listingId || !roomId) return;
-    const st = listingState.get(listingId);
-    const room = st?.rooms?.find(r => r.id === roomId);
-    if (!room?.photoUrls?.length) return;
+  async function handleLabel(listingId, photoId, label) {
+    if (!listingId || !photoId) return;
     try {
-      for (const photoUrl of room.photoUrls) {
-        await chrome.runtime.sendMessage({ type: 'REMOVE_PHOTO_FROM_ROOM', listingId, roomId, photoUrl });
-      }
+      const res = await chrome.runtime.sendMessage({ type: 'LABEL_PHOTO', listingId, photoId, label: label.trim() });
+      if (!res?.success) throw new Error(res?.error || 'Label failed');
     } catch (err) {
-      console.error('[SleepEasy SidePanel] Clear photos failed:', err);
+      showNotice(err?.message || 'Label failed');
     }
   }
-
-  async function handleRename(listingId, roomId, name) {
-    if (!listingId || !roomId) return;
-    if (!name || !name.trim()) return;
-    try {
-      const res = await chrome.runtime.sendMessage({ type: 'RENAME_ROOM', listingId, roomId, name: name.trim() });
-      if (!res?.success) console.error('[SleepEasy SidePanel] Rename failed:', res?.error);
-    } catch (err) {
-      console.error('[SleepEasy SidePanel] Rename failed:', err);
-    }
-  }
-
-  // ── Util ──
 
   function escapeHtml(str) {
     return String(str)
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
-      .replace(/\"/g, '&quot;')
+      .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
   }
-
-  // ── Start ──
 
   initialize();
 })();

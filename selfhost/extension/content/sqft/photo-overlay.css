@@ -1,6 +1,4 @@
-/* SleepEasy Area Analysis - Photo Overlay Styles */
-
-/* ── Hover overlay container ── */
+/* SleepEasy photo overlay styles */
 
 .sleepsy-overlay {
   position: absolute;
@@ -10,14 +8,10 @@
   pointer-events: auto;
 }
 
-/* ── Action buttons wrapper ── */
-
 .sleepsy-actions {
   display: flex;
   gap: 0;
 }
-
-/* ── Integrated pill (single container for room + sqft) ── */
 
 .sleepsy-pill {
   display: inline-flex;
@@ -32,7 +26,6 @@
   line-height: 1.2;
 }
 
-/* Segment inside the pill */
 .sleepsy-seg {
   display: inline-flex;
   align-items: center;
@@ -59,25 +52,12 @@
   opacity: 0.7;
 }
 
-/* Divider between segments */
 .sleepsy-div {
   width: 1px;
   height: 16px;
   background: rgba(255, 255, 255, 0.2);
   flex: 0 0 1px;
 }
-
-/* ── Unassigned: simple assign button ── */
-
-.sleepsy-pill.sleepsy-unassigned {
-  background: rgba(0, 0, 0, 0.65);
-}
-
-.sleepsy-pill.sleepsy-unassigned .sleepsy-seg {
-  font-weight: 600;
-}
-
-/* ── Sqft display ── */
 
 .sleepsy-sqft-value {
   font-weight: 800;
@@ -96,7 +76,6 @@
   letter-spacing: 0.5px;
 }
 
-/* "Analyze" action label next to ??? sqft */
 .sleepsy-analyze-label {
   font-weight: 700;
   font-size: 11px;
@@ -104,7 +83,6 @@
   opacity: 0.9;
 }
 
-/* Make the sqft segment pulse subtly when it needs analysis */
 .sleepsy-seg.sleepsy-sqft-btn:not(:disabled):has(.sleepsy-analyze-label) {
   background: rgba(255, 255, 255, 0.08);
 }
@@ -112,21 +90,6 @@
 .sleepsy-seg.sleepsy-sqft-btn:not(:disabled):has(.sleepsy-analyze-label):hover {
   background: rgba(255, 255, 255, 0.18);
 }
-
-/* ── Room name inside pill ── */
-
-.sleepsy-room-label {
-  opacity: 0.85;
-  font-weight: 600;
-}
-
-.sleepsy-room-count {
-  opacity: 0.55;
-  font-weight: 600;
-  font-size: 11px;
-}
-
-/* ── Spinner (loading state) ── */
 
 .sleepsy-spinner {
   display: inline-block;
@@ -138,11 +101,14 @@
   animation: sleepsy-spin 0.6s linear infinite;
 }
 
+.sleepsy-loading-text {
+  font-size: 11px;
+  font-weight: 700;
+}
+
 @keyframes sleepsy-spin {
   to { transform: rotate(360deg); }
 }
-
-/* ── Room dropdown ── */
 
 .sleepsy-dropdown {
   position: absolute;
@@ -169,34 +135,10 @@
   margin-bottom: 8px;
 }
 
-.sleepsy-dd-search {
-  width: 100%;
-  border: 1px solid #e8e8e8;
-  border-radius: 6px;
-  padding: 6px 8px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  font-size: 12px;
-  font-weight: 500;
-  outline: none;
-}
-
-.sleepsy-dd-search:focus {
-  border-color: #080808;
-  box-shadow: none;
-}
-
 .sleepsy-dd-list {
   max-height: 240px;
   overflow: auto;
   padding: 4px 0;
-}
-
-/* Room rows */
-.sleepsy-room-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 0 4px;
 }
 
 .sleepsy-room-pick {
@@ -215,79 +157,15 @@
   cursor: pointer;
   transition: background 0.1s;
   border-radius: 6px;
+  margin: 0 4px;
 }
 
 .sleepsy-room-pick:hover {
   background: #f5f5f5;
 }
 
-.sleepsy-room-row.active .sleepsy-room-pick {
+.sleepsy-room-pick.active {
   background: #f0f0f0;
-  cursor: default;
-}
-
-.sleepsy-room-row.last-used .sleepsy-room-name {
-  font-weight: 700;
-}
-
-.sleepsy-room-check {
-  width: 16px;
-  flex: 0 0 16px;
-  font-size: 12px;
-  color: #080808;
-  text-align: center;
-}
-
-.sleepsy-room-name {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sleepsy-room-meta {
-  font-size: 10px;
-  font-weight: 600;
-  color: #9ca3af;
-  flex: 0 0 auto;
-}
-
-.sleepsy-room-meta.muted {
-  opacity: 0.5;
-}
-
-.sleepsy-room-rename {
-  border: none;
-  background: none;
-  color: #9ca3af;
-  font-size: 12px;
-  font-weight: 900;
-  cursor: pointer;
-  border-radius: 6px;
-  padding: 6px;
-  line-height: 1;
-}
-
-.sleepsy-room-rename:hover {
-  background: #f5f5f5;
-  color: #080808;
-}
-
-.sleepsy-room-rename-input {
-  flex: 1;
-  min-width: 0;
-  border: 1px solid #e8e8e8;
-  border-radius: 6px;
-  padding: 5px 8px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  outline: none;
-}
-
-.sleepsy-room-rename-input:focus {
-  border-color: #080808;
 }
 
 .sleepsy-dd-divider {
@@ -295,31 +173,10 @@
   background: #f0f0f0;
 }
 
-.sleepsy-dd-new-toggle {
-  width: 100%;
-  border: none;
-  background: #fff;
-  color: #080808;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 8px 10px;
-  text-align: left;
-  cursor: pointer;
-}
-
-.sleepsy-dd-new-toggle:hover {
-  background: #fafafa;
-}
-
 .sleepsy-dd-create {
   display: flex;
   gap: 6px;
   padding: 8px 10px;
-}
-
-.sleepsy-dd-create.sleepsy-dd-create-collapsed {
-  display: none;
 }
 
 .sleepsy-dd-create-input {
@@ -371,8 +228,6 @@
 .sleepsy-dd-remove:hover {
   background: #fef2f2;
 }
-
-/* ── Toast notice ── */
 
 .sleepeasy-toast {
   position: fixed;

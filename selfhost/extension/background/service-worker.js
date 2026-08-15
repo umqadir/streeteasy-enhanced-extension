@@ -1,13 +1,9 @@
 /**
  * SleepEasy service worker.
  *
- * 1. Opens the side panel on extension-icon click (and on first sqft action per tab)
- * 2. Routes messages between content script <-> side panel
- * 3. Orchestrates room area analysis: calls the local backend, persists results,
- *    broadcasts state changes
- *
- * MV3 service workers are ephemeral — all state lives in chrome.storage.local
- * via ListingStorage.
+ * 1. Opens the side panel on extension-icon click and first photo action
+ * 2. Routes messages between content script and side panel
+ * 3. Orchestrates photo-level area analysis and persists results
  */
 
 import { ListingStorage } from './storage.js';
@@ -15,8 +11,6 @@ import { SqftEstimationAPI } from './backend-api.js';
 
 const storage = new ListingStorage();
 const api = new SqftEstimationAPI();
-
-// Tabs that already had the side panel auto-opened (avoid repeats).
 const autoOpenedTabs = new Set();
 
 chrome.action.onClicked.addListener(async (tab) => {
@@ -33,14 +27,10 @@ async function maybeAutoOpenSidePanel(tabId) {
   try {
     await chrome.sidePanel.open({ tabId });
   } catch {
-    // Side panel API may not be available (e.g., popup windows)
+    // Side panel API may not be available in every window type.
   }
 }
 
-/**
- * Photo URLs are storage keys; the same normalization must be applied on
- * every write path. (listing-context.js applies the same rule on read.)
- */
 function normalizePhotoUrl(url) {
   try {
     const u = new URL(url);
@@ -56,13 +46,12 @@ async function sendToTab(tabId, message) {
   try {
     return await chrome.tabs.sendMessage(tabId, message);
   } catch {
-    // Tab may not have the content script loaded
     return null;
   }
 }
 
 async function broadcastStateChange(tabId, listingId) {
-  const rooms = await storage.getRooms(listingId);
+  const photos = await storage.getPhotos(listingId);
   const annotations = await storage.getAnnotations(listingId);
   const positions = await storage.getPhotoPositions(listingId);
 
@@ -71,188 +60,134 @@ async function broadcastStateChange(tabId, listingId) {
       type: 'STATE_CHANGED',
       target: 'sidepanel',
       listingId,
-      rooms,
+      photos,
       positions,
     });
   } catch {
-    // Side panel may not be open
+    // Side panel may not be open.
   }
 
+  const contentMessage = {
+    type: 'UPDATE_ANNOTATIONS',
+    target: 'content',
+    listingId,
+    annotations,
+  };
+
   if (tabId) {
-    await sendToTab(tabId, {
-      type: 'UPDATE_ANNOTATIONS',
-      target: 'content',
-      listingId,
-      annotations,
-    });
+    await sendToTab(tabId, contentMessage);
+  } else {
+    const tabs = await chrome.tabs.query({});
+    await Promise.all(tabs.map(tab => sendToTab(tab.id, contentMessage)));
   }
 }
 
-/**
- * Estimate a room's floor area via the local backend.
- * Returns the shape the UI layers expect, or throws.
- */
-// ── Analysis routing ──
-// The on-device CV pipeline needs WebGPU + DOM, which the MV3 service worker
-// lacks, so in-browser analysis runs in the side panel page. The service worker
-// runs the optional local backend and routes in-browser requests to the side panel.
-
-/** Use the local backend only when the user opted in AND it is reachable. */
 async function shouldUseBackend(config) {
   if (config.analysisBackend === 'inbrowser') return false;
   if (config.analysisBackend === 'local') return true;
-  // 'auto': backend if a healthy one answers, else fall back to in-browser.
   const health = await api.checkHealth();
   return !!health?.ok;
 }
 
-async function analyzeViaBackend(room, config) {
-  let estimate;
-  let pipeline;
-
-  if (room.photoUrls.length === 1) {
-    estimate = await api.estimateSinglePhoto(room.photoUrls[0]);
-    pipeline = 'single';
-  } else {
-    const health = await api.checkHealth();
-    const noCudaMultiBlocked = (
-      !!health?.ok
-      && config.analysisMode !== 'single-image'
-      && health?.capabilities?.cudaAvailable === false
-    );
-    if (noCudaMultiBlocked) {
-      return {
-        success: false,
-        errorCode: 'NO_CUDA_MULTI_UNAVAILABLE',
-        promptRequired: !config.noCudaPromptHandled,
-        error: 'Multi-photo DUSt3R requires CUDA on this release. Enable single-image mode in settings.',
-        details: { cudaAvailable: false, analysisMode: config.analysisMode },
-      };
-    }
-    const multiviewMethod = (config.analysisMode === 'single-image') ? 'single-image' : 'dust3r-scene';
-    estimate = await api.estimateMultiPhoto(room.photoUrls, { multiviewMethod });
-    pipeline = multiviewMethod === 'single-image' ? 'single' : 'multi';
-    if (estimate?.pipeline === 'single' || estimate?.pipeline === 'multi') pipeline = estimate.pipeline;
-  }
-
+async function analyzeViaBackend(photo) {
+  const estimate = await api.estimateSinglePhoto(photo.photoUrl);
   const parsedSqft = Number(estimate?.estimatedSqft ?? estimate?.estimatedSqftFloat);
   if (!Number.isFinite(parsedSqft)) throw new Error('Backend returned an invalid sqft value');
   return {
-    success: true,
     sqft: Math.max(0, Math.round(parsedSqft)),
-    pipeline,
+    pipeline: estimate?.pipeline || 'single',
     confidence: estimate?.confidence ?? null,
     method: estimate?.method ?? null,
   };
 }
 
-async function analyzeRoom(listingId, roomId) {
-  const room = await storage.getRoom(listingId, roomId);
-  if (!room || room.photoUrls.length === 0) {
-    return { success: false, error: 'Room has no photos' };
-  }
+async function analyzePhoto(listingId, photoId) {
+  const photo = await storage.getPhoto(listingId, photoId);
+  if (!photo) return { success: false, error: 'Photo is not saved' };
 
   const config = await api.getConfig();
   if (await shouldUseBackend(config)) {
-    const outcome = await analyzeViaBackend(room, config);
-    if (!outcome.success) return outcome;
-    await storage.updateRoomEstimate(listingId, roomId, outcome.sqft, outcome.pipeline);
+    const outcome = await analyzeViaBackend(photo);
+    await storage.updatePhotoEstimate(listingId, photoId, outcome.sqft, outcome.pipeline);
     return {
       success: true,
       result: {
         estimatedSqft: outcome.sqft,
         pipeline: outcome.pipeline,
-        confidence: outcome.confidence ?? null,
-        method: outcome.method ?? null,
+        confidence: outcome.confidence,
+        method: outcome.method,
       },
     };
   }
 
-  // In-browser: the side panel (which has WebGPU) runs the model and writes the
-  // result back via SET_ROOM_ESTIMATE. We defer; the UI updates on broadcast.
-  chrome.runtime.sendMessage({ target: 'sidepanel', type: 'RUN_INBROWSER', listingId, roomId }).catch(() => {});
+  chrome.runtime.sendMessage({
+    target: 'sidepanel',
+    type: 'RUN_INBROWSER_PHOTO',
+    listingId,
+    photoId,
+  }).catch(() => {});
   return { success: true, deferred: true };
 }
 
-/**
- * Build the per-listing history summary shown in the side panel accordion.
- * A room's estimate only counts toward the listing total when it is current
- * (not outdated) and was produced by the appropriate pipeline for its photo count.
- */
 async function getHistory() {
   const listings = await storage.getListings();
   const history = [];
   for (const listing of listings) {
-    const rooms = await storage.getRooms(listing.id);
-    const validRooms = rooms.filter(r => {
-      if (r.estimatedSqft === null || r.estimatedSqft === undefined) return false;
-      if (r.outdated) return false;
-      if (r.photoUrls.length > 1 && r.pipeline === 'single') return false;
-      return true;
-    });
-    const totalSqft = validRooms.reduce((sum, r) => sum + r.estimatedSqft, 0);
+    const photos = await storage.getPhotos(listing.id);
+    const analyzedPhotoCount = photos.filter(p => p.estimatedSqft !== null && p.estimatedSqft !== undefined).length;
     history.push({
       ...listing,
-      roomCount: rooms.length,
-      // Preserve legitimate 0 values instead of coercing to null via truthiness.
-      totalSqft: validRooms.length > 0 ? totalSqft : null,
-      analyzedRoomCount: validRooms.length,
+      photoCount: photos.length,
+      analyzedPhotoCount,
     });
   }
   return history;
 }
 
-// ── Message handler ──
-//
-// Every handler resolves to a {success, ...} payload; thrown errors become
-// {success: false, error}. `return true` keeps the message channel open for
-// the async response.
-
 const handlers = {
-  async ADD_PHOTO_TO_ROOM(message, tabId) {
-    const { listingId, listingUrl, address, photoUrl, roomId } = message;
+  async SAVE_PHOTO(message, tabId) {
+    const { listingId, listingUrl, address, photoUrl, label } = message;
     const normalized = normalizePhotoUrl(photoUrl);
 
-    maybeAutoOpenSidePanel(tabId);
+    await maybeAutoOpenSidePanel(tabId);
     await storage.ensureListing(listingId, listingUrl, address);
+    const photo = await storage.savePhoto(listingId, normalized, label || '');
+    await broadcastStateChange(tabId, listingId);
+    return { success: true, photo };
+  },
 
-    // A photo belongs to at most one room: remove from any existing room first.
-    const existingRoom = await storage.findRoomForPhoto(listingId, normalized);
-    if (existingRoom) {
-      await storage.removePhotoFromRoom(listingId, existingRoom.id, normalized);
-    }
-
-    await storage.addPhotoToRoom(listingId, roomId, normalized);
+  async LABEL_PHOTO(message, tabId) {
+    const { listingId, photoId, label } = message;
+    await storage.labelPhoto(listingId, photoId, label || '');
     await broadcastStateChange(tabId, listingId);
     return { success: true };
   },
 
-  async REMOVE_PHOTO_FROM_ROOM(message, tabId) {
-    const { listingId, photoUrl, roomId } = message;
-    await storage.removePhotoFromRoom(listingId, roomId, normalizePhotoUrl(photoUrl));
+  async DELETE_PHOTO(message, tabId) {
+    const { listingId, photoId } = message;
+    await storage.deletePhoto(listingId, photoId);
     await broadcastStateChange(tabId, listingId);
     return { success: true };
   },
 
-  async CREATE_ROOM(message, tabId) {
-    const { listingId, listingUrl, address, name } = message;
-    await storage.ensureListing(listingId, listingUrl, address);
-    const room = await storage.createRoom(listingId, name);
-    await broadcastStateChange(tabId, listingId);
-    return { success: true, room };
+  async ANALYZE_PHOTO(message, tabId) {
+    await maybeAutoOpenSidePanel(tabId);
+    const response = await analyzePhoto(message.listingId, message.photoId);
+    if (response.success) await broadcastStateChange(tabId, message.listingId);
+    return response;
   },
 
-  async GET_ROOMS(message) {
-    const rooms = await storage.getRooms(message.listingId);
-    return { success: true, rooms };
+  async GET_LABELS(message) {
+    const labels = await storage.getLabels(message.listingId);
+    return { success: true, labels };
   },
 
   async GET_LISTING_STATE(message) {
     const { listingId } = message;
     const listing = await storage.getListing(listingId);
-    const rooms = await storage.getRooms(listingId);
+    const photos = await storage.getPhotos(listingId);
     const positions = await storage.getPhotoPositions(listingId);
-    return { success: true, listing, rooms, positions };
+    return { success: true, listing, photos, positions };
   },
 
   async GET_BACKEND_CONFIG() {
@@ -270,28 +205,6 @@ const handlers = {
   async GET_BACKEND_HEALTH() {
     const health = await api.checkHealth();
     return { success: true, health };
-  },
-
-  async ANALYZE_ROOM(message, tabId) {
-    const response = await analyzeRoom(message.listingId, message.roomId);
-    if (response.success) {
-      await broadcastStateChange(tabId, message.listingId);
-    }
-    return response;
-  },
-
-  async RENAME_ROOM(message, tabId) {
-    const { listingId, roomId, name } = message;
-    await storage.renameRoom(listingId, roomId, name);
-    await broadcastStateChange(tabId, listingId);
-    return { success: true };
-  },
-
-  async DELETE_ROOM(message, tabId) {
-    const { listingId, roomId } = message;
-    await storage.deleteRoom(listingId, roomId);
-    await broadcastStateChange(tabId, listingId);
-    return { success: true };
   },
 
   async GET_HISTORY() {
@@ -312,10 +225,10 @@ const handlers = {
     return { success: true, annotations };
   },
 
-  // Side panel writes an in-browser estimate back here to persist + broadcast.
-  async SET_ROOM_ESTIMATE(message, tabId) {
-    const { listingId, roomId, sqft, pipeline } = message;
-    await storage.updateRoomEstimate(listingId, roomId, Math.max(0, Math.round(Number(sqft) || 0)), pipeline || 'inbrowser');
+  async SET_PHOTO_ESTIMATE(message, tabId) {
+    const { listingId, photoId, sqft, pipeline } = message;
+    const parsed = Math.max(0, Math.round(Number(sqft) || 0));
+    await storage.updatePhotoEstimate(listingId, photoId, parsed, pipeline || 'inbrowser');
     await broadcastStateChange(tabId, listingId);
     return { success: true };
   },

@@ -251,7 +251,7 @@ class UIInjector {
         </div>
         <div class="se-metric-line se-metric-sub">
           <span class="se-track${value === null ? ' se-track-empty' : ''}" aria-hidden="true">${dotHtml}</span>
-          <span class="se-rank">${this.escapeHtml(rankBits.join(' · ') || '—')}</span>
+          <span class="se-rank">${this.escapeHtml(rankBits.join(' · ') || 'N/A')}</span>
         </div>
       </div>
     `;
@@ -372,13 +372,25 @@ class UIInjector {
       }
 
       .se-scale {
-        display: flex;
-        justify-content: space-between;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 116px;
         font-size: 10px;
         font-weight: 600;
         color: #9ca3af;
         letter-spacing: 0.02em;
         margin-bottom: 6px;
+      }
+
+      .se-scale span {
+        grid-column: 1;
+      }
+
+      .se-scale span:first-child {
+        justify-self: start;
+      }
+
+      .se-scale span:last-child {
+        justify-self: end;
       }
 
       .se-metrics {
@@ -416,12 +428,14 @@ class UIInjector {
 
       .se-metric-sub {
         align-items: center;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 116px;
         margin-top: 5px;
       }
 
       .se-track {
         position: relative;
-        flex: 1 1 auto;
+        width: 100%;
         height: 3.5px;
         border-radius: 999px;
         background: linear-gradient(90deg, #79b292 0%, #ddc287 55%, #d99087 100%);
@@ -445,11 +459,11 @@ class UIInjector {
       }
 
       .se-rank {
-        flex: 0 0 auto;
         font-size: 11px;
         font-weight: 600;
         font-variant-numeric: tabular-nums;
         color: #6b7280;
+        text-align: right;
         white-space: nowrap;
       }
 
@@ -506,6 +520,10 @@ class UIInjector {
       }
 
       @media (max-width: 520px) {
+        .se-scale,
+        .se-metric-sub {
+          grid-template-columns: minmax(0, 1fr) 104px;
+        }
         .se-rank { font-size: 10px; }
         .se-controls { flex-wrap: wrap; }
       }
@@ -545,7 +563,7 @@ class UIInjector {
 
   getTooltip(measure, timeWindow, dataThrough) {
     const measureLines = {
-      ambient: 'Ambient risk index: incidents per 100,000 people actually present — residents (16h/day) plus daytime workers (8h/day) — so business districts aren’t distorted.',
+      ambient: 'Ambient risk index: incidents per 100,000 people actually present, including residents (16h/day) and daytime workers (8h/day), so business districts are not distorted.',
       per100k: 'Incidents per 100,000 census residents (2020).',
       perSqMi: 'Incidents per square mile of neighborhood area.',
       count: 'Raw incident counts for the neighborhood.'
@@ -554,7 +572,7 @@ class UIInjector {
 
     const parts = [
       measureLines[measure] || '',
-      `NYPD complaint data (${windowLabels[timeWindow] || timeWindow}, through ${this.formatDate(dataThrough)}) mapped to the official NYC neighborhood (NTA) containing this listing — which may differ from StreetEasy’s neighborhood label.`,
+      `NYPD complaint data (${windowLabels[timeWindow] || timeWindow}, through ${this.formatDate(dataThrough)}) mapped to the official NYC neighborhood (NTA) containing this listing. This may differ from StreetEasy's neighborhood label.`,
       'The dot shows where this neighborhood ranks across all 197 NYC neighborhoods: #1 = lowest rate. Past incidence does not predict future safety.'
     ];
     return parts.filter(Boolean).map(p => this.escapeHtml(p)).join('<br><br>');

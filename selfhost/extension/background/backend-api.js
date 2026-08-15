@@ -5,8 +5,7 @@
  * (default http://127.0.0.1:8787). The extension never contacts any other
  * host for photo analysis.
  *
- * Endpoints: GET /health, GET|POST /backend/config,
- *            POST /estimate/single, POST /estimate/multi
+ * Endpoints: GET /health, GET|POST /backend/config, POST /estimate/single
  */
 
 const BACKEND_CONFIG_KEY = 'area:backend:config';
@@ -14,9 +13,7 @@ const BACKEND_CONFIG_KEY = 'area:backend:config';
 export const DEFAULT_BACKEND_CONFIG = Object.freeze({
   baseUrl: 'http://127.0.0.1:8787',
   devicePolicy: 'auto',         // auto | cpu | mps
-  analysisMode: 'auto',         // auto (DUSt3R multi-view when CUDA available) | single-image
   analysisBackend: 'auto',      // auto (local backend when reachable, else in-browser) | inbrowser | local
-  noCudaPromptHandled: false,
 });
 
 export class SqftEstimationAPI {
@@ -47,18 +44,13 @@ export class SqftEstimationAPI {
     const devicePolicy = ['auto', 'cpu', 'mps'].includes(String(config.devicePolicy))
       ? String(config.devicePolicy)
       : 'auto';
-    const analysisMode = ['auto', 'single-image'].includes(String(config.analysisMode))
-      ? String(config.analysisMode)
-      : 'auto';
     const analysisBackend = ['auto', 'inbrowser', 'local'].includes(String(config.analysisBackend))
       ? String(config.analysisBackend)
       : 'auto';
     return {
       baseUrl,
       devicePolicy,
-      analysisMode,
       analysisBackend,
-      noCudaPromptHandled: config.noCudaPromptHandled === true,
     };
   }
 
@@ -85,7 +77,6 @@ export class SqftEstimationAPI {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         devicePolicy: this.config.devicePolicy,
-        analysisMode: this.config.analysisMode,
       }),
     }, 15000);
   }
@@ -141,24 +132,4 @@ export class SqftEstimationAPI {
     });
   }
 
-  async estimateMultiPhoto(imageUrls, options = {}) {
-    await this.ready();
-    const requested = String(options.multiviewMethod || '').trim().toLowerCase();
-    const effectiveMethod = (imageUrls.length <= 1)
-      ? 'single-image'
-      : (requested || (this.config.analysisMode === 'single-image' ? 'single-image' : 'dust3r-scene'));
-    if (!['dust3r-scene', 'single-image'].includes(effectiveMethod)) {
-      throw new Error(`Unsupported multiview method: ${effectiveMethod}`);
-    }
-    await this._pushBackendConfig();
-    return await this._fetchJson('/estimate/multi', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        imageUrls,
-        devicePolicy: this.config.devicePolicy,
-        multiviewMethod: effectiveMethod,
-      }),
-    });
-  }
 }
